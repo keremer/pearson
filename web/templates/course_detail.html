@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block title %}{{ course.title }} - Course Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="display-4">{{ course.title }}</h1>
+        <p class="lead text-muted">{{ course.course_code }} • {{ course.instructor }}</p>
+    </div>
+    <div class="btn-group">
+        <a href="{{ url_for('web.edit_course', course_id=course.id) }}" class="btn btn-outline-primary">
+            <i class="fas fa-edit"></i> Edit Course
+        </a>
+        <a href="{{ url_for('web.create_lesson', course_id=course.id) }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add Lesson
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Course Information -->
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle"></i> Course Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Level:</strong> {{ course.level or 'Not specified' }}</p>
+                        <p><strong>Language:</strong> {{ course.language or 'Not specified' }}</p>
+                        <p><strong>Delivery Mode:</strong> {{ course.delivery_mode or 'Not specified' }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Instructor:</strong> {{ course.instructor or 'Not specified' }}</p>
+                        <p><strong>Contact:</strong> {{ course.contact_email or 'Not specified' }}</p>
+                        <p><strong>Created:</strong> {{ course.created_date.strftime('%Y-%m-%d') }}</p>
+                    </div>
+                </div>
+                
+                {% if course.aim %}
+                <div class="mt-3">
+                    <h6>Course Aim</h6>
+                    <p class="text-muted">{{ course.aim }}</p>
+                </div>
+                {% endif %}
+                
+                {% if course.description %}
+                <div class="mt-3">
+                    <h6>Description</h6>
+                    <p class="text-muted">{{ course.description|replace('\n', '<br>')|safe }}</p>
+                </div>
+                {% endif %}
+                
+                {% if course.objectives %}
+                <div class="mt-3">
+                    <h6>Learning Objectives</h6>
+                    <div class="text-muted">
+                        {{ course.objectives|replace('\n', '<br>')|safe }}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Lessons Preview -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-tasks"></i> Lessons ({{ lessons|length }})
+                </h5>
+                <a href="{{ url_for('web.course_lessons', course_id=course.id) }}" class="btn btn-sm btn-outline-primary">
+                    View All
+                </a>
+            </div>
+            <div class="card-body">
+                {% if lessons %}
+                    <div class="list-group list-group-flush">
+                        {% for lesson in lessons[:5] %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">Week {{ lesson.order }}: {{ lesson.title }}</h6>
+                                    <p class="mb-1 text-muted small">
+                                        <i class="fas fa-clock"></i> {{ lesson.duration }} minutes • 
+                                        <i class="fas fa-play-circle"></i> {{ lesson.activity_type or 'Activity' }}
+                                    </p>
+                                    {% if lesson.assignment_description %}
+                                    <p class="mb-1 small text-muted">
+                                        <strong>Assignment:</strong> {{ lesson.assignment_description|truncate(80) }}
+                                    </p>
+                                    {% endif %}
+                                </div>
+                                <div class="btn-group ms-3">
+                                    <a href="{{ url_for('web.edit_lesson', lesson_id=lesson.id) }}" title="Edit Lesson"
+                                       class="btn btn-sm btn-outline-secondary">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <form method="POST" action="{{ url_for('web.delete_lesson', lesson_id=lesson.id) }}" 
+                                          class="d-inline" onsubmit="return confirm('Delete this lesson?');">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete Lesson">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    {% if lessons|length > 5 %}
+                    <div class="text-center mt-3">
+                        <a href="{{ url_for('web.course_lessons', course_id=course.id) }}" class="btn btn-outline-primary">
+                            View All {{ lessons|length }} Lessons
+                        </a>
+                    </div>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-tasks fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No lessons yet for this course.</p>
+                        <a href="{{ url_for('web.create_lesson', course_id=course.id) }}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Add First Lesson
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-md-4">
+        <!-- Quick Actions -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-bolt"></i> Quick Actions
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('web.create_lesson', course_id=course.id) }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add Lesson
+                    </a>
+                    <a href="{{ url_for('web.course_lessons', course_id=course.id) }}" class="btn btn-outline-primary">
+                        <i class="fas fa-list"></i> Manage Lessons
+                    </a>
+                    <button class="btn btn-outline-secondary" onclick="alert('Export feature coming soon!')">
+                        <i class="fas fa-download"></i> Export Materials
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Course Stats -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-chart-bar"></i> Course Statistics
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <small class="text-muted">Total Lessons</small>
+                    <h4>{{ lessons|length }}</h4>
+                </div>
+                <div class="mb-3">
+                    <small class="text-muted">Total Duration</small>
+                    <h4>{{ lessons|sum(attribute='duration') }} minutes</h4>
+                </div>
+                <div class="mb-3">
+                    <small class="text-muted">Average Lesson Duration</small>
+                    <h4>
+                        {% if lessons %}
+                            {{ (lessons|sum(attribute='duration') / lessons|length)|round|int }} minutes
+                        {% else %}
+                            0 minutes
+                        {% endif %}
+                    </h4>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

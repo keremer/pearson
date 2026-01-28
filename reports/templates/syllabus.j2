@@ -1,0 +1,67 @@
+# {{ course_title | default('Untitled Course') }}
+
+**Course Code:** {{ course_code | default('TBD') }}  
+**Instructor:** {{ instructor | default('TBD') }}  
+**Contact:** {{ contact_email | default('TBD') }}  
+**Level:** {{ level | default('N/A') }}  
+**Language:** {{ language | default('English') }}  
+**Delivery Mode:** {{ delivery_mode | default('N/A') }}  
+**Generated:** {{ generated_date }}
+
+## Course Aim
+{{ course_aim | default('No course aim specified.') }}
+
+## Course Description
+{{ course_description | default('No course description available.') }}
+
+{% if learning_outcomes and learning_outcomes | length > 0 %}
+## Learning Outcomes
+Upon successful completion of this course, students will be able to:
+{% for outcome in learning_outcomes %}
+- **{{ outcome.code }}:** {{ outcome.description }}
+{% endfor %}
+{% endif %}
+
+{% if objectives and objectives | length > 0 %}
+## Learning Objectives
+{% for objective in objectives %}
+- {{ objective | trim }}
+{% endfor %}
+{% endif %}
+
+## Course Outline
+
+| Week | Lesson Title | Duration | Activity Type | Key Topics |
+|------|--------------|----------|---------------|------------|
+{% for lesson in lessons %}
+| {{ lesson.order | default(loop.index) }} | {{ lesson.title | default('Untitled Lesson') }} | {{ lesson.duration | default(60) }} minutes | {{ lesson.activity_type | default('N/A') }} | {{ lesson.content | default('No content') | truncate(60) }} |
+{% endfor %}
+
+## Assessment Overview
+- **Total Lessons:** {{ lessons | length }}
+- **Total Duration:** {{ total_duration | default(0) }} minutes
+- **Average Lesson Duration:** {{ (total_duration / lessons | length) | round | int if lessons | length > 0 else 0 }} minutes
+
+{% if assessment_formats and assessment_formats | length > 0 %}
+## Assessment Formats
+{% for assessment in assessment_formats %}
+- **{{ assessment.format_type | default('Assessment') }}:** {{ assessment.requirements | default('Requirements not specified') }}
+{% endfor %}
+{% endif %}
+
+{% if tools and tools | length > 0 %}
+## Tools & Resources
+{% for tool in tools %}
+- **{{ tool.category | default('Tool') }} - {{ tool.name | default('Unnamed') }}:** {{ tool.specifications | default(tool.description | default('No specifications provided')) }}
+{% endfor %}
+{% endif %}
+
+{% if prerequisites and prerequisites | length > 0 %}
+## Prerequisites
+{% for prereq in prerequisites %}
+- {{ prereq }}
+{% endfor %}
+{% endif %}
+
+---
+*Generated automatically by Course Automation System*

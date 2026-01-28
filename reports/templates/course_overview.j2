@@ -1,0 +1,34 @@
+# {{ course_title }} - Course Overview
+
+**Course Code:** {{ course_code | default('N/A') }}  
+**Instructor:** {{ instructor | default('N/A') }}  
+**Total Duration:** {{ total_duration }} minutes  
+**Total Lessons:** {{ total_lessons }}
+
+## Quick Stats
+- **Average Lesson Duration:** {{ average_duration }} minutes
+- **Longest Lesson:** {{ longest_lesson.duration | default(0) }} minutes ({{ longest_lesson.title | default('N/A') }})
+- **Shortest Lesson:** {{ shortest_lesson.duration | default(0) }} minutes ({{ shortest_lesson.title | default('N/A') }})
+
+## Lesson Distribution
+{% for lesson in lessons %}
+### Week {{ lesson.order }}: {{ lesson.title | default('Untitled Lesson') }}
+- **Duration:** {{ lesson.duration | default(0) }} minutes
+- **Topics:** {{ lesson.content | default('No content') | truncate(100) }}
+{% if lesson.objectives and lesson.objectives | length > 0 %}
+- **Key Objectives:** 
+  {% for objective in lesson.objectives %}
+    - {{ objective | trim }}
+  {% endfor %}
+{% endif %}
+{% endfor %}
+
+## Timeline
+{% set cumulative_time = 0 %}
+{% for lesson in lessons %}
+{% set cumulative_time = cumulative_time + (lesson.duration | default(0)) %}
+- **Week {{ lesson.order }}:** {{ cumulative_time }} minutes cumulative
+{% endfor %}
+
+---
+*Generated on {{ generated_date }}*
