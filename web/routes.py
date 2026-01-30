@@ -13,6 +13,8 @@ from cli.setup import DatabaseSetup
 from werkzeug.utils import secure_filename
 from cli.course_injector import CourseInjector
 from web import web_bp
+from web.forms import CourseForm, LessonForm, ImportForm
+
 
 def get_db_session():
     """
@@ -129,6 +131,27 @@ def course_lessons(course_id):
 @web_bp.route('/course/create', methods=['GET', 'POST'])
 def create_course():
     """Create a new course"""
+    form = CourseForm()
+    if form.validate_on_submit():
+        # Process form data
+        course = Course(
+            title=form.title.data,
+            course_code=form.course_code.data,
+            instructor=form.instructor.data,
+            contact_email=form.contact_email.data,
+            level=form.level.data,
+            language=form.language.data,
+            delivery_mode=form.delivery_mode.data,
+            aim=form.aim.data,
+            description=form.description.data,
+            objectives=form.objectives.data
+        )
+        db_session = get_db_session()
+        db_session.add(course)
+        db_session.commit()
+        flash(f'Course "{course.title}" created successfully!', 'success')
+        return redirect(url_for('web.course_detail', course_id=course.id))
+    
     if request.method == 'GET':
         return render_template('course_edit.html', course=None)
     
@@ -156,7 +179,7 @@ def create_course():
     except Exception as e:
         db_session.rollback()
         flash(f'Error creating course: {str(e)}', 'error')
-        return render_template('course_edit.html', course=None)
+        return render_template('course_edit.html', form=form, course=None)
 
 @web_bp.route('/course/<int:course_id>/edit', methods=['GET', 'POST'])
 def edit_course(course_id):

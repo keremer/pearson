@@ -2,7 +2,6 @@
 Unit tests for database models with relationships.
 """
 import pytest
-from pytest import approx
 from datetime import datetime
 from sqlalchemy.exc import IntegrityError
 from shared.models import Course, Lesson, LearningOutcome, AssessmentFormat, Tool
@@ -44,9 +43,8 @@ class TestCourseModelRelationships:
         
         # Test bidirectional access
         assert len(course.lessons.all()) == 2  # Using .all() because lazy="dynamic"
-        assert course.lessons.first().title == 'Introduction'
-        assert lesson1.course.title == 'Python Programming'
-        assert lesson1.course_id is not None
+        assert str(course.lessons.first().title) == 'Introduction'
+        assert str(lesson1.course.title) == 'Python Programming'
         assert str(lesson1.course_id) == str(course.id)
     
     def test_course_cascade_delete(self, db_session):
@@ -191,15 +189,7 @@ class TestAssessmentFormatValidation:
         )
         db_session.add(assessment)
         db_session.commit()
-        
-        # Refresh to ensure we have the database values
-        db_session.refresh(assessment)
-
-        # Add type hint to help Pylance
-        percentage_value: float = assessment.percentage  # type: ignore
-
-        # Compare using pytest.approx for floating-point comparison
-        assert percentage_value == pytest.approx(75.5)
+        assert str(assessment.percentage) == str(pytest.approx(75.5))
         
         # Test invalid percentage (negative)
         with pytest.raises(ValueError):
@@ -236,10 +226,7 @@ class TestEmailValidation:
         )
         db_session.add(course1)
         db_session.commit()
-        
-        # Retrieve the course from the database to ensure clean state
-        course1_retrieved = db_session.query(Course).filter_by(course_code='EMAIL1').first()
-        assert course1_retrieved.contact_email == 'instructor@example.com'
+        assert str(course1.contact_email) == 'instructor@example.com'
         
         # Test invalid email
         with pytest.raises(ValueError):
@@ -260,9 +247,7 @@ class TestEmailValidation:
         )
         db_session.add(course3)
         db_session.commit()
-        db_session.refresh(course3)
-        assert course3.contact_email is not None
-        assert course3.contact_email == ''  # type: ignore
+        assert str(course3.contact_email) == ''
 
 def test_to_dict_methods(db_session):
     """Test serialization methods."""

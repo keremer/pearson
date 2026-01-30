@@ -1,6 +1,31 @@
+# Testing
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
+
 # Data folder (except structure)
 data/
 !data/.gitkeep
+
+# Database
+*.db
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temp files
+*.tmp
+*.temp
+
+# Instance folder
+instance/
 
 # Environments
 .env
@@ -12,7 +37,6 @@ venv/
 ENV/
 env.bak/
 venv.bak/
-
 
 # IDE
 .vscode/
