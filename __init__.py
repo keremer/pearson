@@ -27,7 +27,7 @@ del project_root
 __all__ = [
     'Course', 'Lesson', 'LearningOutcome', 'AssessmentFormat', 
     'Tool', 'LessonLearningOutcome', 'DatabaseSetup', 'CourseInjector',
-    'web_bp', 'create_app'
+    'web_bp'
 ]
 
 # Database configuration
@@ -54,14 +54,14 @@ try:
     )
     from pearson.cli.setup import DatabaseSetup
     from pearson.cli.course_injector import CourseInjector
-    from pearson.web import web_bp, create_app
+    from pearson.web import web_bp # create_app
 except ImportError as e:
     print(f"Warning: Could not import all modules: {e}")
     # These will be None if imports fail
     Base = Course = Lesson = LearningOutcome = None
     AssessmentFormat = Tool = LessonLearningOutcome = None
     DatabaseSetup = CourseInjector = None
-    web_bp = create_app = None
+    web_bp = None # create_app = 
 
 # Convenience function to initialize everything
 def init_app(config=None):

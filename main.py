@@ -19,8 +19,12 @@ def run_web_mode():
     """Logic to launch the Flask Web Server"""
     print("🖥️  Launching Web Interface...")
     try:
-        from pearson.run_web import create_app
-        app = create_app()
+        from pearson.run_web import init_app
+        # FIX: init_app returns (app, db_setup) tuple
+        app, db_setup = init_app({           # Unpack the tuple
+            'DEBUG': True,
+            'TESTING': False,
+        })
         port = int(os.environ.get('PORT', 5000))
         # Ensure debug mode is handled via config as per your run_web logic
         app.run(host='0.0.0.0', port=port, debug=app.config.get('DEBUG', True))
