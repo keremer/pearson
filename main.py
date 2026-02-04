@@ -7,6 +7,7 @@ import os
 import sys
 from pathlib import Path
 from typing import Optional, List
+from pearson.cli.report_commands import report
 
 import click
 from flask import Flask
@@ -44,7 +45,8 @@ def web(host: str, port: int, debug: bool):
     click.echo(f"   Debug: {debug}")
     
     app.run(host=host, port=port, debug=debug)
-
+    
+cli.add_command(report)
 
 @cli.command()
 @click.option('--database', default=None, help='Database URL (overrides default)')

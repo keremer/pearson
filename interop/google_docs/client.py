@@ -1,11 +1,9 @@
+# pearson/interop/google_docs/client.py (fixed)
 """
 Google Docs Client with OAuth 2.0 Authentication
 Implements BaseInteropClient interface
-Optimized for GoogleDocsParser compatibility
 """
 from __future__ import annotations
-
-import pearson  # This automatically sets up everything
 
 import os
 import json
@@ -22,8 +20,8 @@ from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-from pearson.interop import BaseInteropClient  # Import from parent __init__.py
-from pearson.interop.google_docs.config import GoogleDocsConfig
+from .. import BaseInteropClient
+from .config import GoogleDocsConfig
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +50,7 @@ class DocumentContentExtractor:
     @staticmethod
     def extract_structured_text(document: Dict[str, Any]) -> str:
         """Extract structured text with paragraph markers"""
-        return DocumentContentExtractor.extract_plain_text(document)  # Same for now
+        return DocumentContentExtractor.extract_plain_text(document)
 
 
 class GoogleDocsClient(BaseInteropClient):
@@ -61,8 +59,8 @@ class GoogleDocsClient(BaseInteropClient):
     def __init__(self, config: GoogleDocsConfig):
         self.config = config
         self.credentials: Optional[GoogleAuthCredentials] = None
-        self.docs_service = None
-        self.drive_service = None
+        self.docs_service: Optional[Any] = None
+        self.drive_service: Optional[Any] = None
         self.authenticated = False
         self.user_email: Optional[str] = None
         self.extractor = DocumentContentExtractor()
@@ -74,6 +72,7 @@ class GoogleDocsClient(BaseInteropClient):
             logger.warning(f"Initial authentication deferred: {e}")
 
     def authenticate(self) -> bool:
+        """Authenticate with Google API using OAuth 2.0."""
         try:
             creds = None
             # Ensure the tokens directory exists
@@ -97,16 +96,26 @@ class GoogleDocsClient(BaseInteropClient):
                     token.write(creds.to_json())
 
             self.credentials = creds
-            # ... rest of your service initialization ...
+            self.authenticated = True
+            
+            # Build services
+            self.docs_service = build('docs', 'v1', credentials=creds)
+            self.drive_service = build('drive', 'v3', credentials=creds)
+            
+            # Get user email
+            self.user_email = self._get_user_email(creds)
+            
+            logger.info(f"✅ Authenticated as: {self.user_email}")
             return True
+            
         except Exception as e:
             logger.error(f"❌ Authentication failed: {e}")
+            self._reset_auth_state()
             return False
     
     def _get_user_email(self, credentials: GoogleAuthCredentials) -> Optional[str]:
-        """Get the email address of the authenticated user"""
+        """Get the email address of the authenticated user."""
         try:
-            # Use the credentials directly without type casting issues
             user_info_service = build('oauth2', 'v2', credentials=credentials, cache_discovery=False)
             user_info = user_info_service.userinfo().get().execute()
             return user_info.get('email')
@@ -114,41 +123,35 @@ class GoogleDocsClient(BaseInteropClient):
             logger.warning(f"Could not retrieve user email: {e}")
             return None
     
-    def _reset_auth_state(self):
-        """Reset authentication state on failure"""
+    def _reset_auth_state(self) -> None:
+        """Reset authentication state on failure."""
         self.authenticated = False
         self.credentials = None
         self.docs_service = None
         self.drive_service = None
         self.user_email = None
     
-    def _test_connection(self):
-        """Test API connection safely"""
-        try:
-            # FIX: Check if drive_service is available and log if not
-            if not self.drive_service:
-                logger.warning("⚠️ Drive service not initialized for connection test")
-                return
-            
-            results = self.drive_service.files().list(
-                pageSize=1,
-                fields="files(id, name)"
-            ).execute()
-            
-            items = results.get('files', [])
-            logger.info(f"✅ Connection test passed. Found {len(items)} file(s).")
-        except Exception as e:
-            logger.warning(f"⚠️ Connection test warning: {e}")
-    
-    def _ensure_authenticated(self):
-        """Ensure client is authenticated before API calls"""
+    def _ensure_authenticated(self) -> None:
+        """Ensure client is authenticated before API calls."""
         if not self.authenticated:
             if not self.authenticate():
                 raise RuntimeError("Authentication required but failed")
     
+    def _ensure_docs_service(self) -> None:
+        """Ensure docs service is available."""
+        self._ensure_authenticated()
+        if self.docs_service is None:
+            raise RuntimeError("Google Docs service not initialized")
+    
+    def _ensure_drive_service(self) -> None:
+        """Ensure drive service is available."""
+        self._ensure_authenticated()
+        if self.drive_service is None:
+            raise RuntimeError("Google Drive service not initialized")
+    
     def get_content(self, source_id: str) -> Optional[Dict[str, Any]]:
         """
-        Retrieve content from Google Docs - implements BaseInteropClient
+        Retrieve content from Google Docs.
         
         Returns format optimized for GoogleDocsParser:
         - Raw Google Docs API response
@@ -162,17 +165,12 @@ class GoogleDocsClient(BaseInteropClient):
             Dictionary containing raw document and metadata
         """
         try:
-            self._ensure_authenticated()
+            self._ensure_docs_service()
             
             logger.info(f"📄 Fetching Google Doc: {source_id}")
             
-            # FIX: Check if docs_service is None before using it
-            if not self.docs_service:
-                logger.error("❌ Google Docs service not initialized")
-                return None
-            
             # Get raw document from Google Docs API
-            document = self.docs_service.documents().get(
+            document = self.docs_service.documents().get(  # type: ignore
                 documentId=source_id
             ).execute()
             
@@ -192,7 +190,7 @@ class GoogleDocsClient(BaseInteropClient):
                 'content': {
                     'raw': document,  # Raw Google Docs API response
                     'plain_text': plain_text,
-                    'structured_text': plain_text  # Same as plain_text for now
+                    'structured_text': plain_text
                 },
                 
                 # Format 2: Direct access fields for parser
@@ -228,7 +226,6 @@ class GoogleDocsClient(BaseInteropClient):
                     response[key] = document[key]
             
             logger.info(f"✅ Retrieved: '{title}' ({len(plain_text)} characters)")
-            logger.debug(f"Document structure keys: {list(document.keys())}")
             
             return response
             
@@ -237,25 +234,21 @@ class GoogleDocsClient(BaseInteropClient):
                 logger.error(f"❌ Document not found: {source_id}")
             elif error.resp.status == 403:
                 logger.error(f"❌ Permission denied: {source_id}")
-                logger.info(f"💡 Tip: Make sure the document is shared with {self.user_email}")
+                if self.user_email:
+                    logger.info(f"💡 Tip: Make sure the document is shared with {self.user_email}")
             else:
                 logger.error(f"❌ HTTP Error ({error.resp.status}): {error}")
             return None
         except Exception as e:
             logger.error(f"❌ Error retrieving document {source_id}: {e}")
-            import traceback
-            logger.debug(traceback.format_exc())
             return None
     
     def _get_drive_metadata(self, document_id: str) -> Dict[str, Any]:
-        """Get additional metadata from Drive API"""
+        """Get additional metadata from Drive API."""
         try:
-            # FIX: Check if drive_service is None before using it
-            if not self.drive_service:
-                logger.warning("Drive service not available")
-                return {}
+            self._ensure_drive_service()
             
-            file_metadata = self.drive_service.files().get(
+            file_metadata = self.drive_service.files().get(  # type: ignore
                 fileId=document_id,
                 fields='id,name,createdTime,modifiedTime,owners,webViewLink,size,permissions'
             ).execute()
@@ -267,7 +260,7 @@ class GoogleDocsClient(BaseInteropClient):
     
     def update_content(self, source_id: str, content: Dict[str, Any]) -> bool:
         """
-        Update content on Google Docs - implements BaseInteropClient
+        Update content on Google Docs.
         
         Args:
             source_id: Google Docs document ID
@@ -277,17 +270,12 @@ class GoogleDocsClient(BaseInteropClient):
             True if successful, False otherwise
         """
         try:
-            self._ensure_authenticated()
-            
-            # FIX: Check if docs_service is None before using it
-            if not self.docs_service:
-                logger.error("❌ Google Docs service not initialized")
-                return False
+            self._ensure_docs_service()
             
             logger.info(f"📝 Updating Google Doc: {source_id}")
             
             # Get current document to determine length
-            document = self.docs_service.documents().get(
+            document = self.docs_service.documents().get(  # type: ignore
                 documentId=source_id
             ).execute()
             
@@ -318,7 +306,7 @@ class GoogleDocsClient(BaseInteropClient):
             
             # Execute batch update
             if requests:
-                self.docs_service.documents().batchUpdate(
+                self.docs_service.documents().batchUpdate(  # type: ignore
                     documentId=source_id,
                     body={'requests': requests}
                 ).execute()
@@ -334,7 +322,7 @@ class GoogleDocsClient(BaseInteropClient):
             return False
     
     def _get_document_end_index(self, document: Dict[str, Any]) -> int:
-        """Get the end index of document content"""
+        """Get the end index of document content."""
         try:
             end_index = 1
             if 'body' in document and 'content' in document['body']:
@@ -346,7 +334,7 @@ class GoogleDocsClient(BaseInteropClient):
             return 1
     
     def _prepare_content_for_update(self, content: Dict[str, Any]) -> str:
-        """Prepare content for insertion into Google Docs"""
+        """Prepare content for insertion into Google Docs."""
         text_parts = []
         
         # Add title if present
@@ -379,7 +367,7 @@ class GoogleDocsClient(BaseInteropClient):
     
     def create_document(self, title: str, folder_id: Optional[str] = None) -> Optional[str]:
         """
-        Create a new Google Document with optional folder placement
+        Create a new Google Document with optional folder placement.
         
         Args:
             title: Document title
@@ -389,12 +377,7 @@ class GoogleDocsClient(BaseInteropClient):
             Document ID if successful, None otherwise
         """
         try:
-            self._ensure_authenticated()
-            
-            # FIX: Check if drive_service is None before using it
-            if not self.drive_service:
-                logger.error("❌ Drive service not initialized")
-                return None
+            self._ensure_drive_service()
             
             logger.info(f"📄 Creating Google Doc: '{title}'")
             
@@ -407,11 +390,13 @@ class GoogleDocsClient(BaseInteropClient):
             # Add parent folder if specified
             if folder_id:
                 file_metadata['parents'] = [folder_id]
-            elif self.config.target_folder_id:
+            elif hasattr(self.config, 'default_folder_id') and self.config.default_folder_id:
+                file_metadata['parents'] = [self.config.default_folder_id]
+            elif hasattr(self.config, 'target_folder_id') and self.config.target_folder_id:
                 file_metadata['parents'] = [self.config.target_folder_id]
             
             # Create the document
-            result = self.drive_service.files().create(
+            result = self.drive_service.files().create(  # type: ignore
                 body=file_metadata,
                 fields='id,name,webViewLink,createdTime'
             ).execute()
@@ -419,9 +404,6 @@ class GoogleDocsClient(BaseInteropClient):
             document_id = result.get('id')
             
             logger.info(f"✅ Created Google Doc: '{title}' (ID: {document_id})")
-            logger.info(f"   🔗 View at: {result.get('webViewLink')}")
-            logger.info(f"   🕒 Created: {result.get('createdTime')}")
-            
             return document_id
             
         except Exception as e:
@@ -430,7 +412,7 @@ class GoogleDocsClient(BaseInteropClient):
     
     def list_documents(self, query: Optional[str] = None) -> List[Dict[str, Any]]:
         """
-        List Google Docs documents
+        List Google Docs documents.
         
         Args:
             query: Optional search query
@@ -439,19 +421,20 @@ class GoogleDocsClient(BaseInteropClient):
             List of document metadata dictionaries
         """
         try:
-            self._ensure_authenticated()
-            
-            # FIX: Check if drive_service is None before using it
-            if not self.drive_service:
-                logger.error("❌ Drive service not initialized")
-                return []
+            self._ensure_drive_service()
             
             # Build search query
             file_query = "mimeType='application/vnd.google-apps.document' and trashed=false"
             
             # Add folder filter if configured
-            if self.config.target_folder_id:
-                file_query += f" and '{self.config.target_folder_id}' in parents"
+            default_folder_id = None
+            if hasattr(self.config, 'default_folder_id'):
+                default_folder_id = self.config.default_folder_id
+            elif hasattr(self.config, 'target_folder_id'):
+                default_folder_id = self.config.target_folder_id
+            
+            if default_folder_id:
+                file_query += f" and '{default_folder_id}' in parents"
             
             if query:
                 file_query += f" and (name contains '{query}' or fullText contains '{query}')"
@@ -459,7 +442,7 @@ class GoogleDocsClient(BaseInteropClient):
             logger.info(f"🔍 Listing documents with query: {file_query}")
             
             # Execute query
-            results = self.drive_service.files().list(
+            results = self.drive_service.files().list(  # type: ignore
                 q=file_query,
                 pageSize=100,
                 fields="files(id, name, createdTime, modifiedTime, webViewLink, size, owners, parents)",
@@ -474,263 +457,3 @@ class GoogleDocsClient(BaseInteropClient):
         except Exception as e:
             logger.error(f"❌ Error listing documents: {e}")
             return []
-    
-    def search_documents(self, query: str) -> List[Dict[str, Any]]:
-        """
-        Search documents by full text content
-        
-        Args:
-            query: Search text
-            
-        Returns:
-            List of matching document metadata dictionaries
-        """
-        try:
-            self._ensure_authenticated()
-            
-            # FIX: Check if drive_service is None before using it
-            if not self.drive_service:
-                logger.error("❌ Drive service not initialized")
-                return []
-            
-            search_query = (
-                f"mimeType='application/vnd.google-apps.document' "
-                f"and trashed=false "
-                f"and fullText contains '{query}'"
-            )
-            
-            logger.info(f"🔍 Searching documents for: '{query}'")
-            
-            results = self.drive_service.files().list(
-                q=search_query,
-                pageSize=50,
-                fields="files(id, name, createdTime, modifiedTime, webViewLink)"
-            ).execute()
-            
-            documents = results.get('files', [])
-            
-            logger.info(f"✅ Found {len(documents)} documents matching search")
-            return documents
-            
-        except Exception as e:
-            logger.error(f"❌ Error searching documents: {e}")
-            return []
-    
-    def get_document_metadata(self, document_id: str) -> Optional[Dict[str, Any]]:
-        """
-        Get detailed document metadata
-        
-        Args:
-            document_id: Google Docs document ID
-            
-        Returns:
-            Dictionary with document metadata
-        """
-        try:
-            self._ensure_authenticated()
-            
-            # FIX: Check if docs_service is None before using it
-            if not self.docs_service:
-                logger.error("❌ Google Docs service not initialized")
-                return None
-            
-            # Get Docs metadata
-            docs_metadata = self.docs_service.documents().get(
-                documentId=document_id
-            ).execute()
-            
-            # Get Drive metadata
-            drive_metadata = self._get_drive_metadata(document_id)
-            
-            # Count sections safely (handle missing/invalid body/content)
-            sections = 0
-            # Ensure docs_metadata is a dict and body is a dict (not None)
-            body = docs_metadata.get('body') if isinstance(docs_metadata, dict) else {}
-            if not isinstance(body, dict):
-                body = {}
-            # Safely extract content list
-            content = body.get('content')
-            content_list = content if isinstance(content, list) else []
-            sections = sum(1 for c in content_list if isinstance(c, dict) and 'paragraph' in c)
-            
-            metadata = {
-                'document_id': document_id,
-                'title': docs_metadata.get('title', ''),
-                'drive_metadata': drive_metadata,
-                'document_structure': {
-                    'sections': sections,
-                    'last_modified': drive_metadata.get('modifiedTime'),
-                    'total_elements': len(docs_metadata.get('body', {}).get('content', []))
-                },
-                'retrieved_at': datetime.utcnow().isoformat(),
-                'authenticated_user': self.user_email
-            }
-            
-            return metadata
-            
-        except Exception as e:
-            logger.error(f"❌ Error getting document metadata: {e}")
-            return None
-    
-    def share_document(self, document_id: str, user_email: str, 
-                      role: str = 'writer') -> bool:
-        """
-        Share a document with a user
-        
-        Args:
-            document_id: Google Docs document ID
-            user_email: Email address to share with
-            role: Permission role (reader, writer, commenter)
-            
-        Returns:
-            True if successful, False otherwise
-        """
-        try:
-            self._ensure_authenticated()
-            
-            # FIX: Check if drive_service is None before using it
-            if not self.drive_service:
-                logger.error("❌ Drive service not initialized")
-                return False
-            
-            permission = {
-                'type': 'user',
-                'role': role,
-                'emailAddress': user_email
-            }
-            
-            self.drive_service.permissions().create(
-                fileId=document_id,
-                body=permission,
-                sendNotificationEmail=False
-            ).execute()
-            
-            logger.info(f"✅ Shared document {document_id} with {user_email} as {role}")
-            return True
-            
-        except Exception as e:
-            logger.error(f"❌ Error sharing document {document_id}: {e}")
-            return False
-    
-    def delete_document(self, document_id: str) -> bool:
-        """
-        Delete a Google Document
-        
-        Args:
-            document_id: Google Docs document ID
-            
-        Returns:
-            True if successful, False otherwise
-        """
-        try:
-            self._ensure_authenticated()
-            
-            # FIX: Check if drive_service is None before using it
-            if not self.drive_service:
-                logger.error("❌ Drive service not initialized")
-                return False
-            
-            self.drive_service.files().delete(fileId=document_id).execute()
-            
-            logger.info(f"✅ Deleted Google Doc: {document_id}")
-            return True
-            
-        except Exception as e:
-            logger.error(f"❌ Error deleting document {document_id}: {e}")
-            return False
-    
-    def watch_document(self, document_id: str, webhook_url: str) -> Optional[Dict[str, Any]]:
-        """
-        Set up a webhook/watch for document changes
-        
-        Args:
-            document_id: Google Docs document ID
-            webhook_url: Webhook URL to notify on changes
-            
-        Returns:
-            Watch configuration if successful, None otherwise
-        """
-        try:
-            self._ensure_authenticated()
-            
-            # FIX: Check if drive_service is None before using it
-            if not self.drive_service:
-                logger.error("❌ Drive service not initialized")
-                return None
-            
-            watch_request = {
-                'id': f"watch-{document_id}-{datetime.utcnow().timestamp()}",
-                'type': 'web_hook',
-                'address': webhook_url,
-                'payload': True,
-                'expiration': (datetime.utcnow().timestamp() + 86400 * 7) * 1000  # 7 days
-            }
-            
-            result = self.drive_service.files().watch(
-                fileId=document_id,
-                body=watch_request
-            ).execute()
-            
-            logger.info(f"✅ Set up watch for document: {document_id}")
-            logger.info(f"   Webhook URL: {webhook_url}")
-            logger.info(f"   Resource ID: {result.get('resourceId')}")
-            logger.info(f"   Expires: {result.get('expiration')}")
-            
-            return result
-            
-        except Exception as e:
-            logger.error(f"❌ Error setting up watch for document {document_id}: {e}")
-            return None
-    
-    def logout(self) -> bool:
-        """
-        Log out and delete token file
-        
-        Returns:
-            True if successful, False otherwise
-        """
-        try:
-            token_path = self.config.token_path
-            if token_path and os.path.exists(token_path):
-                os.remove(token_path)
-                logger.info(f"🗑️  Removed token file: {token_path}")
-            
-            self._reset_auth_state()
-            logger.info("👋 Logged out successfully")
-            return True
-            
-        except Exception as e:
-            logger.error(f"❌ Error during logout: {e}")
-            return False
-    
-    def get_user_info(self) -> Optional[Dict[str, Any]]:
-        """
-        Get information about the authenticated user
-        
-        Returns:
-            User information dictionary
-        """
-        try:
-            self._ensure_authenticated()
-            
-            if not self.credentials:
-                return None
-            
-            # Cast to GoogleAuthCredentials for type safety
-            auth_creds = cast(GoogleAuthCredentials, self.credentials)
-            
-            user_info_service = build('oauth2', 'v2', credentials=auth_creds, cache_discovery=False)
-            user_info = user_info_service.userinfo().get().execute()
-            
-            return {
-                'email': user_info.get('email'),
-                'name': user_info.get('name'),
-                'given_name': user_info.get('given_name'),
-                'family_name': user_info.get('family_name'),
-                'picture': user_info.get('picture'),
-                'locale': user_info.get('locale'),
-                'authenticated': True
-            }
-        except Exception as e:
-            logger.error(f"❌ Error getting user info: {e}")
-            return None

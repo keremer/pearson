@@ -1,12 +1,17 @@
+# pearson/interop/google_docs/parser.py (updated with improvements)
 """
-Google Docs Document Parser - Structured content extraction
+Google Docs Document Parser - Structured content extraction with improved parsing.
 """
-from typing import Dict, Any, List, Optional, Union
+import re
+from typing import Dict, Any, List, Optional
 from datetime import datetime
+
 from .. import BaseContentParser
 
 
 class GoogleDocsParser(BaseContentParser):
+    """Enhanced Google Docs parser with Bloom's taxonomy and assessment classification."""
+    
     def __init__(self):
         self.section_handlers = {
             'learning outcomes': self._parse_learning_outcomes,
@@ -20,13 +25,10 @@ class GoogleDocsParser(BaseContentParser):
     
     def parse_to_course_structure(self, external_content: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Parse Google Doc into our course data structure
+        Parse Google Doc into our course data structure.
         
         Args:
             external_content: Content from GoogleDocsClient.get_content()
-                Can be either:
-                1. Raw Google Docs API response (old format)
-                2. Client's enriched format with 'content' and 'raw' keys
                 
         Returns:
             Dictionary with structured course data
@@ -77,9 +79,72 @@ class GoogleDocsParser(BaseContentParser):
         
         return course_data
     
+    def parse_from_course_structure(self, course_data: Dict[str, Any], 
+                                   format: Optional[str] = None) -> str:
+        """
+        Parse course structure to Google Docs format.
+        
+        Args:
+            course_data: Course structure dictionary
+            format: Output format (optional)
+            
+        Returns:
+            Formatted content for Google Docs
+        """
+        # This method should convert our course structure back to a format
+        # suitable for Google Docs. For now, we'll create a simple text representation.
+        sections = []
+        
+        # Add title
+        title = course_data.get('title', 'Untitled Course')
+        sections.append(f"# {title}")
+        sections.append("")
+        
+        # Add description
+        if course_data.get('course_description'):
+            sections.append("## Course Description")
+            sections.append(course_data['course_description'])
+            sections.append("")
+        
+        # Add learning outcomes
+        if course_data.get('learning_outcomes'):
+            sections.append("## Learning Outcomes")
+            for outcome in course_data['learning_outcomes']:
+                code = outcome.get('code', '')
+                description = outcome.get('description', '')
+                sections.append(f"- **{code}:** {description}")
+            sections.append("")
+        
+        # Add assessment formats
+        if course_data.get('assessment_formats'):
+            sections.append("## Assessment")
+            for assessment in course_data['assessment_formats']:
+                sections.append(f"- **{assessment.get('type', 'Assessment')}:** {assessment.get('description', '')}")
+            sections.append("")
+        
+        # Add tools
+        if course_data.get('tools'):
+            sections.append("## Tools & Resources")
+            for tool in course_data['tools']:
+                sections.append(f"- **{tool.get('name', 'Tool')}:** {tool.get('description', '')}")
+            sections.append("")
+        
+        # Add lessons/schedule
+        if course_data.get('lessons'):
+            sections.append("## Course Schedule")
+            for lesson in course_data['lessons']:
+                week = lesson.get('week', lesson.get('order', '?'))
+                topic = lesson.get('topic', lesson.get('title', 'Untitled'))
+                sections.append(f"### Week {week}: {topic}")
+                if lesson.get('content'):
+                    sections.append(lesson['content'])
+                sections.append("")
+        
+        return '\n'.join(sections)
+    
     def _extract_content_and_metadata(self, external_content: Dict[str, Any]) -> tuple:
         """
-        Extract raw document and metadata from various input formats
+        Extract raw document and metadata from various input formats.
         
         Returns:
             Tuple of (raw_document, title, document_id, modified_time)
@@ -127,7 +192,7 @@ class GoogleDocsParser(BaseContentParser):
         return raw_document, title, document_id, modified_time
     
     def _detect_content_format(self, external_content: Dict[str, Any]) -> str:
-        """Detect the format of the input content"""
+        """Detect the format of the input content."""
         if 'content' in external_content and 'raw' in external_content['content']:
             return 'client_enriched'
         elif 'body' in external_content and 'content' in external_content['body']:
@@ -140,7 +205,7 @@ class GoogleDocsParser(BaseContentParser):
     def _parse_document_structure(self, raw_document: Dict[str, Any], 
                                 title: str, document_id: Optional[str], 
                                 modified_time: Optional[str]) -> Dict[str, Any]:
-        """Parse the raw document structure into sections"""
+        """Parse the raw document structure into sections."""
         structured_data = {
             'title': title,
             'source_platform': 'google_docs',
@@ -184,7 +249,7 @@ class GoogleDocsParser(BaseContentParser):
         return structured_data
     
     def _parse_paragraph(self, paragraph: Dict[str, Any]) -> Optional[Dict[str, str]]:
-        """Parse individual paragraph element"""
+        """Parse individual paragraph element."""
         elements = paragraph.get('elements', [])
         content_parts = []
         
@@ -223,7 +288,7 @@ class GoogleDocsParser(BaseContentParser):
             return {'type': 'content', 'content': content}
     
     def _parse_table(self, table: Dict[str, Any]) -> str:
-        """Parse table element into text representation"""
+        """Parse table element into text representation."""
         try:
             rows = []
             for row in table.get('tableRows', []):
@@ -242,7 +307,7 @@ class GoogleDocsParser(BaseContentParser):
             return "[Table content]"
     
     def _map_to_course_model(self, structured_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Map parsed content to our course data model"""
+        """Map parsed content to our course data model."""
         course_data = {
             'title': structured_data['title'],
             'course_description': '',
@@ -305,7 +370,7 @@ class GoogleDocsParser(BaseContentParser):
         return course_data
     
     def _parse_course_description(self, content_list: List[str], section_name: str) -> str:
-        """Parse course description section"""
+        """Parse course description section."""
         if not content_list:
             return ""
         
@@ -318,7 +383,7 @@ class GoogleDocsParser(BaseContentParser):
         return description.strip()
     
     def _parse_learning_outcomes(self, content_list: List[str], section_name: str) -> List[Dict[str, str]]:
-        """Parse learning outcomes section"""
+        """Parse learning outcomes section."""
         outcomes = []
         
         for content in content_list:
@@ -335,7 +400,6 @@ class GoogleDocsParser(BaseContentParser):
                 description = parts[1].strip()
                 
                 # Extract number from code
-                import re
                 numbers = re.findall(r'\d+', code)
                 number = numbers[0] if numbers else str(len(outcomes) + 1)
                 
@@ -385,7 +449,7 @@ class GoogleDocsParser(BaseContentParser):
         return outcomes
     
     def _classify_bloom_level(self, description: str) -> str:
-        """Classify Bloom's taxonomy level based on description"""
+        """Classify Bloom's taxonomy level based on description."""
         description_lower = description.lower()
         
         bloom_keywords = {
@@ -404,7 +468,7 @@ class GoogleDocsParser(BaseContentParser):
         return 'Unknown'
     
     def _suggest_assessment_type(self, description: str) -> str:
-        """Suggest assessment type based on learning outcome"""
+        """Suggest assessment type based on learning outcome."""
         description_lower = description.lower()
         
         if any(word in description_lower for word in ['write', 'essay', 'report', 'paper', 'document']):
@@ -423,7 +487,7 @@ class GoogleDocsParser(BaseContentParser):
         return 'General Assessment'
     
     def _parse_assessments(self, content_list: List[str], section_name: str) -> List[Dict[str, str]]:
-        """Parse assessment formats section"""
+        """Parse assessment formats section."""
         assessments = []
         
         for content in content_list:
@@ -448,8 +512,75 @@ class GoogleDocsParser(BaseContentParser):
         
         return assessments
     
+    def _classify_assessment_type(self, content: str) -> str:
+        """Classify assessment type based on content."""
+        content_lower = content.lower()
+        
+        assessment_types = {
+            'Written Assignment': ['written', 'essay', 'report', 'paper', 'article', 'document', 'thesis'],
+            'Presentation': ['presentation', 'slide', 'demo', 'demonstration', 'talk', 'speech'],
+            'Project': ['project', 'portfolio', 'collection', 'showcase', 'exhibition'],
+            'Exam/Test': ['exam', 'test', 'quiz', 'midterm', 'final', 'assessment', 'evaluation'],
+            'Lab/Exercise': ['lab', 'exercise', 'practice', 'worksheet', 'activity'],
+            'Reflective Writing': ['reflective', 'journal', 'diary', 'log', 'blog', 'self-assessment'],
+            'Group Work': ['group', 'team', 'collaborative', 'peer', 'pair'],
+            'Code/Programming': ['code', 'program', 'script', 'algorithm', 'software', 'app']
+        }
+        
+        for type_name, keywords in assessment_types.items():
+            if any(keyword in content_lower for keyword in keywords):
+                return type_name
+        
+        return 'Assignment'
+    
+    def _extract_weight(self, content: str) -> Optional[str]:
+        """Extract weight percentage from assessment description."""
+        # Look for patterns like "30%", "worth 40%", "weight: 25%"
+        patterns = [
+            r'(\d+)\s*%',
+            r'worth\s*(\d+)\s*%',
+            r'weight\s*[:\s]*(\d+)\s*%',
+            r'(\d+)\s*percent'
+        ]
+        
+        for pattern in patterns:
+            match = re.search(pattern, content, re.IGNORECASE)
+            if match:
+                return f"{match.group(1)}%"
+        
+        return None
+    
+    def _extract_due_info(self, content: str) -> Optional[str]:
+        """Extract due date information."""
+        # Look for patterns like "due Week 5", "submit by April 15", "deadline: Friday"
+        patterns = [
+            r'due\s*(week\s*\d+|[^,.;]+)',
+            r'submit\s*(by|before)\s*([^,.;]+)',
+            r'deadline\s*[:\s]*([^,.;]+)'
+        ]
+        
+        for pattern in patterns:
+            match = re.search(pattern, content, re.IGNORECASE)
+            if match:
+                return match.group(1).strip()
+        
+        return None
+    
+    def _extract_assessment_components(self, content: str) -> List[str]:
+        """Extract assessment components."""
+        components = []
+        
+        # Common assessment components
+        common_components = ['rubric', 'guidelines', 'template', 'examples', 'submission', 'format', 'length', 'criteria']
+        
+        for component in common_components:
+            if component in content.lower():
+                components.append(component.capitalize())
+        
+        return components
+    
     def _parse_tools(self, content_list: List[str], section_name: str) -> List[Dict[str, str]]:
-        """Parse tools and software section"""
+        """Parse tools and software section."""
         tools = []
         
         for content in content_list:
@@ -473,8 +604,79 @@ class GoogleDocsParser(BaseContentParser):
         
         return tools
     
+    def _classify_tool_category(self, content: str) -> str:
+        """Classify tool category."""
+        content_lower = content.lower()
+        
+        if any(hw_keyword in content_lower for hw_keyword in ['cpu', 'ram', 'gpu', 'ssd', 'hardware', 'computer', 'device']):
+            return 'Hardware'
+        elif any(ai_keyword in content_lower for ai_keyword in ['ai', 'chatgpt', 'copilot', 'dalle', 'midjourney', 'stable diffusion', 'machine learning']):
+            return 'AI Tools'
+        elif any(design_keyword in content_lower for design_keyword in ['adobe', 'photoshop', 'illustrator', 'figma', 'canva', 'blender', 'maya', 'sketch']):
+            return 'Design Software'
+        elif any(dev_keyword in content_lower for dev_keyword in ['vscode', 'pycharm', 'github', 'git', 'docker', 'python', 'javascript', 'sql']):
+            return 'Development Tools'
+        elif any(office_keyword in content_lower for office_keyword in ['office', 'word', 'excel', 'powerpoint', 'google docs', 'slides', 'sheets']):
+            return 'Office Software'
+        
+        return 'Software'
+    
+    def _extract_tool_name(self, content: str) -> str:
+        """Extract tool name from content."""
+        # Remove bullet points and clean
+        content = content.lstrip('•-* ')
+        
+        # For bullet points like "- Software: Blender, Adobe CC"
+        if ':' in content:
+            before_colon = content.split(':')[0].strip()
+            # Check if it's a category or tool name
+            if any(word in before_colon.lower() for word in ['software', 'tool', 'hardware', 'platform', 'application']):
+                # Look for specific tool names after colon
+                after_colon = content.split(':', 1)[1]
+                tool_names = ['Blender', 'Adobe', 'Figma', 'Canva', 'ChatGPT', 'Copilot', 'DALL·E', 'Midjourney', 
+                             'Runway', 'Photoshop', 'Illustrator', 'VSCode', 'Python', 'GitHub']
+                
+                for tool in tool_names:
+                    if tool.lower() in after_colon.lower():
+                        return tool
+                
+                # Return first tool mentioned after colon
+                parts = after_colon.split(',')
+                if parts:
+                    return parts[0].strip()
+            
+            return before_colon
+        
+        # Look for specific tool names
+        tool_names = ['Blender', 'Adobe', 'Figma', 'Canva', 'ChatGPT', 'Copilot', 'DALL·E', 'Midjourney', 
+                     'Runway', 'Photoshop', 'Illustrator', 'VSCode', 'Python', 'GitHub']
+        
+        for tool in tool_names:
+            if tool.lower() in content.lower():
+                return tool
+        
+        # Return first few words as tool name
+        words = content.split()
+        if words:
+            return ' '.join(words[:3])
+        
+        return content.strip()
+    
+    def _extract_proficiency_level(self, content: str) -> str:
+        """Extract required proficiency level."""
+        content_lower = content.lower()
+        
+        if any(level in content_lower for level in ['basic', 'beginner', 'introductory', 'fundamental']):
+            return 'Basic'
+        elif any(level in content_lower for level in ['intermediate', 'moderate', 'working knowledge']):
+            return 'Intermediate'
+        elif any(level in content_lower for level in ['advanced', 'expert', 'proficient', 'master']):
+            return 'Advanced'
+        
+        return 'Not Specified'
+    
     def _parse_weekly_schedule(self, content_list: List[str], section_name: str) -> List[Dict[str, Any]]:
-        """Parse weekly schedule section"""
+        """Parse weekly schedule section."""
         lessons = []
         week_counter = 1
         
@@ -517,7 +719,7 @@ class GoogleDocsParser(BaseContentParser):
         return lessons
     
     def _parse_markdown_table_row(self, content: str, week_number: int) -> Optional[Dict[str, Any]]:
-        """Parse markdown table row format"""
+        """Parse markdown table row format."""
         parts = [part.strip() for part in content.split('|') if part.strip()]
         
         if len(parts) >= 4:
@@ -539,8 +741,6 @@ class GoogleDocsParser(BaseContentParser):
     
     def _parse_week_header(self, content: str, week_number: int) -> Dict[str, Any]:
         """Parse week header format like 'Week 1: Introduction to...'"""
-        import re
-        
         # Extract week number and topic
         week_pattern = r'week\s*(\d+)[:\s]*([^:]+)'
         match = re.search(week_pattern, content, re.IGNORECASE)
@@ -562,7 +762,7 @@ class GoogleDocsParser(BaseContentParser):
         }
     
     def _parse_bullet_point(self, content: str, week_number: int) -> Dict[str, Any]:
-        """Parse bullet point format"""
+        """Parse bullet point format."""
         content = content.lstrip('•-* ').strip()
         
         # Try to extract topic
@@ -578,11 +778,10 @@ class GoogleDocsParser(BaseContentParser):
         }
     
     def _extract_list_items(self, text: str) -> List[str]:
-        """Extract list items from text"""
+        """Extract list items from text."""
         items = []
         
         # Split by commas, semicolons, or "and"
-        import re
         parts = re.split(r'[,;]|\band\b', text)
         
         for part in parts:
@@ -591,174 +790,3 @@ class GoogleDocsParser(BaseContentParser):
                 items.append(part)
         
         return items
-    
-    def _classify_assessment_type(self, content: str) -> str:
-        """Classify assessment type based on content"""
-        content_lower = content.lower()
-        
-        assessment_types = {
-            'Written Assignment': ['written', 'essay', 'report', 'paper', 'article', 'document', 'thesis'],
-            'Presentation': ['presentation', 'slide', 'demo', 'demonstration', 'talk', 'speech'],
-            'Project': ['project', 'portfolio', 'collection', 'showcase', 'exhibition'],
-            'Exam/Test': ['exam', 'test', 'quiz', 'midterm', 'final', 'assessment', 'evaluation'],
-            'Lab/Exercise': ['lab', 'exercise', 'practice', 'worksheet', 'activity'],
-            'Reflective Writing': ['reflective', 'journal', 'diary', 'log', 'blog', 'self-assessment'],
-            'Group Work': ['group', 'team', 'collaborative', 'peer', 'pair'],
-            'Code/Programming': ['code', 'program', 'script', 'algorithm', 'software', 'app']
-        }
-        
-        for type_name, keywords in assessment_types.items():
-            if any(keyword in content_lower for keyword in keywords):
-                return type_name
-        
-        return 'Assignment'
-    
-    def _extract_weight(self, content: str) -> Optional[str]:
-        """Extract weight percentage from assessment description"""
-        import re
-        
-        # Look for patterns like "30%", "worth 40%", "weight: 25%"
-        patterns = [
-            r'(\d+)\s*%',
-            r'worth\s*(\d+)\s*%',
-            r'weight\s*[:\s]*(\d+)\s*%',
-            r'(\d+)\s*percent'
-        ]
-        
-        for pattern in patterns:
-            match = re.search(pattern, content, re.IGNORECASE)
-            if match:
-                return f"{match.group(1)}%"
-        
-        return None
-    
-    def _extract_due_info(self, content: str) -> Optional[str]:
-        """Extract due date information"""
-        import re
-        
-        # Look for patterns like "due Week 5", "submit by April 15", "deadline: Friday"
-        patterns = [
-            r'due\s*(week\s*\d+|[^,.;]+)',
-            r'submit\s*(by|before)\s*([^,.;]+)',
-            r'deadline\s*[:\s]*([^,.;]+)'
-        ]
-        
-        for pattern in patterns:
-            match = re.search(pattern, content, re.IGNORECASE)
-            if match:
-                return match.group(1).strip()
-        
-        return None
-    
-    def _extract_assessment_components(self, content: str) -> List[str]:
-        """Extract assessment components"""
-        components = []
-        
-        # Common assessment components
-        common_components = ['rubric', 'guidelines', 'template', 'examples', 'submission', 'format', 'length', 'criteria']
-        
-        for component in common_components:
-            if component in content.lower():
-                components.append(component.capitalize())
-        
-        return components
-    
-    def _classify_tool_category(self, content: str) -> str:
-        """Classify tool category"""
-        content_lower = content.lower()
-        
-        if any(hw_keyword in content_lower for hw_keyword in ['cpu', 'ram', 'gpu', 'ssd', 'hardware', 'computer', 'device']):
-            return 'Hardware'
-        elif any(ai_keyword in content_lower for ai_keyword in ['ai', 'chatgpt', 'copilot', 'dalle', 'midjourney', 'stable diffusion', 'machine learning']):
-            return 'AI Tools'
-        elif any(design_keyword in content_lower for design_keyword in ['adobe', 'photoshop', 'illustrator', 'figma', 'canva', 'blender', 'maya', 'sketch']):
-            return 'Design Software'
-        elif any(dev_keyword in content_lower for dev_keyword in ['vscode', 'pycharm', 'github', 'git', 'docker', 'python', 'javascript', 'sql']):
-            return 'Development Tools'
-        elif any(office_keyword in content_lower for office_keyword in ['office', 'word', 'excel', 'powerpoint', 'google docs', 'slides', 'sheets']):
-            return 'Office Software'
-        
-        return 'Software'
-    
-    def _extract_tool_name(self, content: str) -> str:
-        """Extract tool name from content"""
-        # Remove bullet points and clean
-        content = content.lstrip('•-* ')
-        
-        # For bullet points like "- Software: Blender, Adobe CC"
-        if ':' in content:
-            before_colon = content.split(':')[0].strip()
-            # Check if it's a category or tool name
-            if any(word in before_colon.lower() for word in ['software', 'tool', 'hardware', 'platform', 'application']):
-                # Look for specific tool names after colon
-                after_colon = content.split(':', 1)[1]
-                tool_names = ['Blender', 'Adobe', 'Figma', 'Canva', 'ChatGPT', 'Copilot', 'DALL·E', 'Midjourney', 
-                             'Runway', 'Photoshop', 'Illustrator', 'VSCode', 'Python', 'GitHub']
-                
-                for tool in tool_names:
-                    if tool.lower() in after_colon.lower():
-                        return tool
-                
-                # Return first tool mentioned after colon
-                parts = after_colon.split(',')
-                if parts:
-                    return parts[0].strip()
-            
-            return before_colon
-        
-        # Look for specific tool names
-        tool_names = ['Blender', 'Adobe', 'Figma', 'Canva', 'ChatGPT', 'Copilot', 'DALL·E', 'Midjourney', 
-                     'Runway', 'Photoshop', 'Illustrator', 'VSCode', 'Python', 'GitHub']
-        
-        for tool in tool_names:
-            if tool.lower() in content.lower():
-                return tool
-        
-        # Return first few words as tool name
-        words = content.split()
-        if words:
-            return ' '.join(words[:3])
-        
-        return content.strip()
-    
-    def _extract_proficiency_level(self, content: str) -> str:
-        """Extract required proficiency level"""
-        content_lower = content.lower()
-        
-        if any(level in content_lower for level in ['basic', 'beginner', 'introductory', 'fundamental']):
-            return 'Basic'
-        elif any(level in content_lower for level in ['intermediate', 'moderate', 'working knowledge']):
-            return 'Intermediate'
-        elif any(level in content_lower for level in ['advanced', 'expert', 'proficient', 'master']):
-            return 'Advanced'
-        
-        return 'Not Specified'
-    
-    def parse_course_document(self, content: str) -> Dict[str, Any]:
-        """
-        Alternative method for backward compatibility
-        
-        Args:
-            content: Plain text content of the document
-            
-        Returns:
-            Dictionary with structured course data
-        """
-        # Create a mock external_content structure from plain text
-        # Pre-filter blank lines then enumerate to build paragraphs
-        lines = [ln for ln in content.split('\n') if ln.strip()]
-        external_content = {
-            'title': 'Parsed from Text',
-            'body': {
-                'content': [
-                    {
-                        'paragraph': {
-                            'elements': [{'textRun': {'content': line}}],
-                            'paragraphStyle': {'namedStyleType': 'HEADING_1' if i == 0 else 'NORMAL_TEXT'}
-                        }
-                    } for i, line in enumerate(lines)
-                ]
-            }
-        }
-        
-        return self.parse_to_course_structure(external_content)
