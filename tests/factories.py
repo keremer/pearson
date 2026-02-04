@@ -6,7 +6,7 @@ from factory.alchemy import SQLAlchemyModelFactory
 from sqlalchemy.orm import Session
 from typing import Optional
 
-from pearson.shared.models import (
+from PythonProjects.pearson.models import (
     Course, Lesson, LearningOutcome, 
     AssessmentFormat, Tool, LessonLearningOutcome
 )

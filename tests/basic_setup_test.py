@@ -7,6 +7,6 @@ def test_basic_setup():
 
 def test_import_models():
     """Test that models can be imported."""
-    from shared.models import Course, Lesson
+    from PythonProjects.pearson.models import Course, Lesson
     assert Course is not None
     assert Lesson is not None

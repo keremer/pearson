@@ -5,19 +5,23 @@ Alternative to: python -m pearson --web
 """
 import sys
 from pathlib import Path
+from typing import Dict, Any
 
 # Add the project root to Python path
-project_root = Path(__file__).parent.absolute()
-sys.path.insert(0, str(project_root))
+PROJECT_ROOT = Path(__file__).parent.absolute()
+sys.path.insert(0, str(PROJECT_ROOT))
 
 from pearson import init_app
 
 if __name__ == '__main__':
-    # Initialize app with configuration
-    app, db_setup = init_app({
+    # Initialize app with configuration (using init_app for backward compatibility)
+    config: Dict[str, Any] = {
         'DEBUG': True,
         'TESTING': False,
-    })
+    }
+    
+    # Use init_app for backward compatibility (returns tuple)
+    app, db_setup = init_app(config)
     
     # Store db_setup in app config (for routes)
     app.config['db_setup'] = db_setup

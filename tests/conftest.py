@@ -15,7 +15,7 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from flask import Flask
-from pearson.shared.models import Base, Course, Lesson, LearningOutcome, AssessmentFormat, Tool, LessonLearningOutcome
+from PythonProjects.pearson.models import Base, Course, Lesson, LearningOutcome, AssessmentFormat, Tool, LessonLearningOutcome
 from pearson.cli.setup import DatabaseSetup
 from pearson.web import web_bp  # Now this works!
 

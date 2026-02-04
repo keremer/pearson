@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Enhanced Course Injector - Handles all syllabus information
-FIXED: Complete working version with proper indentation
+FIXED: Uses association table instead of non-existent LessonLearningOutcome model
 """
 
 import re
@@ -11,7 +11,8 @@ from typing import List, Dict, Any
 
 # Fix imports for new structure
 from cli.setup import DatabaseSetup
-from shared.models import Course, Lesson, LearningOutcome, AssessmentFormat, Tool, LessonLearningOutcome
+from pearson.models import Course, Lesson, LearningOutcome, AssessmentFormat, Tool, lesson_learning_outcome
+
 
 class CourseInjector:
     def __init__(self, database_url='sqlite:///courses.db'):
@@ -213,7 +214,7 @@ class CourseInjector:
             print(f"  🎯 Learning outcomes: {len(course_data['learning_outcomes'])}")
             print(f"  📋 Assessment formats: {len(course_data['assessment_formats'])}")
             
-            session = self.db_setup.Session()
+            session = self.db_setup.get_session()
             
             # Create main course
             course = Course(
@@ -287,16 +288,17 @@ class CourseInjector:
                 lesson_count += 1
                 print(f"  📝 Created lesson: {lesson.title}")
                 
-                # Link learning outcomes to lesson
+                # Link learning outcomes to lesson using the association table
                 addressed_outcomes = self.map_learning_outcomes_to_lessons(week_data)
                 for lo_code in addressed_outcomes:
                     if lo_code in learning_outcomes:
-                        lesson_lo = LessonLearningOutcome(
+                        # Use the association table directly
+                        stmt = lesson_learning_outcome.insert().values(
                             lesson_id=lesson.id,
                             learning_outcome_id=learning_outcomes[lo_code].id,
                             strength='Primary'
                         )
-                        session.add(lesson_lo)
+                        session.execute(stmt)
             
             session.commit()
             print(f"\n🎉 Successfully injected comprehensive course!")
@@ -399,6 +401,7 @@ Connected to course learning outcomes in professional development."""
         
         return ', '.join(base)
 
+
 def main():
     """Main injection function"""
     md_file_path = "professional_development_syllabus.md"
@@ -414,10 +417,11 @@ def main():
     if success:
         print("\n🚀 Course injection completed!")
         print("\nNext steps:")
-        print("1. Verify: python run_cli.py list courses")
-        print("2. Generate: python run_cli.py generate --course-id 1 --format all")
+        print("1. Verify: python main.py list courses")
+        print("2. Generate: python main.py generate --course-id 1 --format all")
     else:
         print("\n❌ Injection failed")
+
 
 if __name__ == "__main__":
     main()

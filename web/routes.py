@@ -8,7 +8,7 @@ import os
 import tempfile
 from flask import (render_template, request, redirect, 
                    url_for, flash, g, jsonify, session, current_app)
-from shared.models import Course, Lesson, LearningOutcome, AssessmentFormat, Tool
+from PythonProjects.pearson.models import Course, Lesson, LearningOutcome, AssessmentFormat, Tool
 from cli.setup import DatabaseSetup
 from werkzeug.utils import secure_filename
 from cli.course_injector import CourseInjector

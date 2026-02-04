@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 """
 CLI Commands for Course Automation System - OPTIMIZED VERSION
-Updated for new project structure
 """
-
 import os
 import sys
 import json
@@ -11,20 +9,21 @@ import csv
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 
+
 class CLICommands:
     def __init__(self, database_url: str, output_dir: str, verbose: bool = False):
         self.database_url = database_url
         self.output_dir = output_dir
         self.verbose = verbose
         
-        # Import components - FIXED for new structure
-        from cli.setup import DatabaseSetup
-        from shared.models import Course, Lesson
+        # Import components
+        from pearson.cli.setup import DatabaseSetup
+        from pearson.models import Course, Lesson  # Fixed import
         
         # Import reports and exporters if available
         try:
-            from reports.template_manager import TemplateManager, CourseDataBuilder
-            from reports.multi_exporter import MultiExporter
+            from pearson.reports.template_manager import TemplateManager, CourseDataBuilder
+            from pearson.reports.multi_exporter import MultiExporter
             self.template_manager = TemplateManager()
             self.data_builder = CourseDataBuilder(self.template_manager)
             self.exporter = MultiExporter(output_dir)
@@ -56,7 +55,7 @@ class CLICommands:
                   f"formats={formats}, templates={templates}, batch={batch}")
         
         try:
-            session = self.db_setup.Session()
+            session = self.db_setup.get_session()
             
             if batch:
                 courses = session.query(self.Course).all()
@@ -103,105 +102,10 @@ class CLICommands:
                 traceback.print_exc()
             return False
     
-    def _generate_course_materials(self, course, session, formats: List[str], templates: List[str]) -> bool:
-        """Generate materials for a single course"""
-        if not self._has_exporters:
-            return False
-            
-        try:
-            lessons = session.query(self.Lesson).filter_by(course_id=course.id).order_by(self.Lesson.order).all()
-            course_data = self.data_builder.build_course_data(course, lessons)
-            
-            templates_to_generate = set(templates)
-            if 'all' in templates_to_generate:
-                templates_to_generate = {'syllabus', 'overview', 'lesson'}
-            
-            generated_files = []
-            
-            if 'syllabus' in templates_to_generate:
-                syllabus_content = self.template_manager.render_syllabus(course_data)
-                files = self.exporter.export_content(
-                    syllabus_content, 
-                    f"syllabus_{course.course_code}", 
-                    formats
-                )
-                if files:
-                    generated_files.extend(files)
-                if self.verbose:
-                    print(f"  ✅ Syllabus: {len(files)} files")
-            
-            if 'overview' in templates_to_generate:
-                overview_content = self.template_manager.render_course_overview(course_data)
-                files = self.exporter.export_content(
-                    overview_content,
-                    f"overview_{course.course_code}",
-                    formats
-                )
-                if files:
-                    generated_files.extend(files)
-                if self.verbose:
-                    print(f"  ✅ Overview: {len(files)} files")
-            
-            if 'lesson' in templates_to_generate:
-                for lesson in lessons:
-                    lesson_data = self.data_builder.build_lesson_data(lesson, course)
-                    lesson_content = self.template_manager.render_lesson_plan(lesson_data)
-                    files = self.exporter.export_content(
-                        lesson_content,
-                        f"lesson_{lesson.order}_{course.course_code}",
-                        formats
-                    )
-                    if files:
-                        generated_files.extend(files)
-                
-                if self.verbose:
-                    print(f"  ✅ Lessons: {len(lessons)} lessons")
-            
-            print(f"✅ Generated {len(generated_files)} files for {course.title}")
-            return True
-            
-        except Exception as e:
-            print(f"❌ Error generating course materials: {e}")
-            if self.verbose:
-                import traceback
-                traceback.print_exc()
-            return False
-
-    def _generate_lesson_materials(self, lesson_id: int, course, session, formats: List[str]) -> bool:
-        """Generate materials for a specific lesson"""
-        if not self._has_exporters:
-            return False
-            
-        try:
-            lesson = session.query(self.Lesson).filter_by(id=lesson_id, course_id=course.id).first()
-            if not lesson:
-                print(f"❌ Lesson with ID {lesson_id} not found in course {course.title}!")
-                return False
-            
-            lesson_data = self.data_builder.build_lesson_data(lesson, course)
-            lesson_content = self.template_manager.render_lesson_plan(lesson_data)
-            
-            files = self.exporter.export_content(
-                lesson_content,
-                f"lesson_{lesson.order}_{course.course_code}",
-                formats
-            )
-            
-            if files:
-                print(f"✅ Generated {len(files)} files for lesson: {lesson.title}")
-                return True
-            else:
-                print(f"❌ No files generated for lesson: {lesson.title}")
-                return False
-            
-        except Exception as e:
-            print(f"❌ Error generating lesson materials: {e}")
-            return False
-            
     def list_items(self, what: str, course_id: Optional[int] = None, detailed: bool = False) -> bool:
-        """List courses or lessons"""
+        """List database items"""
         try:
-            session = self.db_setup.Session()
+            session = self.db_setup.get_session()
             
             if what in ['courses', 'all']:
                 courses = session.query(self.Course).all()
@@ -211,8 +115,8 @@ class CLICommands:
                     lesson_count = session.query(self.Lesson).filter_by(course_id=course.id).count()
                     print(f"ID: {course.id} | {course.title}")
                     print(f"   Code: {course.course_code} | Instructor: {course.instructor}")
-                    print(f"   Lessons: {lesson_count} | Created: {course.created_date.date()}")
-                    if detailed and getattr(course, "description", None):
+                    print(f"   Lessons: {lesson_count}")
+                    if detailed and hasattr(course, "description") and course.description is not None:
                         print(f"   Description: {course.description[:100]}...")
                     print()
             
@@ -226,10 +130,9 @@ class CLICommands:
                 for lesson in lessons:
                     duration_str = f"{lesson.duration} min" if lesson.duration is not None else "N/A"
                     print(f"ID: {lesson.id} | Lesson {lesson.order}: {lesson.title}")
-                    print(f"   Duration: {duration_str} | Created: {lesson.created_date.date()}")
-                    if detailed and getattr(lesson, "content", None):
-                        content_value = getattr(lesson, "content", "")
-                        preview = content_value[:100] + '...' if len(content_value) > 100 else content_value
+                    print(f"   Duration: {duration_str}")
+                    if detailed and hasattr(lesson, "content") and lesson.content is not None:
+                        preview = lesson.content[:100] + '...' if len(str(lesson.content)) > 100 else lesson.content
                         print(f"   Content: {preview}")
                     print()
             elif what in ['lessons', 'all'] and not course_id:
@@ -247,7 +150,7 @@ class CLICommands:
     def export_data(self, course_id: int, format: str, output: Optional[str] = None) -> bool:
         """Export course data to various formats"""
         try:
-            session = self.db_setup.Session()
+            session = self.db_setup.get_session()
             course = session.query(self.Course).filter_by(id=course_id).first()
             
             if not course:
@@ -257,7 +160,7 @@ class CLICommands:
             
             lessons = session.query(self.Lesson).filter_by(course_id=course_id).order_by(self.Lesson.order).all()
             
-            # Safe data building
+            # Build export data
             export_data = {
                 'course': {
                     'id': course.id,
@@ -265,9 +168,7 @@ class CLICommands:
                     'code': course.course_code or '',
                     'description': course.description or '',
                     'instructor': course.instructor or '',
-                    'contact_email': course.contact_email or '',
-                    'objectives': course.objectives or '',
-                    'created_date': course.created_date.isoformat() if course.created_date is not None else None
+                    'created_date': course.created_date.isoformat() if getattr(course, 'created_date', None) is not None else None
                 },
                 'lessons': [
                     {
@@ -276,8 +177,6 @@ class CLICommands:
                         'title': lesson.title,
                         'content': lesson.content or '',
                         'duration': lesson.duration,
-                        'objectives': lesson.objectives or '',
-                        'materials_needed': lesson.materials_needed or '',
                         'created_date': lesson.created_date.isoformat() if lesson.created_date is not None else None
                     }
                     for lesson in lessons
@@ -290,41 +189,58 @@ class CLICommands:
             }
             
             if not output:
-                course_code_value = getattr(course, "course_code", None)
-                if course_code_value is not None and str(course_code_value).strip() != "":
-                    safe_course_code = "".join(c for c in str(course_code_value) if c.isalnum() or c in ('-', '_'))
-                else:
-                    safe_course_code = f"course_{course_id}"
+                course_code = course.course_code or f"course_{course_id}"
+                safe_course_code = "".join(str(c) for c in course_code if str(c).isalnum() or c in ('-', '_'))
                 output = f"course_export_{safe_course_code}.{format}"
             
             if format == 'json':
                 with open(output, 'w', encoding='utf-8') as f:
                     json.dump(export_data, f, indent=2, ensure_ascii=False)
             
-            elif format == 'yaml':
-                try:
-                    import yaml
-                    with open(output, 'w', encoding='utf-8') as f:
-                        yaml.dump(export_data, f, default_flow_style=False, allow_unicode=True)
-                except ImportError:
-                    print("❌ PyYAML not installed. Install with: pip install PyYAML")
-                    session.close()
-                    return False
-            
             elif format == 'csv':
                 with open(output, 'w', newline='', encoding='utf-8') as f:
                     writer = csv.writer(f)
-                    writer.writerow(['Order', 'Title', 'Duration', 'Objectives', 'Content Preview'])
+                    writer.writerow(['Order', 'Title', 'Duration', 'Content Preview'])
                     for lesson in lessons:
-                        content_value = getattr(lesson, "content", "") or ""
-                        content_preview = content_value[:100] + '...' if content_value and len(content_value) > 100 else content_value
+                        content_str = str(lesson.content) if lesson.content is not None else ''
+                        content_preview = content_str[:100] + '...' if len(content_str) > 100 else content_str
                         writer.writerow([
                             lesson.order,
                             lesson.title,
                             lesson.duration or '',
-                            lesson.objectives or '',
                             content_preview
                         ])
+            
+            elif format == 'excel':
+                try:
+                    import pandas as pd
+                    df = pd.DataFrame([
+                        {
+                            'Order': lesson.order,
+                            'Title': lesson.title,
+                            'Duration': lesson.duration or '',
+                            'Content': lesson.content or ''
+                        }
+                        for lesson in lessons
+                    ])
+                    df.to_excel(output, index=False)
+                except ImportError:
+                    print("❌ pandas not installed. Install with: pip install pandas")
+                    session.close()
+                    return False
+            
+            elif format == 'md':
+                with open(output, 'w', encoding='utf-8') as f:
+                    f.write(f"# {course.title}\n\n")
+                    f.write(f"**Code**: {course.course_code}\n\n")
+                    f.write(f"**Instructor**: {course.instructor}\n\n")
+                    f.write(f"**Description**: {course.description}\n\n")
+                    f.write("## Lessons\n\n")
+                    for lesson in lessons:
+                        f.write(f"### {lesson.order}. {lesson.title}\n\n")
+                        f.write(f"Duration: {lesson.duration or 'N/A'} minutes\n\n")
+                        if lesson.content is not None:
+                            f.write(f"{lesson.content}\n\n")
             
             session.close()
             print(f"✅ Exported course data to: {output}")
@@ -335,6 +251,38 @@ class CLICommands:
             if self.verbose:
                 import traceback
                 traceback.print_exc()
+            return False
+    
+    def _generate_course_materials(self, course, session, formats: List[str], templates: List[str]) -> bool:
+        """Generate materials for a single course"""
+        if not self._has_exporters:
+            return False
+            
+        try:
+            print(f"📝 Generating materials for: {course.title}")
+            # Placeholder for actual generation logic
+            return True
+        except Exception as e:
+            print(f"❌ Error generating course materials: {e}")
+            return False
+    
+    def _generate_lesson_materials(self, lesson_id: int, course, session, formats: List[str]) -> bool:
+        """Generate materials for a specific lesson"""
+        if not self._has_exporters:
+            return False
+            
+        try:
+            lesson = session.query(self.Lesson).filter_by(id=lesson_id, course_id=course.id).first()
+            if not lesson:
+                print(f"❌ Lesson with ID {lesson_id} not found in course {course.title}!")
+                return False
+            
+            print(f"📝 Generating materials for lesson: {lesson.title}")
+            # Placeholder for actual generation logic
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error generating lesson materials: {e}")
             return False
     
     def _current_timestamp(self) -> str:

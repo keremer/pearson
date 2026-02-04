@@ -4,7 +4,7 @@ Unit tests for database models with relationships.
 import pytest
 from datetime import datetime
 from sqlalchemy.exc import IntegrityError
-from shared.models import Course, Lesson, LearningOutcome, AssessmentFormat, Tool
+from PythonProjects.pearson.models import Course, Lesson, LearningOutcome, AssessmentFormat, Tool
 
 class TestCourseModelRelationships:
     """Tests for Course model relationships."""

@@ -5,7 +5,7 @@ import pytest
 import io
 from flask import url_for
 import pearson.tests.conftest as conftest
-import pearson.shared.models as models
+import PythonProjects.pearson.models as models
 
 class TestIndexRoute:
     """Tests for the index route."""

@@ -3,7 +3,7 @@ Integration tests for database operations.
 """
 import pytest
 from sqlalchemy.exc import IntegrityError
-from shared.models import Course, Lesson
+from PythonProjects.pearson.models import Course, Lesson
 
 class TestDatabaseIntegration:
     """Integration tests for database operations."""
