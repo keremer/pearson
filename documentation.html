@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pearson Course Management System v2.0 Documentation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 2rem;
+            max-width: 1000px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        h1, h2, h3 {
+            color: #333;
+            margin-top: 2rem;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 0.3rem;
+        }
+        h1 { font-size: 2.2rem; border-bottom: 2px solid #666; }
+        h2 { font-size: 1.8rem; }
+        h3 { font-size: 1.4rem; border-bottom: none; }
+        p { margin: 1rem 0; }
+        pre {
+            background: #f4f4f4;
+            padding: 1rem;
+            overflow-x: auto;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        code {
+            background: #f4f4f4;
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        pre code {
+            background: none;
+            padding: 0;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1rem 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 0.5rem;
+            text-align: left;
+            vertical-align: top;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        ul, ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+        }
+        li {
+            margin-bottom: 0.3rem;
+        }
+        blockquote {
+            border-left: 4px solid #ccc;
+            padding-left: 1rem;
+            color: #555;
+            margin-left: 0;
+        }
+        hr {
+            border: 0;
+            border-top: 1px solid #eee;
+            margin: 2rem 0;
+        }
+        .note {
+            background: #fffacd;
+            padding: 0.5rem 1rem;
+            border-left: 4px solid #ffa500;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Pearson Course Management System v2.0 Documentation</h1>
+
+<hr />
+
+<h2>1. Project Overview</h2>
+
+<p>The <strong>Pearson Course Management System (v2.0)</strong> is a comprehensive, open‑source platform for designing, managing, and distributing educational course materials. It provides a robust backend for course authors, instructional designers, and administrators to:</p>
+
+<ul>
+    <li><strong>Define courses</strong> with rich metadata, learning outcomes, lessons, assessments, and required tools.</li>
+    <li><strong>Generate course materials</strong> (syllabi, lesson plans, overviews) in multiple output formats (PDF, HTML, Markdown, DOCX).</li>
+    <li><strong>Synchronise course data</strong> with <strong>Google Docs</strong>, enabling collaborative editing and version‑controlled publishing.</li>
+    <li><strong>Export/import courses</strong> via structured files (JSON, CSV, Excel, YAML).</li>
+    <li><strong>Query and report</strong> on course structures through a CLI, a web interface, and a REST API.</li>
+</ul>
+
+<h3>Key Features</h3>
+
+<table>
+    <thead>
+        <tr>
+            <th>Feature</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Course Modelling</strong></td>
+            <td>SQLAlchemy 2.0 ORM models for <code>Course</code>, <code>Lesson</code>, <code>LearningOutcome</code>, <code>AssessmentFormat</code>, <code>Tool</code>. Full relational integrity with cascade deletes, indexes, and validation.</td>
+        </tr>
+        <tr>
+            <td><strong>Multi‑format Reporting</strong></td>
+            <td>Jinja2‑based templating engine; export to PDF (via xhtml2pdf/ReportLab), HTML, Markdown, plain text, and DOCX (planned).</td>
+        </tr>
+        <tr>
+            <td><strong>Google Docs Interoperability</strong></td>
+            <td>Two‑way sync: push course data to editable Google Docs, or pull structured content from Docs into the system.</td>
+        </tr>
+        <tr>
+            <td><strong>CLI &amp; Web Interfaces</strong></td>
+            <td>Unified Click‑based command line; Flask web front‑end; optional REST API.</td>
+        </tr>
+        <tr>
+            <td><strong>Data Portability</strong></td>
+            <td>Export entire courses or individual components to JSON, CSV, Excel, YAML, Markdown.</td>
+        </tr>
+        <tr>
+            <td><strong>Health &amp; Diagnostics</strong></td>
+            <td>Built‑in <code>check</code> and <code>inspect</code> commands for system verification and schema introspection.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>Architecture Overview</h3>
+
+<p>The system follows a <strong>modular, package‑oriented</strong> design:</p>
+
+<pre><code>pearson/                      # Main package
+├── __init__.py              # Flask application factory (create_app)
+├── config.py                # Configuration classes (Development, Production, Testing)
+├── models.py                # SQLAlchemy declarative models
+├── main.py                  # Click CLI entry point (unified)
+├── cli/                     # CLI sub‑commands (database, reports, interop)
+├── web/                     # Flask blueprints (routes, templates, static)
+├── reports/                 # Reporting engine (template manager, exporters)
+├── interop/                 # Interoperability core (Google Docs integration)
+└── templates/               # Jinja2 report templates
+</code></pre>
+
+<ul>
+    <li><strong>Flask</strong> serves the web interface and REST API, using <strong>Flask‑SQLAlchemy</strong> for database sessions.</li>
+    <li><strong>Click</strong> drives the CLI – all operations can be performed from the terminal, ideal for automation.</li>
+    <li><strong>SQLAlchemy 2.0</strong> provides the ORM layer with support for migrations (Alembic).</li>
+    <li><strong>Google APIs</strong> are accessed via the official Python client, with OAuth 2.0 or service account authentication.</li>
+</ul>
+
+<hr />
+
+<h2>2. Installation Guide</h2>
+
+<h3>2.1 Prerequisites</h3>
+
+<ul>
+    <li><strong>Python</strong> 3.10 or higher (3.11+ recommended)</li>
+    <li><strong>pip</strong> 22.0+</li>
+    <li><strong>Git</strong> (for cloning the repository)</li>
+    <li>(Optional) <strong>Google Cloud Project</strong> with Docs API enabled for interoperability features.</li>
+</ul>
+
+<h3>2.2 Step‑by‑Step Setup</h3>
+
+<ol>
+    <li>
+        <p><strong>Clone the repository</strong></p>
+        <pre><code>git clone https://github.com/pearson/pearson-course-manager.git
+cd pearson-course-manager</code></pre>
+    </li>
+    <li>
+        <p><strong>Create and activate a virtual environment</strong></p>
+        <pre><code>python -m venv venv
+source venv/bin/activate      # On Windows: venv\Scripts\activate</code></pre>
+    </li>
+    <li>
+        <p><strong>Install the package and dependencies</strong></p>
+        <p>The project uses <code>pyproject.toml</code> for modern packaging. Install in editable mode for development:</p>
+        <pre><code>pip install -e .</code></pre>
+        <p>To include optional API dependencies:</p>
+        <pre><code>pip install -e '.[api]'</code></pre>
+        <p>Or install directly from <code>requirements.txt</code>:</p>
+        <pre><code>pip install -r requirements.txt</code></pre>
+    </li>
+    <li>
+        <p><strong>Configure environment variables</strong></p>
+        <p>Create a <code>.env</code> file in the project root (see <strong>Section 3 – Configuration</strong>).</p>
+    </li>
+    <li>
+        <p><strong>Initialise the database</strong></p>
+        <p>Run the setup command to create tables and optionally load sample data:</p>
+        <pre><code>python main.py setup --sample-data</code></pre>
+        <p>The default SQLite database will be created at <code>data/courses.db</code>.</p>
+    </li>
+    <li>
+        <p><strong>Verify the installation</strong></p>
+        <pre><code>python main.py check</code></pre>
+        <p>This performs a health check and reports the system state.</p>
+    </li>
+    <li>
+        <p><strong>Start the web interface (optional)</strong></p>
+        <pre><code>python main.py web</code></pre>
+        <p>Navigate to <code>http://127.0.0.1:5000</code>.</p>
+    </li>
+    <li>
+        <p><strong>Start the REST API (optional)</strong></p>
+        <pre><code>python main.py api</code></pre>
+        <p>API available at <code>http://localhost:8000/api</code>.</p>
+    </li>
+</ol>
+
+<hr />
+
+<h2>3. Configuration</h2>
+
+<h3>3.1 Environment Variables</h3>
+
+<p>Configuration is managed via a <strong><code>.env</code></strong> file at the project root. The system reads these variables and populates the Flask configuration object.</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Variable</th>
+            <th>Description</th>
+            <th>Default</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><code>FLASK_ENV</code></td>
+            <td><code>development</code>, <code>production</code>, <code>testing</code></td>
+            <td><code>development</code></td>
+        </tr>
+        <tr>
+            <td><code>DATABASE_URL</code></td>
+            <td>SQLAlchemy database URL (SQLite, PostgreSQL, MySQL)</td>
+            <td><code>sqlite:///data/courses.db</code></td>
+        </tr>
+        <tr>
+            <td><code>SECRET_KEY</code></td>
+            <td>Flask session secret – <strong>must be set in production</strong></td>
+            <td><code>dev-secret-key</code></td>
+        </tr>
+        <tr>
+            <td><code>GOOGLE_CREDENTIALS_FILE</code></td>
+            <td>Path to Google OAuth 2.0 client secrets JSON file</td>
+            <td><code>credentials.json</code></td>
+        </tr>
+        <tr>
+            <td><code>GOOGLE_TOKEN_FILE</code></td>
+            <td>Path where the OAuth token will be stored</td>
+            <td><code>token.json</code></td>
+        </tr>
+        <tr>
+            <td><code>GOOGLE_DRIVE_FOLDER_ID</code></td>
+            <td>(Optional) Default Google Drive folder ID for synced documents</td>
+            <td>–</td>
+        </tr>
+        <tr>
+            <td><code>OUTPUT_DIR</code></td>
+            <td>Default directory for generated reports</td>
+            <td><code>./output</code></td>
+        </tr>
+        <tr>
+            <td><code>LOG_LEVEL</code></td>
+            <td>Logging level (<code>DEBUG</code>, <code>INFO</code>, <code>WARNING</code>, <code>ERROR</code>)</td>
+            <td><code>INFO</code></td>
+        </tr>
+    </tbody>
+</table>
+
+<p><strong>Example <code>.env</code>:</strong></p>
+<pre><code>FLASK_ENV=development
+DATABASE_URL=sqlite:///data/courses.db
+SECRET_KEY=my-secret-key-change-in-production
+GOOGLE_CREDENTIALS_FILE=credentials.json
+GOOGLE_TOKEN_FILE=token.json
+OUTPUT_DIR=./reports_output
+LOG_LEVEL=DEBUG
+</code></pre>
+
+<h3>3.2 Google API Setup</h3>
+
+<p>To enable Google Docs interoperability, you must:</p>
+
+<ol>
+    <li>
+        <p><strong>Create a Google Cloud Project</strong><br />
+        Go to the <a href="https://console.cloud.google.com">Google Cloud Console</a>. Create a new project (or select an existing one).</p>
+    </li>
+    <li>
+        <p><strong>Enable the required APIs</strong><br />
+        <strong>Google Docs API</strong> and <strong>Google Drive API</strong> (for file management).</p>
+    </li>
+    <li>
+        <p><strong>Create credentials</strong></p>
+        <ul>
+            <li><strong>For OAuth 2.0 desktop flow</strong> (recommended for personal use):<br />
+                Create an OAuth 2.0 Client ID → Application type: <strong>Desktop app</strong>. Download the JSON file and save it as <code>credentials.json</code> in the project root.</li>
+            <li><strong>For service account</strong> (headless / server environments):<br />
+                Create a service account, grant it domain‑wide delegation if needed, and download the private key JSON. Rename it to <code>service_account.json</code> and set <code>GOOGLE_CREDENTIALS_FILE=service_account.json</code>.</li>
+        </ul>
+    </li>
+    <li>
+        <p><strong>Place the credentials file</strong> in the project root (or update the <code>.env</code> path).</p>
+    </li>
+</ol>
+
+<p>The first time you run a Google‑dependent command, a browser window will open for OAuth consent. The token will be saved to the file specified by <code>GOOGLE_TOKEN_FILE</code>.</p>
+
+<hr />
+
+<h2>4. Usage Guide</h2>
+
+<h3>4.1 Unified CLI (<code>main.py</code>)</h3>
+
+<p>The system provides a rich Click‑based command line interface. All commands are accessible via <code>python main.py &lt;command&gt;</code>.</p>
+
+<pre><code>python main.py --help
+</code></pre>
+
+<table>
+    <thead>
+        <tr>
+            <th>Command</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><code>web</code></td>
+            <td>Start the Flask web application.</td>
+        </tr>
+        <tr>
+            <td><code>api</code></td>
+            <td>Start the REST API server.</td>
+        </tr>
+        <tr>
+            <td><code>setup</code></td>
+            <td>Initialise or reset the database; optionally add sample data.</td>
+        </tr>
+        <tr>
+            <td><code>inject FILE</code></td>
+            <td>Ingest a comprehensive course definition from a file (JSON/YAML).</td>
+        </tr>
+        <tr>
+            <td><code>generate</code></td>
+            <td>Generate course materials (syllabi, lesson plans) using templates.</td>
+        </tr>
+        <tr>
+            <td><code>list WHAT</code></td>
+            <td>List database items: <code>courses</code>, <code>lessons</code>, <code>outcomes</code>, <code>tools</code>, <code>formats</code>, <code>all</code>.</td>
+        </tr>
+        <tr>
+            <td><code>export</code></td>
+            <td>Export course data to JSON, CSV, Excel, Markdown, or YAML.</td>
+        </tr>
+        <tr>
+            <td><code>report</code></td>
+            <td>Reporting sub‑commands (detailed in Section 5).</td>
+        </tr>
+        <tr>
+            <td><code>sync</code></td>
+            <td>Google Docs sync sub‑commands (Section 6).</td>
+        </tr>
+        <tr>
+            <td><code>check</code></td>
+            <td>Perform a system health check.</td>
+        </tr>
+        <tr>
+            <td><code>inspect MODEL</code></td>
+            <td>Show database schema and sample rows for a given model.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h4>4.1.1 Database Setup</h4>
+<pre><code># Create tables (and drop existing if --reset)
+python main.py setup --reset --sample-data
+
+# Use a different database
+python main.py setup --database postgresql://user:pass@localhost/courses
+</code></pre>
+
+<h4>4.1.2 Course Injection</h4>
+<p>Prepare a course definition file (JSON/YAML) and inject it:</p>
+<pre><code>python main.py inject my_course.json
+</code></pre>
+
+<p><strong>Example JSON structure:</strong></p>
+<pre><code>{
+  "course": {
+    "course_code": "CS101",
+    "title": "Introduction to Computer Science",
+    "instructor": "Dr. Smith",
+    "contact_email": "smith@university.edu",
+    "level": "Undergraduate",
+    "language": "English",
+    "delivery_mode": "Hybrid",
+    "aim": "...",
+    "description": "...",
+    "objectives": "..."
+  },
+  "lessons": [ ... ],
+  "learning_outcomes": [ ... ],
+  "assessment_formats": [ ... ],
+  "tools": [ ... ]
+}
+</code></pre>
+
+<h4>4.1.3 Generating Materials</h4>
+<pre><code># Generate a syllabus for a specific course
+python main.py generate --course-id 1 --format pdf --template syllabus
+
+# Generate multiple formats
+python main.py generate --course-id 1 --format pdf --format html --template syllabus
+
+# Generate all lessons for a course as lesson plans
+python main.py generate --course-id 1 --format pdf --template lesson_plan --batch
+</code></pre>
+
+<p>Output files are saved to the directory specified by <code>--output-dir</code> (default <code>./output</code>).</p>
+
+<h4>4.1.4 Listing and Exporting</h4>
+<pre><code># List all courses with details
+python main.py list courses --detailed
+
+# Export course #2 as CSV
+python main.py export --course-id 2 --format csv --output course2.csv
+</code></pre>
+
+<h4>4.1.5 System Inspection</h4>
+<pre><code># Check system health
+python main.py check
+
+# Inspect the 'lesson' table schema and first 10 rows
+python main.py inspect lesson --count 10
+</code></pre>
+
+<hr />
+
+<h3>4.2 Web Interface</h3>
+
+<p>Start the web server:</p>
+
+<pre><code>python main.py web
+</code></pre>
+
+<p>Then open <code>http://127.0.0.1:5000</code>.</p>
+
+<p>The web interface provides:</p>
+
+<ul>
+    <li><strong>Dashboard</strong> – overview of all courses.</li>
+    <li><strong>Course detail view</strong> – display course metadata, lessons, outcomes, assessments, tools.</li>
+    <li><strong>Report generation</strong> – select a course and template, download generated PDF/HTML.</li>
+    <li><strong>Google Docs sync</strong> – one‑click push/pull with status feedback.</li>
+    <li><strong>Admin panel</strong> – (if extended) user management.</li>
+</ul>
+
+<hr />
+
+<h3>4.3 REST API</h3>
+
+<p>Start the API server:</p>
+
+<pre><code>python main.py api
+</code></pre>
+
+<p>Base URL: <code>http://localhost:8000/api</code></p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Endpoint</th>
+            <th>Method</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><code>/api/health</code></td>
+            <td>GET</td>
+            <td>Health check, returns <code>{"status": "ok"}</code></td>
+        </tr>
+        <tr>
+            <td><code>/api/courses</code></td>
+            <td>GET</td>
+            <td>List all courses (summary)</td>
+        </tr>
+        <tr>
+            <td><code>/api/courses/&lt;int:id&gt;</code></td>
+            <td>GET</td>
+            <td>Retrieve a single course with all relationships</td>
+        </tr>
+        <tr>
+            <td><code>/api/courses</code></td>
+            <td>POST</td>
+            <td>Create a new course (JSON body)</td>
+        </tr>
+        <tr>
+            <td><code>/api/courses/&lt;int:id&gt;</code></td>
+            <td>PUT</td>
+            <td>Update an existing course</td>
+        </tr>
+        <tr>
+            <td><code>/api/courses/&lt;int:id&gt;</code></td>
+            <td>DELETE</td>
+            <td>Delete a course</td>
+        </tr>
+    </tbody>
+</table>
+
+<p><strong>Authentication:</strong> Not implemented by default – suitable for local/internal use. For production, extend with API keys or OAuth2.</p>
+
+<hr />
+
+<h2>5. Reporting System</h2>
+
+<p>The reporting engine is built around <strong>Jinja2 templates</strong> and a <strong>multi‑format exporter</strong>. It resides in the <code>pearson/reports/</code> package.</p>
+
+<h3>5.1 Template Manager</h3>
+
+<p>Templates are stored as <code>.j2</code> files in <code>pearson/templates/</code>. The <code>TemplateManager</code> discovers, caches, and renders them with course data.</p>
+
+<p><strong>Built‑in templates:</strong></p>
+<ul>
+    <li><code>syllabus.j2</code>  – full course syllabus.</li>
+    <li><code>lesson_plan.j2</code> – detailed lesson plan.</li>
+    <li><code>course_overview.j2</code> – one‑page course summary.</li>
+</ul>
+
+<p><strong>Adding custom templates:</strong></p>
+<ol>
+    <li>Place your <code>.j2</code> file in <code>pearson/templates/</code>.</li>
+    <li>Use the <code>--template</code> CLI option with the base name (without extension).</li>
+</ol>
+
+<h3>5.2 Export Formats</h3>
+
+<table>
+    <thead>
+        <tr>
+            <th>Format</th>
+            <th>Backend</th>
+            <th>Dependencies</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>HTML</strong></td>
+            <td>Jinja2 → HTML</td>
+            <td>–</td>
+        </tr>
+        <tr>
+            <td><strong>PDF</strong></td>
+            <td>xhtml2pdf / ReportLab</td>
+            <td><code>xhtml2pdf</code>, <code>reportlab</code></td>
+        </tr>
+        <tr>
+            <td><strong>MD</strong></td>
+            <td>Jinja2 → Markdown</td>
+            <td>–</td>
+        </tr>
+        <tr>
+            <td><strong>TXT</strong></td>
+            <td>Jinja2 → plain text (strip HTML)</td>
+            <td><code>markdown</code> (optional)</td>
+        </tr>
+        <tr>
+            <td><strong>DOCX</strong></td>
+            <td>python-docx (planned)</td>
+            <td>–</td>
+        </tr>
+    </tbody>
+</table>
+
+<p>The exporter automatically selects the correct renderer based on the requested format.</p>
+
+<h3>5.3 Data Context</h3>
+
+<p>Each template receives a <code>course</code> object (dictionary representation) enriched with:</p>
+<ul>
+    <li><code>course.id</code>, <code>title</code>, <code>code</code>, <code>instructor</code>, etc.</li>
+    <li><code>course.lessons</code> – list of lesson dictionaries.</li>
+    <li><code>course.learning_outcomes</code> – list of outcome objects.</li>
+    <li><code>course.assessment_formats</code> – list of assessment types.</li>
+    <li><code>course.tools</code> – list of tools.</li>
+    <li>Additional helpers: <code>now</code> (current date), <code>config</code> (system config).</li>
+</ul>
+
+<h3>5.4 Example: Generate a Syllabus PDF</h3>
+
+<pre><code>python main.py generate --course-id 1 --format pdf --template syllabus
+</code></pre>
+
+<p>Output: <code>./output/course_1_syllabus.pdf</code></p>
+
+<hr />
+
+<h2>6. Google Docs Interoperability</h2>
+
+<p>The interoperability module (<code>pearson/interop/</code>) provides two‑way synchronisation between course data and Google Documents.</p>
+
+<h3>6.1 Authentication</h3>
+
+<ul>
+    <li><strong>OAuth 2.0 Desktop Flow</strong> – interactive; stores a refresh token in <code>token.json</code>.</li>
+    <li><strong>Service Account</strong> – non‑interactive, suitable for CI/CD.</li>
+</ul>
+
+<p>Run the authentication flow manually:</p>
+<pre><code>python main.py sync auth
+</code></pre>
+
+<p>This will open a browser for consent if no valid token exists.</p>
+
+<h3>6.2 Core Operations</h3>
+
+<p>All sync commands are grouped under <code>main.py sync</code>:</p>
+
+<pre><code>python main.py sync --help
+</code></pre>
+
+<table>
+    <thead>
+        <tr>
+            <th>Sub‑command</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><code>push COURSE_ID</code></td>
+            <td>Export course data to a new or existing Google Doc.</td>
+        </tr>
+        <tr>
+            <td><code>pull DOC_ID</code></td>
+            <td>Import structured content from a Google Doc and update the course.</td>
+        </tr>
+        <tr>
+            <td><code>list</code></td>
+            <td>List all synced documents for a course.</td>
+        </tr>
+        <tr>
+            <td><code>status DOC_ID</code></td>
+            <td>Show sync status and version history.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h4>6.2.1 Push a Course to Google Docs</h4>
+<pre><code>python main.py sync push 1 --title "CS101 Syllabus (Draft)"
+</code></pre>
+
+<ul>
+    <li>If the course was previously synced, the existing document will be updated.</li>
+    <li>A new Google Doc is created and the course content (metadata, lessons, outcomes) is rendered using a special <strong>Google Docs template</strong>.</li>
+    <li>The document ID is stored in the local sync registry.</li>
+</ul>
+
+<h4>6.2.2 Pull from Google Docs</h4>
+<pre><code>python main.py sync pull 1abc123DEFgh
+</code></pre>
+
+<p>The system parses the Google Doc content (using the <strong>parser.py</strong> module) and extracts structured data. It then updates the corresponding course in the database.</p>
+
+<h3>6.3 Sync Workflow</h3>
+
+<ol>
+    <li><strong>Author</strong> modifies course data via CLI or web.</li>
+    <li><code>sync push</code> writes the current state to a Google Doc.</li>
+    <li><strong>Collaborators</strong> edit the document (suggestions, comments).</li>
+    <li><code>sync pull</code> reads the edited document and merges changes back into the database (conflict resolution via timestamps).</li>
+</ol>
+
+<hr />
+
+<h2>7. API Reference</h2>
+
+<p>The REST API is minimal but extensible. It is built with Flask and returns JSON responses.</p>
+
+<h3>7.1 Base URL</h3>
+
+<p><code>http://localhost:8000/api</code> (port can be changed via <code>--port</code>)</p>
+
+<h3>7.2 Endpoints</h3>
+
+<h4><code>GET /api/health</code></h4>
+<p><strong>Response:</strong></p>
+<pre><code>{
+  "status": "ok",
+  "timestamp": "2025-04-09T10:00:00Z",
+  "version": "2.0.0"
+}
+</code></pre>
+
+<h4><code>GET /api/courses</code></h4>
+<p>Returns a list of all courses with basic metadata.</p>
+<p><strong>Query Parameters:</strong></p>
+<ul>
+    <li><code>limit</code> – max number of courses (default: 100)</li>
+    <li><code>offset</code> – pagination offset</li>
+</ul>
+<p><strong>Response:</strong></p>
+<pre><code>[
+  {
+    "id": 1,
+    "course_code": "CS101",
+    "title": "Introduction to Computer Science",
+    "instructor": "Dr. Smith",
+    "lesson_count": 12
+  },
+  ...
+]
+</code></pre>
+
+<h4><code>GET /api/courses/&lt;id&gt;</code></h4>
+<p>Returns the full course object, including all related lessons, outcomes, assessments, and tools.</p>
+<p><strong>Response:</strong></p>
+<pre><code>{
+  "id": 1,
+  "course_code": "CS101",
+  "title": "...",
+  "lessons": [ ... ],
+  "learning_outcomes": [ ... ],
+  ...
+}
+</code></pre>
+
+<h4><code>POST /api/courses</code></h4>
+<p>Create a new course. Expects a JSON body matching the <code>Course</code> model (required fields: <code>course_code</code>, <code>title</code>).</p>
+<p><strong>Example:</strong></p>
+<pre><code>{
+  "course_code": "MATH202",
+  "title": "Linear Algebra",
+  "instructor": "Prof. Johnson",
+  "level": "Undergraduate"
+}
+</code></pre>
+<p><strong>Returns:</strong> The created course object with its new <code>id</code>.</p>
+
+<h4><code>PUT /api/courses/&lt;id&gt;</code></h4>
+<p>Update an existing course. Only supplied fields are updated.</p>
+
+<h4><code>DELETE /api/courses/&lt;id&gt;</code></h4>
+<p>Delete a course and all its dependent records (cascade delete).</p>
+
+<hr />
+
+<h2>8. Troubleshooting</h2>
+
+<h3>8.1 Database Issues</h3>
+
+<p><strong>Q:</strong> The <code>setup</code> command fails with “no such table”.<br />
+<strong>A:</strong> Run with <code>--reset</code> to drop and recreate all tables.</p>
+
+<p><strong>Q:</strong> How do I switch from SQLite to PostgreSQL?<br />
+<strong>A:</strong> Set <code>DATABASE_URL</code> to your PostgreSQL connection string and install <code>psycopg2</code> (<code>pip install psycopg2-binary</code>). Run <code>python main.py setup</code> to create the schema.</p>
+
+<h3>8.2 Google API Authentication</h3>
+
+<p><strong>Q:</strong> OAuth consent screen error: “This app is not verified”.<br />
+<strong>A:</strong> During development, click “Advanced” → “Go to ... (unsafe)”. For production, submit your app for verification.</p>
+
+<p><strong>Q:</strong> <code>FileNotFoundError: credentials.json</code><br />
+<strong>A:</strong> Ensure the file exists and the path in <code>.env</code> is correct. Download from Google Cloud Console.</p>
+
+<p><strong>Q:</strong> Token expired or revoked.<br />
+<strong>A:</strong> Delete <code>token.json</code> and re‑authenticate with <code>python main.py sync auth</code>.</p>
+
+<h3>8.3 Report Generation</h3>
+
+<p><strong>Q:</strong> PDF generation fails with <code>No module named 'xhtml2pdf'</code>.<br />
+<strong>A:</strong> Install the reporting extras: <code>pip install -e '.[reporting]'</code> or manually <code>pip install xhtml2pdf reportlab</code>.</p>
+
+<p><strong>Q:</strong> The generated PDF has broken layout.<br />
+<strong>A:</strong> xhtml2pdf has limited CSS support. Use simple, table‑based layouts. For complex designs, consider using the HTML output and print via browser.</p>
+
+<h3>8.4 CLI Errors</h3>
+
+<p><strong>Q:</strong> <code>ImportError: cannot import name 'CLICommands' from 'pearson.cli'</code>.<br />
+<strong>A:</strong> The CLI structure expects the <code>pearson</code> package to be installed in editable mode. Run <code>pip install -e .</code> from the project root.</p>
+
+<p><strong>Q:</strong> <code>sqlalchemy.exc.OperationalError: unable to open database file</code>.<br />
+<strong>A:</strong> The <code>data/</code> directory does not exist. Create it: <code>mkdir data</code>.</p>
+
+<hr />
+
+<h2>9. Development Guide</h2>
+
+<h3>9.1 Setting Up a Development Environment</h3>
+
+<ol>
+    <li><strong>Fork and clone</strong> the repository.</li>
+    <li>
+        <p><strong>Create a virtual environment</strong> and install in editable mode with development extras:</p>
+        <pre><code>pip install -e '.[dev]'</code></pre>
+        <p>This installs <code>pytest</code>, <code>black</code>, <code>mypy</code>, <code>pylint</code>, and <code>alembic</code>.</p>
+    </li>
+    <li>
+        <p><strong>Install pre‑commit hooks</strong> (optional but recommended):</p>
+        <pre><code>pre-commit install</code></pre>
+        <p>Configuration in <code>.pre-commit-config.yaml</code>.</p>
+    </li>
+</ol>
+
+<h3>9.2 Code Style &amp; Quality</h3>
+
+<ul>
+    <li><strong>Formatting:</strong> <code>black</code> (line length 88).</li>
+    <li><strong>Linting:</strong> <code>pylint</code> (configuration in <code>.pylintrc</code>).</li>
+    <li><strong>Type checking:</strong> <code>mypy</code> – all code must pass strict mode.</li>
+</ul>
+
+<p>Run all checks:</p>
+<pre><code>black .
+mypy pearson/
+pylint pearson/
+</code></pre>
+
+<h3>9.3 Testing</h3>
+
+<p>We use <code>pytest</code> for unit and integration tests.</p>
+<pre><code>pytest tests/ -v
+</code></pre>
+
+<ul>
+    <li>Tests are located in the <code>tests/</code> directory, mirroring the package structure.</li>
+    <li>Database tests use a temporary SQLite in‑memory database.</li>
+    <li>Google API tests are mocked (see <code>tests/mocks/google_docs_mock.py</code>).</li>
+</ul>
+
+<h3>9.4 Extending the System</h3>
+
+<h4>9.4.1 Adding a New Database Model</h4>
+<ol>
+    <li>Define the class in <code>pearson/models.py</code>, inheriting from <code>Base</code>.</li>
+    <li>Add relationships as needed.</li>
+    <li>
+        <p>Create a migration:</p>
+        <pre><code>alembic revision --autogenerate -m "add new model"
+alembic upgrade head</code></pre>
+    </li>
+</ol>
+
+<h4>9.4.2 Adding a New CLI Command</h4>
+<ol>
+    <li>Create a function in an existing sub‑command module (e.g., <code>cli/report_commands.py</code>) or add a new file.</li>
+    <li>Decorate it with <code>@click.command()</code> and attach to the main <code>cli</code> group in <code>main.py</code>.</li>
+    <li>
+        <p>Example:</p>
+        <pre><code>@cli.command()
+@click.argument('course_id', type=int)
+def archive(course_id):
+    """Archive a course (soft delete)."""
+    # implementation</code></pre>
+    </li>
+</ol>
+
+<h4>9.4.3 Adding a New Report Template</h4>
+<ol>
+    <li>Place a <code>.j2</code> file in <code>pearson/templates/</code>.</li>
+    <li>Use any Jinja2 features – the full <code>course</code> object is available.</li>
+    <li>Invoke via <code>--template your_template_name</code>.</li>
+</ol>
+
+<h4>9.4.4 Adding a New Export Format</h4>
+<ol>
+    <li>Subclass <code>BaseExporter</code> in <code>reports/multi_exporter.py</code>.</li>
+    <li>Implement the <code>export(self, data, output_path)</code> method.</li>
+    <li>Register the exporter in the <code>EXPORTERS</code> dictionary.</li>
+</ol>
+
+<h4>9.4.5 Contributing Guidelines</h4>
+<ul>
+    <li>Fork the repository and create a feature branch.</li>
+    <li>Write tests for new functionality.</li>
+    <li>Ensure all CI checks pass.</li>
+    <li>Submit a pull request with a clear description of changes.</li>
+</ul>
+
+<hr />
+
+<h2>Appendix: File Structure Reference</h2>
+
+<pre><code>pearson-course-manager/
+├── .env.example
+├── .gitignore
+├── pyproject.toml
+├── requirements.txt
+├── README.md
+├── main.py                     # Unified CLI entry point
+├── run_api.py                  # Legacy API runner
+├── run_cli.py                  # Legacy CLI runner
+├── run_web.py                  # Legacy web runner
+├── data/                       # Default SQLite database location
+├── output/                     # Default generated reports directory
+├── pearson/
+│   ├── __init__.py            # create_app(), init_app()
+│   ├── config.py              # Configuration classes
+│   ├── models.py              # SQLAlchemy models
+│   ├── cli/                   # CLI command modules
+│   │   ├── __init__.py
+│   │   ├── commands.py        # CLICommands base class
+│   │   ├── database_commands.py
+│   │   ├── report_commands.py
+│   │   └── interop_commands.py
+│   ├── web/                   # Flask web application
+│   │   ├── __init__.py
+│   │   ├── routes.py
+│   │   ├── templates/         # Web templates (not reports)
+│   │   └── static/
+│   ├── reports/               # Reporting engine
+│   │   ├── __init__.py
+│   │   ├── template_manager.py
+│   │   ├── multi_exporter.py
+│   │   └── course_data_builder.py
+│   ├── interop/               # Interoperability core
+│   │   ├── __init__.py
+│   │   ├── manager.py
+│   │   └── google_docs/
+│   │       ├── __init__.py
+│   │       ├── config.py
+│   │       ├── client.py
+│   │       ├── auth.py
+│   │       ├── parser.py
+│   │       └── sync.py
+│   └── templates/             # Jinja2 report templates
+│       ├── syllabus.j2
+│       ├── lesson_plan.j2
+│       └── course_overview.j2
+├── tests/
+│   ├── conftest.py
+│   ├── test_models.py
+│   ├── test_cli.py
+│   └── test_reports.py
+└── migrations/                # Alembic migration scripts
+    └── versions/
+</code></pre>
+
+<hr />
+
+<p><em>This documentation is for Pearson Course Management System v2.0.0. For the latest updates, please refer to the official repository or the project’s internal wiki.</em></p>
+
+</body>
+</html>
