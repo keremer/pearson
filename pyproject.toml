@@ -25,16 +25,14 @@ dependencies = [
     "SQLAlchemy>=2.0.0",
     "click>=8.1.0",
     "python-dotenv>=1.0.0",
-    "Jinja2>=3.1.0",
+    "Jinja2>=3.1.2",
     "Werkzeug>=2.3.0",
-    "markdown>=3.4.0",
+    "markdown>=3.4.4",
     "pandas>=2.0.0",
     "openpyxl>=3.1.0",
     "python-dateutil>=2.8.0",
     "requests>=2.31.0",
     "typing-extensions>=4.5.0",
-    "Jinja2>=3.1.2",
-    "markdown>=3.4.4",
     "xhtml2pdf>=0.2.13",
     "reportlab>=4.0.4",
 ]
@@ -70,11 +68,14 @@ Homepage = "https://github.com/keremer/pearson"
 Documentation = "https://github.com/keremer/pearson/wiki"
 
 [project.scripts]
+# Updated to point to the main module within the pearson package
 pearson = "pearson.main:cli"
 
 [tool.setuptools.packages.find]
-where = ["pearson"]
-include = ["pearson*", "cli*", "web*", "shared*"]
+where = ["."]
+# Focus on the 'pearson' root package; setuptools will find the 
+# sub-packages (web, api, cli, interop) automatically if they contain __init__.py
+include = ["pearson*"]
 exclude = ["tests*", "*.tests", "*.tests.*", "tests.*"]
 
 [tool.black]
