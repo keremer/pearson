@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 # Import Pearson models for type hints
 try:
-    from ..models import Course, Lesson, LearningOutcome, AssessmentFormat, Tool
+    from pearson.models import Course, Lesson, LearningOutcome, AssessmentFormat, Tool
 except ImportError:
     # For standalone testing
     pass

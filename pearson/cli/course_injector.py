@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import List, Dict, Any
 
 # Fix imports for new structure
-from cli.setup import DatabaseSetup
+from pearson.cli.setup import DatabaseSetup
 from pearson.models import Course, Lesson, LearningOutcome, AssessmentFormat, Tool, lesson_learning_outcome
 
 

@@ -7,8 +7,8 @@ from pathlib import Path
 from typing import List, Optional
 from sqlalchemy.orm import Session
 
-from ..models import Course
-from ..reports import TemplateManager, CourseDataBuilder, MultiExporter
+from pearson.models import Course
+from pearson.reports import TemplateManager, CourseDataBuilder, MultiExporter
 
 
 @click.group()

@@ -2,7 +2,7 @@
 """
 Educational Data Hub - API Server
 """
-from api import app
+from pearson.api import app
 
 def start_api(port=5000, debug=True):
     """Entry point for the API server used by main.py"""
