@@ -70,10 +70,10 @@ Homepage = "https://github.com/keremer/pearson"
 Documentation = "https://github.com/keremer/pearson/wiki"
 
 [project.scripts]
-pearson = "main:cli"
+pearson = "pearson.main:cli"
 
 [tool.setuptools.packages.find]
-where = ["."]
+where = ["pearson"]
 include = ["pearson*", "cli*", "web*", "shared*"]
 exclude = ["tests*", "*.tests", "*.tests.*", "tests.*"]
 
