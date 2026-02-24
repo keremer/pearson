@@ -52,7 +52,7 @@ class Course(Base):
         back_populates="course",
         cascade="all, delete-orphan",
         order_by="Lesson.order",
-        lazy="dynamic"
+        lazy="select"
     )
     
     learning_outcomes = relationship(

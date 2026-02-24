@@ -26,7 +26,7 @@ class Config:
     ALLOWED_EXTENSIONS: set[str] = {'md'}
 
     # Application
-    PROJECT_ROOT: ClassVar[Path] = Path(__file__).parent.absolute()
+    PROJECT_ROOT: ClassVar[Path] = Path(__file__).absolute()
     DATA_DIR: ClassVar[Path] = PROJECT_ROOT / 'data'
     CONFIG_DIR: ClassVar[Path] = PROJECT_ROOT / 'config'
     TESTS_DIR: ClassVar[Path] = PROJECT_ROOT / 'tests'

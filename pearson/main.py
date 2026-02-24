@@ -7,15 +7,16 @@ import os
 import sys
 from pathlib import Path
 from typing import Optional, List
-from pearson.cli.report_commands import report
-
-import click
-from flask import Flask
 
 # Add project root to path for consistent imports
 PROJECT_ROOT = Path(__file__).parent.absolute()
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
+    
+from pearson.cli.report_commands import report
+
+import click
+from flask import Flask
 
 # Now import from the pearson package
 from pearson import create_app, get_database_url

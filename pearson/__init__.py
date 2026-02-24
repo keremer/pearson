@@ -20,18 +20,25 @@ __all__ = [
 ]
 
 # Export commonly used paths
-PROJECT_ROOT = Path(__file__).parent.absolute()
+PACKAGE_ROOT = Path(__file__).parent.absolute()
+PROJECT_ROOT = PACKAGE_ROOT.parent.absolute()
 DATA_DIR = PROJECT_ROOT / "data"
 CONFIG_DIR = PROJECT_ROOT / "config"
 TESTS_DIR = PROJECT_ROOT / "tests"
 
 
 def get_data_dir() -> Path:
-    """Get the data directory path."""
-    data_dir = DATA_DIR
-    data_dir.mkdir(exist_ok=True)
+    """Get the data directory path at project root."""
+    # PACKAGE_ROOT is .../pearson/pearson
+    # PROJECT_ROOT is .../pearson
+    package_root = Path(__file__).parent.absolute()
+    project_root = package_root.parent.absolute()
+    
+    data_dir = project_root / "data"
+    
+    # Force creation of the directory with parents
+    data_dir.mkdir(parents=True, exist_ok=True)
     return data_dir
-
 
 def get_database_path(db_name: str = 'courses.db') -> Path:
     """Get the full path to the database file."""
@@ -39,23 +46,29 @@ def get_database_path(db_name: str = 'courses.db') -> Path:
 
 
 def get_database_url(db_name: str = 'courses.db') -> str:
-    """Get the SQLAlchemy database URL."""
+    """Get the SQLAlchemy database URL with a clean absolute path."""
     db_path = get_database_path(db_name)
-    return f'sqlite:///{db_path}'
+    # On Windows, we need to ensure the path is absolute and uses forward slashes
+    return f'sqlite:///{db_path.as_posix()}'
 
 
 def create_app(config: Optional[Dict[str, Any]] = None) -> Flask:
     """
     Create and configure the Flask application.
     
-    Args:
-        config (dict): Configuration dictionary to update app config
-        
     Returns:
         Flask: Configured Flask application instance
     """
+    # PACKAGE_ROOT is .../pearson/pearson
+    package_root = Path(__file__).parent.absolute()
+    # PROJECT_ROOT is .../pearson
+    project_root = package_root.parent.absolute()
+
     # Create Flask app
-    app = Flask(__name__, instance_relative_config=True)
+    app = Flask(__name__, 
+                instance_relative_config=True,
+                static_folder=str(project_root / 'static'),
+                static_url_path='/static')
     
     # Default configuration
     app.config.from_mapping(
@@ -66,7 +79,7 @@ def create_app(config: Optional[Dict[str, Any]] = None) -> Flask:
         TESTING=False,
         DEBUG=os.environ.get('FLASK_DEBUG', '0').lower() in ['1', 'true', 'yes'],
         MAX_CONTENT_LENGTH=16 * 1024 * 1024,  # 16MB max upload
-        UPLOAD_FOLDER=str(PROJECT_ROOT / 'web' / 'static' / 'uploads'),
+        UPLOAD_FOLDER=str(PROJECT_ROOT / 'static' / 'uploads'),
         ALLOWED_EXTENSIONS={'md'},
     )
     
@@ -94,12 +107,22 @@ def create_app(config: Optional[Dict[str, Any]] = None) -> Flask:
             print(f"📦 Database initialized: {app.config['DATABASE_URL']}")
             _db_initialized = True
     
-    # Register blueprints
+    # Register Web Blueprints
     try:
         from pearson.web import web_bp
         app.register_blueprint(web_bp)
     except ImportError as e:
         print(f"⚠️  Could not register web blueprint: {e}")
+
+    # --- NEW: Proper API Binding ---
+    try:
+        # Import and initialize the course-related API routes
+        from pearson.api.courses import init_course_routes
+        init_course_routes(app)
+        print("🔗 API routes bound successfully")
+    except ImportError as e:
+        print(f"⚠️  Could not initialize API routes: {e}")
+    # -------------------------------
     
     # Register CLI commands
     @app.cli.command("init-db")

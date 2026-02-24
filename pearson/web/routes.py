@@ -9,11 +9,11 @@ import tempfile
 from flask import (render_template, request, redirect, 
                    url_for, flash, g, jsonify, session, current_app)
 from pearson.models import Course, Lesson, LearningOutcome, AssessmentFormat, Tool
-from cli.setup import DatabaseSetup
+from pearson.cli.setup import DatabaseSetup
 from werkzeug.utils import secure_filename
-from cli.course_injector import CourseInjector
-from web import web_bp
-from web.forms import CourseForm, LessonForm, ImportForm
+from pearson.cli.course_injector import CourseInjector
+from pearson.web import web_bp
+from pearson.web.forms import CourseForm, LessonForm, ImportForm
 
 
 def get_db_session():
