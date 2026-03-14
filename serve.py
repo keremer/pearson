@@ -1,8 +1,16 @@
 import os
+from pathlib import Path
 
+from dotenv import load_dotenv
 from waitress import serve
 
 from pearson import create_app
+
+# Get the directory where THIS file lives
+basedir = Path(__file__).parent.absolute()
+
+# Explicitly load the .env using the absolute path
+load_dotenv(os.path.join(basedir, '.env'))
 
 # Create the application instance using your factory
 app = create_app({
