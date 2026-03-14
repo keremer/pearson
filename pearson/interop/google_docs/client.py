@@ -75,11 +75,20 @@ class GoogleDocsClient(BaseInteropClient):
         """Authenticate with Google API using OAuth 2.0."""
         try:
             creds = None
-            # Ensure the tokens directory exists
-            os.makedirs(os.path.dirname(self.config.token_path), exist_ok=True)
-            if os.path.exists(self.config.token_path):
+            # FORCE check: If token_path is a directory, something is wrong with config
+            tpath = Path(self.config.token_path)
+
+            if tpath.is_dir():
+            # If it's a directory, append a default filename so it's a file path
+                tpath = tpath / "token_default.json"
+                self.config.token_path = str(tpath)
+
+            # Ensure the parent directory exists
+            tpath.parent.mkdir(parents=True, exist_ok=True)
+
+            if tpath.exists() and tpath.is_file():      #        Added is_file check
                 creds = OAuthCredentials.from_authorized_user_file(
-                    self.config.token_path, self.config.scopes
+                str(tpath), self.config.scopes
                 )
 
             if not creds or not creds.valid:
