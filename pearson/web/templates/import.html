@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Import Syllabus - Course Management{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-file-import me-2"></i>Import Markdown Syllabus</h4>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">
+                    Upload a standardized Markdown syllabus. The system will automatically parse 
+                    course details, learning outcomes, tools, and weekly schedules.
+                </p>
+                
+                <form action="{{ url_for('web.import_syllabus') }}" method="POST" enctype="multipart/form-data" class="mt-4">
+                    <div class="mb-4">
+                        <label for="file" class="form-label fw-bold">Select Markdown File (.md)</label>
+                        <input class="form-control form-control-lg" type="file" id="file" name="file" accept=".md" required>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-upload me-2"></i>Parse and Inject Course
+                        </button>
+                        <a href="{{ url_for('web.list_courses') }}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer bg-light">
+                <small class="text-muted">
+                    <i class="fas fa-info-circle me-1"></i> 
+                    Ensure your file follows the structure found in <code>CGIDCS251119.md</code>[cite: 162].
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

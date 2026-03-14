@@ -1,0 +1,193 @@
+#!/usr/bin/env python3
+"""
+Database Setup and Initialization - FIXED VERSION WITH TYPE HINTS
+"""
+
+import os
+from typing import List, Optional, Any
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, Session
+from shared.models import Base, Course, Lesson, LearningOutcome, AssessmentFormat, Tool
+
+
+class DatabaseSetup:
+    def __init__(self, database_url: str = 'sqlite:///courses.db') -> None:
+        self.database_url: str = database_url
+        self.engine = create_engine(database_url, echo=True)
+        self.Session: sessionmaker = sessionmaker(bind=self.engine)
+        
+        # Expose model classes
+        self.Course = Course
+        self.Lesson = Lesson
+        self.LearningOutcome = LearningOutcome
+        self.AssessmentFormat = AssessmentFormat
+        self.Tool = Tool
+    
+    def create_database(self) -> None:
+        """Create all database tables"""
+        print("Creating database tables...")
+        Base.metadata.create_all(self.engine)
+        print("✅ Database tables created successfully!")
+
+    def list_courses(self) -> None:
+        """List all courses in the database"""
+        session: Session = self.Session()
+        try:
+            courses: List[Course] = session.query(Course).all()
+
+            if not courses:
+                print("No courses found in database.")
+                return
+            
+            print(f"Found {len(courses)} courses:")
+            for i, course in enumerate(courses, 1):
+                print(f"  {i}. {course.title} (ID: {course.id})")
+                
+                description: Optional[str] = getattr(course, 'description', None)
+                if description and isinstance(description, str) and description.strip():
+                    preview: str = description[:100] + "..." if len(description) > 100 else description
+                    print(f"     Description: {preview}")
+
+        except Exception as e:
+            print(f"Error listing courses: {e}")
+        finally:
+            session.close()
+
+    def drop_database(self) -> None:
+        """Drop all database tables (for testing)"""
+        print("Dropping database tables...")
+        Base.metadata.drop_all(self.engine)
+        print("✅ Database tables dropped!")
+
+    def create_sample_data(self) -> None:
+        """Create sample course data for testing - FIXED VERSION"""
+        session: Session = self.Session()
+        
+        try:
+            # Sample Course 1: Python Programming
+            python_course: Course = Course(
+                title="Python Programming Fundamentals",
+                description="A comprehensive introduction to Python programming covering basic syntax, data structures, functions, and object-oriented programming.",
+                objectives="Understand Python syntax,Work with data structures,Write functions,Understand OOP concepts,Handle errors and exceptions",
+                course_code="PY101",
+                instructor="Dr. Jane Smith",
+                contact_email="jane.smith@university.edu"
+            )
+            session.add(python_course)
+            session.flush()
+            print(f"✅ Created course: {python_course.title} with ID: {python_course.id}")
+            
+            # Lessons for Python course
+            python_lessons: List[Lesson] = [
+                Lesson(
+                    course_id=python_course.id,
+                    title="Introduction to Python",
+                    content="In this lesson, we'll cover Python installation, basic syntax, variables, and data types. We'll write our first Python program and understand how to use the Python interpreter.",
+                    duration=90,
+                    order=1,
+                    objectives="Install Python,Understand basic syntax,Use variables,Learn data types",
+                    materials_needed="Python 3.8+,Text editor,Example code files"
+                ),
+                Lesson(
+                    course_id=python_course.id,
+                    title="Functions and Modules",
+                    content="Learn how to define and use functions, work with parameters and return values, and organize code into modules.",
+                    duration=120,
+                    order=2,
+                    objectives="Define functions,Use parameters,Return values,Import modules",
+                    materials_needed="Python IDE,Example projects"
+                )
+            ]
+            session.add_all(python_lessons)
+            
+            # Sample Course 2: Web Development
+            web_course: Course = Course(
+                title="Web Development Basics",
+                description="Learn the fundamentals of web development including HTML, CSS, and JavaScript.",
+                objectives="Create HTML pages,Style with CSS,Add interactivity with JavaScript,Understand web protocols",
+                course_code="WEB101",
+                instructor="Prof. John Doe",
+                contact_email="john.doe@university.edu"
+            )
+            session.add(web_course)
+            session.flush()
+            
+            web_lessons: List[Lesson] = [
+                Lesson(
+                    course_id=web_course.id,
+                    title="HTML Fundamentals",
+                    content="Learn the basics of HTML structure, tags, and semantic markup.",
+                    duration=60,
+                    order=1,
+                    objectives="Create HTML structure,Use semantic tags,Add links and images",
+                    materials_needed="Text editor,Web browser"
+                )
+            ]
+            session.add_all(web_lessons)
+            
+            # Commit everything
+            session.commit()
+            print("✅ Sample data created successfully!")
+            
+        except Exception as e:
+            session.rollback()
+            print(f"❌ Error creating sample data: {e}")
+            raise
+        finally:
+            session.close()
+
+    def get_course_count(self) -> int:
+        """Get the number of courses in the database"""
+        session: Session = self.Session()
+        try:
+            count: int = session.query(Course).count()
+            return count
+        except Exception as e:
+            print(f"Error getting course count: {e}")
+            return 0
+        finally:
+            session.close()
+
+    def get_lesson_count(self, course_id: Optional[int] = None) -> int:
+        """Get the number of lessons, optionally filtered by course"""
+        session: Session = self.Session()
+        try:
+            query = session.query(Lesson)
+            if course_id:
+                query = query.filter(Lesson.course_id == course_id)
+            count: int = query.count()
+            return count
+        except Exception as e:
+            print(f"Error getting lesson count: {e}")
+            return 0
+        finally:
+            session.close()
+
+
+def main() -> None:
+    """Main function to set up the database"""
+    print("🎯 Database Setup")
+    print("=" * 50)
+    
+    # Initialize database setup
+    db_setup: DatabaseSetup = DatabaseSetup()
+    
+    # Create tables
+    db_setup.create_database()
+
+    # Create sample data
+    db_setup.create_sample_data()
+    
+    # List courses to verify
+    db_setup.list_courses()
+    
+    # Show statistics
+    course_count: int = db_setup.get_course_count()
+    lesson_count: int = db_setup.get_lesson_count()
+    print(f"📊 Database contains {course_count} courses and {lesson_count} lessons total")
+
+    print("🎉 Database setup completed successfully!")
+
+
+if __name__ == "__main__":
+    main()

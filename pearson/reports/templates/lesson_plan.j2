@@ -1,0 +1,77 @@
+# Lesson {{ order | default(1) }}: {{ title | default('Untitled Lesson') }}
+
+**Course:** {{ course_title | default('Unknown Course') }}  
+**Week:** {{ order | default(1) }}  
+**Duration:** {{ duration | default(60) }} minutes  
+**Activity Type:** {{ activity_type | default('N/A') }}  
+**Date:** {{ date | default('TBD') }}
+
+## Learning Objectives
+{% if objectives and objectives | length > 0 %}
+{% for objective in objectives %}
+- {{ objective | trim }}
+{% endfor %}
+{% else %}
+- No specific learning objectives defined
+{% endif %}
+
+## Lesson Content
+{{ content | default('No content available for this lesson.') }}
+
+{% if assignment_description and assignment_description | trim %}
+## Assignment
+{{ assignment_description }}
+{% endif %}
+
+{% if activities and activities | length > 0 %}
+## Activities
+{% for activity in activities %}
+### {{ activity.title | default('Activity') }}
+**Time:** {{ activity.duration | default(15) }} minutes  
+**Type:** {{ activity.type | default('Exercise') }}
+
+**Description:**  
+{{ activity.description | default('No description provided.') }}
+
+**Instructions:**  
+{{ activity.instructions | default('Follow the activity guidelines.') }}
+
+{% if activity.materials %}
+**Materials Needed:**  
+{{ activity.materials }}
+{% endif %}
+{% endfor %}
+{% endif %}
+
+{% if assignments and assignments | length > 0 %}
+## Assignments
+{% for assignment in assignments %}
+### {{ assignment.title | default('Assignment') }}
+**Due Date:** {{ assignment.due_date | default('TBD') }}  
+**Points:** {{ assignment.points | default('N/A') }}  
+**Type:** {{ assignment.type | default('Homework') }}
+
+**Instructions:**  
+{{ assignment.instructions | default('Complete the assignment as described.') }}
+
+{% if assignment.rubric %}
+**Grading Rubric:**  
+{{ assignment.rubric }}
+{% endif %}
+{% endfor %}
+{% endif %}
+
+{% if materials_needed and materials_needed | trim %}
+## Materials Needed
+{{ materials_needed }}
+{% endif %}
+
+{% if resources and resources | length > 0 %}
+## Additional Resources
+{% for resource in resources %}
+- [{{ resource.title | default('Resource') }}]({{ resource.url | default('#') }}){% if resource.description %} - {{ resource.description }}{% endif %}
+{% endfor %}
+{% endif %}
+
+---
+*Generated automatically by Course Automation System*
