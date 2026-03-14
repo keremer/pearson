@@ -6,22 +6,23 @@ Uses Click for CLI management
 import os
 import sys
 from pathlib import Path
-from typing import Optional, List
+from typing import List, Optional
 
 # Add project root to path for consistent imports
 PROJECT_ROOT = Path(__file__).parent.absolute()
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
     
-from pearson.cli.report_commands import report
-
 import click
 from flask import Flask
 
 # Now import from the pearson package
 from pearson import create_app, get_database_url
-from pearson.cli import CLICommands, DatabaseSetup, CourseInjector  # Fixed imports
+from pearson.cli import (CLICommands, CourseInjector,  # Fixed imports
+                         DatabaseSetup)
+from pearson.cli.report_commands import report
 
+app = create_app()
 
 @click.group(context_settings={'help_option_names': ['-h', '--help']})
 @click.version_option(version='1.0.0', prog_name='Pearson Course Manager')
@@ -36,10 +37,11 @@ def cli():
 @click.option('--debug/--no-debug', default=True, help='Enable debug mode')
 def web(host: str, port: int, debug: bool):
     """Start the web interface"""
-    app = create_app({
-        'DEBUG': debug,
-        'TESTING': debug,
-    })
+    # app = create_app({
+    #     'DEBUG': debug,
+    #     'TESTING': debug,
+    # })
+    """CLI entry point for manual runs."""
     
     click.echo(f"🌐 Starting Pearson Web Interface...")
     click.echo(f"   URL: http://{host}:{port}")
@@ -252,9 +254,11 @@ def check(db_name: str):
 def inspect(model_name: str, count: int):
     """Inspect database models and their structure"""
     try:
+        from sqlalchemy import create_engine
+        from sqlalchemy import inspect as sa_inspect
+
         from pearson.models import Base
-        from sqlalchemy import inspect as sa_inspect, create_engine
-        
+
         # Create a database engine
         engine = create_engine(get_database_url())
         

@@ -8,7 +8,7 @@ __email__ = 'ercoskunkerem@gmail.com'
 
 import os
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from flask import Flask
 
@@ -19,6 +19,10 @@ __all__ = [
     '__version__', '__author__', '__email__'
 ]
 
+class PearsonApp(Flask):
+    """Custom Flask subclass to provide type hints for app attributes."""
+    interop_manager: 'InteropManager'
+
 # Export commonly used paths
 PACKAGE_ROOT = Path(__file__).parent.absolute()
 PROJECT_ROOT = PACKAGE_ROOT.parent.absolute()
@@ -26,6 +30,8 @@ DATA_DIR = PROJECT_ROOT / "data"
 CONFIG_DIR = PROJECT_ROOT / "config"
 TESTS_DIR = PROJECT_ROOT / "tests"
 
+if TYPE_CHECKING:
+    from pearson.interop.manager import InteropManager
 
 def get_data_dir() -> Path:
     """Get the data directory path at project root."""
@@ -52,7 +58,7 @@ def get_database_url(db_name: str = 'courses.db') -> str:
     return f'sqlite:///{db_path.as_posix()}'
 
 
-def create_app(config: Optional[Dict[str, Any]] = None) -> Flask:
+def create_app(config: Optional[Dict[str, Any]] = None) -> PearsonApp:
     """
     Create and configure the Flask application.
     
@@ -65,10 +71,13 @@ def create_app(config: Optional[Dict[str, Any]] = None) -> Flask:
     project_root = package_root.parent.absolute()
 
     # Create Flask app
-    app = Flask(__name__, 
+    app = PearsonApp(__name__, 
                 instance_relative_config=True,
                 static_folder=str(project_root / 'static'),
                 static_url_path='/static')
+    
+    from pearson.interop.manager import create_interop_manager
+    app.interop_manager = create_interop_manager()
     
     # Default configuration
     app.config.from_mapping(
@@ -95,7 +104,7 @@ def create_app(config: Optional[Dict[str, Any]] = None) -> Flask:
     
     # Initialize database setup in app context
     _db_initialized = False
-    
+        
     @app.before_request
     def initialize_database():
         """Initialize database on first request."""
