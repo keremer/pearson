@@ -5,6 +5,7 @@ from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileRequired, FileAllowed
 from wtforms import StringField, TextAreaField, IntegerField, SelectField, SubmitField
 from wtforms.validators import DataRequired, Email, Length, Optional
+from markupsafe import Markup
 
 class CourseForm(FlaskForm):
     title = StringField('Course Title', validators=[DataRequired(), Length(max=200)])

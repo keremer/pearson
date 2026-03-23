@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from flask import Flask
+from markupsafe import Markup
 
 # Package metadata
 __all__ = [

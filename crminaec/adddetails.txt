@@ -1,0 +1,454 @@
+[[SECTION_BREAK]]
+xcode: A07
+content_tr:
+### İŞ TANIMI
+Proje ve genel şartnamede belirtilen tekniklerde, yüzeyi özel kalıplar ve kimyasallar yardımı ile dokulu/desenli hale getirilmiş sertleştiricili şap uygulamasıdır.
+### BİRİM FİYAT TARİFİ
+Betonun dökümü, desenli kalıpların basılması, yüzey sertleştirici ve kür malzemeleri ile her türlü işçilik ve zayiat dahildir.
+content_en:
+### DESCRIPTION OF WORK
+Application of surface-hardened screed with patterned or textured finishes using specialized molds and chemical additives.
+### UNIT PRICE INCLUDES
+Concrete casting, pattern stamping, surface hardeners, curing agents, and all specialized labor and wastage.
+
+[[SECTION_BREAK]]
+xcode: B03
+content_tr:
+### İŞ TANIMI
+Mimari detaylara uygun olarak cephelerde kullanılan prefabrik süsleme ve tamamlayıcı elemanların temini ve montajıdır.
+### BİRİM FİYAT TARİFİ
+Prekast elemanların üretimi, montaj aksesuarları, sızdırmazlık elemanları ve iskele kurulumu dahildir.
+content_en:
+### DESCRIPTION OF WORK
+Procurement and installation of precast architectural facade ornaments and supplementary decorative elements.
+### UNIT PRICE INCLUDES
+Production of precast units, mounting accessories, sealing components, and required scaffolding.
+
+[[SECTION_BREAK]]
+xcode: B05
+content_tr:
+### İŞ TANIMI
+Teras ve balkon kenarlarında projesine uygun prefabrik korkuluk ve küpeşte elemanlarının montajı işidir.
+### BİRİM FİYAT TARİFİ
+Korkuluk üniteleri, ankrajlar, derz dolguları ve montaj sonrası koruma tedbirleri dahildir.
+content_en:
+### DESCRIPTION OF WORK
+Procurement and installation of precast architectural railings and handrails for terraces and balconies.
+### UNIT PRICE INCLUDES
+Precast units, structural anchors, grout materials, and post-installation protection.
+
+[[SECTION_BREAK]]
+xcode: C03
+content_tr:
+### İŞ TANIMI
+15 cm kalınlıkta gazbeton bloklarla (Ytong vb.) iç bölme duvarı örülmesi işidir.
+### BİRİM FİYAT TARİFİ
+15 cm gazbeton bloklar, yapıştırıcı harç, hatıl betonları ve kolon birleşim aksesuarları dahildir.
+content_en:
+### DESCRIPTION OF WORK
+Constructing internal partition walls using 15 cm factory-made lightweight autoclaved aerated concrete (AAC) blocks.
+### UNIT PRICE INCLUDES
+15 cm AAC blocks, adhesive mortar, reinforcing lintels/beams, and attachment accessories.
+
+[[SECTION_BREAK]]
+xcode: E01
+content_tr:
+### İŞ TANIMI
+Asma tavan bitişlerinde galvanizli veya boyalı çelik profillerden çevre kasnağı oluşturulması işidir.
+### BİRİM FİYAT TARİFİ
+Çelik profiller, kaynak, temizlik, toz boya uygulaması ve montaj elemanları dahildir.
+content_en:
+### DESCRIPTION OF WORK
+Manufacturing steel joists/trims at suspended ceiling edges from galvanized or powder-coated steel profiles.
+### UNIT PRICE INCLUDES
+Steel profiles, welding, finishing, powder coating, and all mechanical/chemical assembly elements.
+
+[[SECTION_BREAK]]
+xcode: E04
+content_tr:
+### İŞ TANIMI
+Galvanizli perfore metal mesh ve taşıyıcı lamalarla kedi yolu platformu oluşturulması işidir.
+### BİRİM FİYAT TARİFİ
+Çelik malzeme, 80cm yüksekliğinde korkuluklar, boru küpeşteler ve mevcut strüktüre montaj dahildir.
+content_en:
+### DESCRIPTION OF WORK
+Procurement and manufacture of catwalk platforms composed of 33x33mm perforated metal mesh.
+### UNIT PRICE INCLUDES
+Galvanized steel components, 80cm high balustrades, pipe handrails, and structural anchors to the main frame.
+
+[[SECTION_BREAK]]
+xcode: H02
+content_tr:
+### İŞ TANIMI
+Su depolarının iç yüzeylerinde çimento esaslı esnek sürme izolasyon yapılması işidir.
+### BİRİM FİYAT TARİFİ
+Çift bileşenli izolasyon malzemesi (Sikatop 107 vb.), astar, fileli güçlendirme ve sızdırmazlık testleri dahildir.
+content_en:
+### DESCRIPTION OF WORK
+Application of cement-based polymer-modified flexible liquid waterproofing for water cisterns.
+### UNIT PRICE INCLUDES
+Two-component waterproofing material, primer coats, corner reinforcing tapes, and mandatory water-tightness testing.
+
+[[SECTION_BREAK]]
+xcode: H04
+content_tr:
+### İŞ TANIMI
+Parapet üstlerine prekast harpuşta elemanlarının detaya uygun şekilde montajı işidir.
+### BİRİM FİYAT TARİFİ
+Prekast harpuşta elemanları, derz dolguları, harç ve montaj işçiliği dahildir.
+content_en:
+### DESCRIPTION OF WORK
+Application of precast coping elements on top of parapets according to architectural details.
+### UNIT PRICE INCLUDES
+Precast units, 400-dose cement grout for joints, and all specialized labor and materials.
+
+[[SECTION_BREAK]]
+xcode: J01
+content_tr:
+### İŞ TANIMI
+Çatılarda 24V pistonlu motor mekanizmalı duman tahliye kapaklarının yapılması işidir.
+### BİRİM FİYAT TARİFİ
+Kapak gövdesi, hidrolik açma sistemi, rüzgar önleyici levhalar ve elektrik bağlantıları dahildir.
+content_en:
+### DESCRIPTION OF WORK
+Installation of smoke rectifier covers with integrated 24V piston engine opening mechanisms.
+### UNIT PRICE INCLUDES
+Cover frame, hydraulic/piston opening system, wind prevention plates, and electrical commissioning.
+
+[[SECTION_BREAK]]
+xcode: J03
+content_tr:
+### İŞ TANIMI
+Alüminyum profilli, ısı yalıtımlı pencere doğramalarının temini ve montajı işidir.
+### BİRİM FİYAT TARİFİ
+Alüminyum profiller, ısıcam (temperli/reflekte), fitil, ispanyolet setleri ve ankrajlar dahildir.
+content_en:
+### DESCRIPTION OF WORK
+Procurement and installation of aluminum-framed windows per project schedules and facade drawings.
+### UNIT PRICE INCLUDES
+Thermal-break aluminum profiles, IGU (tempered/reflective glass), gaskets, hardware sets, and 3D adjustable anchors.
+
+[[SECTION_BREAK]]
+xcode: S02
+content_tr:
+### İŞ TANIMI
+60x60cm taşyünü panellerle modüler asma tavan yapılması işidir.
+### BİRİM FİYAT TARİFİ
+Toz boyalı alüminyum T-profiller, askı takımları, taşyünü levhalar ve kenar profilleri dahildir.
+content_en:
+### DESCRIPTION OF WORK
+Procurement and installation of 60x60cm mineral wool acoustic suspended ceilings.
+### UNIT PRICE INCLUDES
+Powder-coated aluminum grid system, adjustable hangers, 12-15mm rock wool plates, and edge trims.
+
+[[SECTION_BREAK]]
+xcode: S11
+content_tr:
+### İŞ TANIMI
+Islak hacimlerde PVC esaslı modüler bebek alt değiştirme ünitesi montajıdır.
+### BİRİM FİYAT TARİFİ
+PVC ünite, montaj dübelleri, emniyet kayışları ve montaj işçiliği dahildir.
+content_en:
+### DESCRIPTION OF WORK
+Provision and installation of modular PVC-based baby changing stations in public wet areas.
+### UNIT PRICE INCLUDES
+PVC station unit, specialized wall anchors, safety straps, and mechanical installation labor.
+
+[[SECTION_BREAK]]
+xcode: S33
+content_tr:
+### İŞ TANIMI
+Merdiven kenarlarında boru profilden basamağa montajlı korkuluk ve küpeşte yapılmasıdır.
+### BİRİM FİYAT TARİFİ
+Galvanizli boru profiller, kaynak, temizlik, toz boya ve montaj elemanları dahildir.
+content_en:
+### DESCRIPTION OF WORK
+Construction of steel profile balustrades and railings for internal and external staircases.
+### UNIT PRICE INCLUDES
+Galvanized pipe profiles, welding, finishing, electrostatic powder coating, and structural base attachments.
+
+[[SECTION_BREAK]]
+xcode: R05
+content_tr:
+### İŞ TANIMI
+[cite_start]Otopark kolonlarının uluslararası standartlara uygun renk ve görsellik özelliklerinde, kondensasyona dayanıklı boyalarla zebra desenli işaretlenmesi işidir[cite: 171].
+### BİRİM FİYAT TARİFİ
+[cite_start]Yüzeylerin zımpara ile düzeltilmesi, akrilik esaslı astar uygulaması ve en az iki kat yarı-mat akrilik emülsiyon boya ile harf/numaralandırma yapılması dahildir[cite: 171].
+content_en:
+### DESCRIPTION OF WORK
+[cite_start]Zebra striping of columns in parking lots according to international standards using condensation-resistant paints[cite: 171].
+### UNIT PRICE INCLUDES
+[cite_start]Surface sanding, acrylic-based priming, and at least two finish coats of semi-gloss acrylic emulsion paint for stripes and numbering[cite: 171].
+
+[[SECTION_BREAK]]
+xcode: S01
+content_tr:
+### İŞ TANIMI
+[cite_start]Giriş kapılarında çarpmalara karşı elektrostatik toz boyalı siyah çelik borudan bariyer koruması yapılması işidir[cite: 126].
+### BİRİM FİYAT TARİFİ
+[cite_start]Çelik boru büküm ve kaynak işleri, zemine galvanizli somunlar ile ankraj, toz boya ve montaj elemanları dahildir[cite: 126].
+content_en:
+### DESCRIPTION OF WORK
+[cite_start]Manufacturing steel tube profile bumpers for entrance hall protection using powder-coated black steel[cite: 126].
+### UNIT PRICE INCLUDES
+[cite_start]Steel tube bending, welding, floor anchoring with galvanized nuts/bolts, powder coating, and all mechanical assembly labor[cite: 126].
+
+[[SECTION_BREAK]]
+xcode: S03
+content_tr:
+### İŞ TANIMI
+[cite_start]Tuvaletlerde 3cm kalınlığında doğal taş (granit/mermer) lavabo tezgahı yapılması işidir[cite: 183].
+### BİRİM FİYAT TARİFİ
+[cite_start]Doğal taş temini, lavabo yerinin açılması, rodaj, polisaj, taşıyıcı çelik konstrüksiyon ve nem geçirmez plywood levha montajı dahildir[cite: 183].
+content_en:
+### DESCRIPTION OF WORK
+[cite_start]Procurement and installation of Hilton-type natural stone (granite) lavatory countertops of 3cm thickness[cite: 183].
+### UNIT PRICE INCLUDES
+[cite_start]Natural stone material, boring for sinks, grinding, polishing, structural steel support frame, and moisture-proof plywood backing[cite: 183].
+
+[[SECTION_BREAK]]
+xcode: S13
+content_tr:
+### İŞ TANIMI
+[cite_start]Personel soyunma odaları için raflı ve askılı dolapların temini ve montajıdır[cite: 173].
+### BİRİM FİYAT TARİFİ
+[cite_start]Onaylı örneğe uygun tip ve boyutta dolap temini, yerinde montaj ve nakliye giderleri dahildir[cite: 173].
+content_en:
+### DESCRIPTION OF WORK
+[cite_start]Procurement and installation of personnel lockers with shelving and hanging units[cite: 173].
+### UNIT PRICE INCLUDES
+[cite_start]Procurement of lockers per approved samples, site assembly, on-site transport, and post-installation protection[cite: 173].
+
+[[SECTION_BREAK]]
+xcode: T01
+content_tr:
+### İŞ TANIMI
+[cite_start]Islak hacimlerde en az 4mm kalınlığında flotal cam aynaların temini ve montajıdır[cite: 149].
+### BİRİM FİYAT TARİFİ
+[cite_start]Ayna temini, mekanik ve kimyasal montaj elemanları (vida, dübel, flanş) ve montaj işçiliği dahildir[cite: 149].
+content_en:
+### DESCRIPTION OF WORK
+[cite_start]Provision and installation of flat flotal glass mirrors (minimum 4mm thick) in toilet areas[cite: 149].
+### UNIT PRICE INCLUDES
+[cite_start]Mirror material, mechanical and chemical assembly elements (screws/plugs/flanges), and all related labor[cite: 149].
+
+[[SECTION_BREAK]]
+xcode: X03
+content_tr:
+### İŞ TANIMI
+[cite_start]Temel altında projesine uygun ocak taşı veya kaza taşı ile blokaj yapılması işidir[cite: 190].
+### BİRİM FİYAT TARİFİ
+[cite_start]Blokaj tabanının düzenlenmesi, taş dolgunun serilmesi, tokmaklanması ve her türlü işçilik/zayiat dahildir[cite: 190].
+content_en:
+### DESCRIPTION OF WORK
+[cite_start]Sub-base course with rubble stone or granular compactable fill under foundations[cite: 190].
+### UNIT PRICE INCLUDES
+[cite_start]Base preparation, stone placement per project slopes, manual/mechanical ramming, and all labor and materials[cite: 190].
+
+[[SECTION_BREAK]]
+xcode: Z03
+content_tr:
+### İŞ TANIMI
+Proje bitiminde şantiyenin kaldırılması ve sahanın temizlenerek iade edilmesi işidir.
+### BİRİM FİYAT TARİFİ
+Geçici tesislerin sökümü, atıkların uzaklaştırılması ve sahanın proje öncesi durumuna getirilmesi dahildir.
+content_en:
+### DESCRIPTION OF WORK
+Project closeout and demobilization of site facilities at the conclusion of construction.
+### UNIT PRICE INCLUDES
+Dismantling of temporary offices, removal of debris, and restoration of the site to its original condition.
+
+[[SECTION_BREAK]]
+xcode: H01
+content_tr:
+### İŞ TANIMI
+Temel ve perde duvarlarda su sızıntılarını önlemek amacıyla projesine uygun bitümlü membran veya sürme esaslı yalıtım yapılması işidir.
+### BİRİM FİYAT TARİFİ
+Yüzey hazırlığı, astar uygulaması, yalıtım malzemesi (membran/sürme), ek yerlerinin sızdırmazlığı ve koruma katmanı dahildir.
+content_en:
+### DESCRIPTION OF WORK
+Application of waterproofing for foundations and retaining walls to prevent water ingress as per project drawings.
+### UNIT PRICE INCLUDES
+Surface preparation, priming, waterproofing material application, sealing of joints, and protective layers.
+
+[[SECTION_BREAK]]
+xcode: H03
+content_tr:
+### İŞ TANIMI
+Düzgün dökülmüş eğim betonu üzerine 4+4mm polyester keçeli bitümlü yalıtım örtüsü uygulanması işidir.
+### BİRİM FİYAT TARİFİ
+TS 113 astar sürülmesi, iki kat 4mm membran serilmesi, 150mm bindirme payları, sıcak hava kaynağı ve düşey yüzeylerde 30cm kıvrılma dahildir.
+content_en:
+### DESCRIPTION OF WORK
+Application of two layers of bituminous waterproofing membrane reinforced with polyester over sloping screed.
+### UNIT PRICE INCLUDES
+TS 113 undercoating, two 4mm membrane layers, 150mm overlaps, hot air welding, and 30cm vertical bending at parapets.
+
+[[SECTION_BREAK]]
+xcode: H05
+content_tr:
+### İŞ TANIMI
+Alüminyum levhalardan, projesine uygun alt konstrüksiyonlu elektrostatik toz boyalı metal harpuşta yapılması işidir.
+### BİRİM FİYAT TARİFİ
+Alüminyum levha temini, toz boya, galvanizli kutu profiller, sızdırmazlık fitilleri, ankrajlar ve montaj işçiliği dahildir.
+content_en:
+### DESCRIPTION OF WORK
+Application of metal coping using aluminum plates with integrated substructure and powder coating.
+### UNIT PRICE INCLUDES
+Aluminum plates, electrostatic powder coating, galvanized support profiles, sealing gaskets, anchors, and assembly labor.
+
+[[SECTION_BREAK]]
+xcode: H08
+content_tr:
+### İŞ TANIMI
+Polipropilen drenaj kanallarının üzerine pik döküm ızgaraların temini ve döşenmesi işidir.
+### BİRİM FİYAT TARİFİ
+Polipropilen kanaletler, pik döküm ızgaralar, sızdırmazlık elemanları ve zemine sabitleme ankrajları dahildir.
+content_en:
+### DESCRIPTION OF WORK
+Procurement and installation of pig iron grilles over polypropylene drainage ducts.
+### UNIT PRICE INCLUDES
+Polypropylene ducts, pig iron grilles, sealing components, and structural anchoring to the ground.
+
+[[SECTION_BREAK]]
+xcode: H10
+content_tr:
+### İŞ TANIMI
+Döşemelerde alüminyum eloksal veya toz boyalı, su geçirimsiz dilatasyon profili uygulamasıdır.
+### BİRİM FİYAT TARİFİ
+Dilatasyon profili, epoksi harcı, EPDM membran, fitil ve elastik dolgu macunu ile 50cm ara ile ankraj dahildir.
+content_en:
+### DESCRIPTION OF WORK
+Construction of waterproof expansion joint profiles for floor surfaces as per architectural drawings.
+### UNIT PRICE INCLUDES
+Expansion joint profiles, epoxy mortar, EPDM membrane, gaskets, elastic stuffing, and anchors at 50cm intervals.
+
+[[SECTION_BREAK]]
+xcode: I02
+content_tr:
+### İŞ TANIMI
+Onaylı örneğe uygun shingle çatı kaplama malzemesinin temini ve çatı yüzeylerine uygulanmasıdır.
+### BİRİM FİYAT TARİFİ
+Shingle levhalar, su yalıtım membranı, köşe kapama profilleri, alın kapamaları ve montaj elemanları dahildir.
+content_en:
+### DESCRIPTION OF WORK
+Procurement and installation of Shingle roofing sheets over prepared roof surfaces per approved samples.
+### UNIT PRICE INCLUDES
+Shingle sheets, waterproofing membrane underlay, corner profiles, fascia covers, and all mechanical fasteners.
+
+[[SECTION_BREAK]]
+xcode: K601
+content_tr:
+### İŞ TANIMI
+Sac kasalı, 60 dakika yangın dayanımlı ve sertifikalı elektrostatik boyalı metal kapı imalatı ve montajıdır.
+### BİRİM FİYAT TARİFİ
+Kapı kasası ve kanadı, panik bar, kilit/kol seti, hidrolik kapatıcı ve yangına dayanıklı camlar (varsa) dahildir.
+content_en:
+### DESCRIPTION OF WORK
+Manufacturing and installation of 60-minute fire-rated metal doors with integrated frames and powder coating.
+### UNIT PRICE INCLUDES
+Door frame and leaf, panic bars, locksets/handles, hydraulic closers, and fire-resistant glazing (if specified).
+
+[[SECTION_BREAK]]
+xcode: KL06
+content_tr:
+### İŞ TANIMI
+MDF üzerine CPL laminat preslenmiş Amerikan panel iç mekan kapı temini ve montajı işidir.
+### BİRİM FİYAT TARİFİ
+Kapı kanadı (kağıt petek dolgulu), kasa, pervaz, menteşe, kilit ve kol seti ile montaj işçiliği dahildir.
+content_en:
+### DESCRIPTION OF WORK
+Procurement and installation of internal American Panel Doors with CPL laminate finish over MDF.
+### UNIT PRICE INCLUDES
+Door leaf (honeycomb core), casing, borders, hinges, locksets, and specialized installation labor.
+
+[[SECTION_BREAK]]
+xcode: M03
+content_tr:
+### İŞ TANIMI
+Mevcut konstrüksiyon üzerine neme dayanıklı yeşil alçı plakalar ile düşey bölme/kaplama yapılmasıdır.
+### BİRİM FİYAT TARİFİ
+Alçıpan levha, galvaniz çelik U-profiller, dübel/vida seti ve birleşim yerlerinin macunlanması dahildir.
+content_en:
+### DESCRIPTION OF WORK
+Vertical cladding using moisture-resistant green gypsum wall boards over steel or concrete structures.
+### UNIT PRICE INCLUDES
+Gypsum boards, galvanized steel U-channels, mechanical fasteners, and joint compounding.
+
+[[SECTION_BREAK]]
+xcode: S06
+content_tr:
+### İŞ TANIMI
+Servis koridorlarında araç çarpmalarına karşı esnek malzemeden duvar ve köşe koruyucu bant yapılmasıdır.
+### BİRİM FİYAT TARİFİ
+Çarpma bandı malzemesi, montaj dübelleri, bitiş aksesuarları ve işçilik dahildir.
+content_en:
+### DESCRIPTION OF WORK
+Procurement and installation of resilient wall and corner protective guards in service areas.
+### UNIT PRICE INCLUDES
+Bumper guard material, mounting anchors, finishing accessories, and installation labor.
+
+[[SECTION_BREAK]]
+xcode: S13
+content_tr:
+### İŞ TANIMI
+Personel soyunma odaları için tiplere uygun raflı ve askılı dolapların temini ve montajıdır.
+### BİRİM FİYAT TARİFİ
+Dolap üniteleri, kilit sistemleri, raflar, askı aparatları ve nakliye/montaj giderleri dahildir.
+content_en:
+### DESCRIPTION OF WORK
+Procurement and installation of lockers with shelving and hanging units per approved samples.
+### UNIT PRICE INCLUDES
+Locker units, integrated locking systems, internal shelving, hangers, and site assembly labor.
+
+[[SECTION_BREAK]]
+xcode: S17
+content_tr:
+### İŞ TANIMI
+Vitrifiye tezgah altı lavabonun projesine uygun şekilde temini ve montajı işidir.
+### BİRİM FİYAT TARİFİ
+Lavabo ünitesi, atıksu sifon bağlantısı, sızdırmazlık silikonu ve montaj ankrajları dahildir.
+content_en:
+### DESCRIPTION OF WORK
+Procurement and installation of under-counter vitrified lavatories in wet areas.
+### UNIT PRICE INCLUDES
+Vitrified sink unit, wastewater siphon connection, sealing silicone, and structural mounting anchors.
+
+[[SECTION_BREAK]]
+xcode: T03
+content_tr:
+### İŞ TANIMI
+16m yüksekliğinde elektrostatik boyalı galvaniz çelik borudan bayrak direği imalatı ve montajıdır.
+### BİRİM FİYAT TARİFİ
+Değişik çaplı borular, kaynak işleri, hareketli flanş, makara, ip ve zemin ankrajı dahildir.
+content_en:
+### DESCRIPTION OF WORK
+Procurement and manufacture of 16m high electrostatically painted galvanized steel flagpoles.
+### UNIT PRICE INCLUDES
+Tapered steel pipes, welding, moving flanges, pulleys, ropes, and ground anchoring systems.
+
+[[SECTION_BREAK]]
+xcode: X02
+content_tr:
+### İŞ TANIMI
+Kazılan yerlerin projesine uygun toprak veya dolgu malzemesi ile doldurulması işidir.
+### BİRİM FİYAT TARİFİ
+Toprağın serilmesi, tabakalar halinde sulanarak mekanik ekipmanla sıkıştırılması ve tesviyesi dahildir.
+content_en:
+### DESCRIPTION OF WORK
+Backfilling of excavated areas using suitable soil or granular material.
+### UNIT PRICE INCLUDES
+Laying of soil in layers, wetting, mechanical compaction, and final leveling.
+
+[[SECTION_BREAK]]
+xcode: Z03
+content_tr:
+### İŞ TANIMI
+İnşaat bitiminde şantiyenin tasfiyesi ve sahanın temizlenerek idareye teslim edilmesi işidir.
+### BİRİM FİYAT TARİFİ
+Geçici yapıların sökülmesi, molozların nakli ve sahanın eski haline getirilmesi dahildir.
+content_en:
+### DESCRIPTION OF WORK
+Demobilization of site facilities and final cleanup at the conclusion of construction.
+### UNIT PRICE INCLUDES
+Dismantling of temporary structures, debris removal, and restoration of the site area.

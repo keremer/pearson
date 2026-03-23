@@ -1,0 +1,384 @@
+[[SECTION_BREAK]]
+xcode: A01
+content_tr:
+### İŞ TANIMI
+[cite_start]Proje ve genel şartnamede belirtilen özellikler ile ilgili uluslararası üretim ve inşaat tekniklerine uygun tünel kalıp malzemesinin temini ve projesine uygun montaj ve söküm işlerini kapsar[cite: 96].
+
+### BİRİM FİYAT TARİFİ
+[cite_start]Tünel kalıp panoları, hazırlanan düzgün montaj platformu üzerinde tüneller haline getirilmesi[cite: 96]. [cite_start]Demir donatıların, rezervasyonların ve gerekli elektrik tesisatın tünel kalıba yerleştirilmesi[cite: 96]. [cite_start]Kalıbın kot ve şakül ayarları, priz için ısıtılması, sökülmesi ve özel kalıp yağı ile yağlanması dahildir[cite: 96].
+
+content_en:
+### DESCRIPTION OF WORK
+[cite_start]Procurement and manufacturing of the tunnel formwork for structural elements according to international construction techniques and approved project drawings[cite: 96].
+
+### UNIT PRICE INCLUDES
+[cite_start]Forming tunnel units on platforms, positioning reinforcing steel, electrical conduits, and mechanical reservations[cite: 96]. [cite_start]Includes leveling, thermal curing assistance, dismantling, cleaning, and oiling for reuse[cite: 96].
+
+[[SECTION_BREAK]]
+xcode: A02
+content_tr:
+### İŞ TANIMI
+[cite_start]Temel, kolon, kiriş ve döşemelerde şantiyede ebatlandırma, bükme, montaj gibi işçilik kalemlerini içeren demir donatı hazırlama işidir[cite: 96].
+
+### BİRİM FİYAT TARİFİ
+[cite_start]Çelik donatı malzemesi, kesim, büküm ve montajı, pas payları, bunlar ile ilgili zayiatlar ve her türlü işçilik[cite: 96]. [cite_start]Yükleme, boşaltma, şantiye içi yatay ve düşey taşımalar ile imalat sonrası koruma tedbirleri dahildir[cite: 96].
+
+content_en:
+### DESCRIPTION OF WORK
+[cite_start]Forming, assembling and placing reinforcing steel involving sizing, bending, and connecting bars in foundations, slabs, columns, and beams[cite: 96].
+
+### UNIT PRICE INCLUDES
+[cite_start]Steel wire and bar material, manufacturing (bending/assembly), spacer blocks, losses, and all labor[cite: 96]. [cite_start]Includes horizontal and vertical carriage at site and post-manufacture protection[cite: 96].
+
+[[SECTION_BREAK]]
+xcode: A03
+content_tr:
+### İŞ TANIMI
+[cite_start]Betonarme perde duvarlarda ve döşemelerde TS 4559’a uygun, kaynak yöntemi ile imal edilmiş olan hasır çelik kullanılan donatı işlerini kapsar[cite: 96].
+
+### BİRİM FİYAT TARİFİ
+[cite_start]Çelik donatı malzemesi, kesim, büküm ve montajı, pas payları, zayiatlar, işçilik ve ekipman giderleri dahildir[cite: 96].
+
+content_en:
+### DESCRIPTION OF WORK
+[cite_start]Forming, assembling and placing welded wire reinforcing steel mesh compliant to TS 4559 in shear walls and slabs[cite: 96].
+
+### UNIT PRICE INCLUDES
+[cite_start]Steel welded wire fabric material, bending, placement, spacers, losses, and all related services/supervision[cite: 96].
+
+[[SECTION_BREAK]]
+xcode: A04
+content_tr:
+### İŞ TANIMI
+[cite_start]Proje ve genel şartnamede belirtilen özelliklere ve TS 1247’ye uygun olarak grobeton dökülmesi işidir[cite: 97].
+
+### BİRİM FİYAT TARİFİ
+[cite_start]BS14 kalitesinde 250 dozlu hazır beton, sıkıştırılmış toprak veya blokaj üzerine 4m'yi aşmayan anolar halinde dökülmesi[cite: 97]. [cite_start]Sıkıştırılması, eğim verilmesi, kürlenmesi ve her türlü malzeme/zayiat dahildir[cite: 97].
+
+content_en:
+### DESCRIPTION OF WORK
+[cite_start]Production of light-aggregate rubble concrete in compliance with international construction techniques and TS 1247[cite: 97].
+
+### UNIT PRICE INCLUDES
+[cite_start]Casting BS 14 quality concrete (250 dose) over compressed soil or gravel in panels not exceeding 4m[cite: 97]. [cite_start]Includes chemical enhancement for adherence, compression, sloping, and wetting[cite: 97].
+
+[[SECTION_BREAK]]
+xcode: A05
+content_tr:
+### İŞ TANIMI
+[cite_start]En az BS35 dayanımındaki hazır betonun TS 500’e uygun şekilde yerinde dökülmesi sureti ile kolon, kiriş ve döşemelerin imalatı işidir[cite: 97].
+
+### BİRİM FİYAT TARİFİ
+[cite_start]Hazır beton harcının satın alınması, transmiksere yüklenmesi, pompa ile basılması, vibratör ile sıkıştırılması ve numune alınarak deneylerin yapılması dahildir[cite: 97].
+
+content_en:
+### DESCRIPTION OF WORK
+[cite_start]Erecting reinforced concrete frame structure with BS 35 (min.) ready mixed concrete compliant to TS 11222 and TS 500[cite: 97].
+
+### UNIT PRICE INCLUDES
+[cite_start]Concrete procurement, transmixer loading, pumping, compacting with vibration, and collection of required samples for testing[cite: 97].
+
+[[SECTION_BREAK]]
+xcode: A06
+content_tr:
+### İŞ TANIMI
+[cite_start]Projede belirtilen kalınlıklarda çimento-kum karışımlı, yüzey sertleştiricili şap yapılması işidir[cite: 98].
+
+### BİRİM FİYAT TARİFİ
+[cite_start]Kum, su, çimento ve agrega karışımı, mantar esaslı titreşim yalıtım malzemesi, kuvars agrega ve reçine esaslı hazır yüzey sertleştiricilerin uygulanması dahildir[cite: 98].
+
+content_en:
+### DESCRIPTION OF WORK
+[cite_start]Producing cement-sand mixture screed with surface hardener with 6 mm thick fungus-based materials[cite: 98].
+
+### UNIT PRICE INCLUDES
+[cite_start]Water, sand, and cement mixtures, fungus-based vibration isolation, quartz aggregate, and sodium-silicate based surface hardeners[cite: 98].
+
+[[SECTION_BREAK]]
+xcode: B01
+content_tr:
+### İŞ TANIMI
+[cite_start]Uluslararası standartlara uygun olarak prefabrik merdivenlerin temini ve/veya imalatı ile montajının yapılması işidir[cite: 99].
+
+### BİRİM FİYAT TARİFİ
+[cite_start]Prekast merdiven ünitelerinin üretimi, temini ve montajı, birleşim yerlerinin 400 dozlu çimento harcı ile kapatılması ve tüm işçilikler dahildir[cite: 99].
+
+content_en:
+### DESCRIPTION OF WORK
+[cite_start]Procurement or production, and erection of precast stairs within regulated quality conditions[cite: 99].
+
+### UNIT PRICE INCLUDES
+[cite_start]Molding, precast stair units, accessories, grout materials (400 dose), and protection measures[cite: 99].
+
+[[SECTION_BREAK]]
+xcode: C01
+content_tr:
+### İŞ TANIMI
+[cite_start]9 cm. yatay delikli fabrika tuğlalarıyla iç bölme tuğla duvar yapılması işidir[cite: 117].
+
+### BİRİM FİYAT TARİFİ
+[cite_start]9 cm. tuğla malzemesi, harç, iskele, duvar taşıyıcılığını güçlendirici yatay ve düşey (hatıl, lento) elemanlar ile kolon/kiriş birleşimindeki çelik aksesuarlar dahildir[cite: 117].
+
+content_en:
+### DESCRIPTION OF WORK
+[cite_start]Unit masonry wall erection using manufactured 9cm hollow clay bricks[cite: 117].
+
+### UNIT PRICE INCLUDES
+[cite_start]Hollow brick material, mortar, scaffolding, horizontal/vertical reinforcing bars (lintels), and steel attachment materials for concrete interfaces[cite: 117].
+
+[[SECTION_BREAK]]
+xcode: C02
+content_tr:
+### İŞ TANIMI
+[cite_start]10 cm kalınlıkta gazbeton bloklarla (Ytong vb.) iç bölme duvarı örülmesi işidir[cite: 119].
+
+### BİRİM FİYAT TARİFİ
+[cite_start]Gazbeton blok malzeme, yapıştırıcı harç, kapı ve pencere lentoları, kolon/kiriş birleşimindeki çelik ankrajlar ve tüm montaj işçiliği dahildir[cite: 119].
+
+content_en:
+### DESCRIPTION OF WORK
+[cite_start]Constructing internal partition walls using 10 cm factory-made lightweight autoclaved aerated concrete (AAC) blocks[cite: 119].
+
+### UNIT PRICE INCLUDES
+[cite_start]AAC block material, adhesive mortar, reinforced lintels for openings, and steel attachment materials for concrete frame connections[cite: 119].
+
+[[SECTION_BREAK]]
+xcode: C04
+content_tr:
+### İŞ TANIMI
+[cite_start]20 cm kalınlıkta gazbeton bloklarla dış veya iç duvar örülmesi işidir[cite: 119].
+
+### BİRİM FİYAT TARİFİ
+[cite_start]Duvar tipine uygun 20 cm blok malzeme, yatay/düşey hatıllar, çelik barlar, lentolar ve mekanik/elektrik geçiş boşluklarının koordinasyonu dahildir[cite: 119].
+
+content_en:
+### DESCRIPTION OF WORK
+[cite_start]Constructing external or internal walls using 20 cm factory-made lightweight autoclaved aerated concrete (AAC) blocks[cite: 119].
+
+### UNIT PRICE INCLUDES
+[cite_start]20 cm block material, adhesive, reinforcing lintels, steel attachment accessories, and coordination for MEP crossings[cite: 119].
+
+[[SECTION_BREAK]]
+xcode: D01
+content_tr:
+### İŞ TANIMI
+3cm kalınlığında doğal taş malzeme (Afyon/Muğla Mermeri) ile projesine uygun döşeme kaplaması yapılması işidir.
+
+### BİRİM FİYAT TARİFİ
+Doğal taş malzeme, ebatlama, yapıştırıcı kimyasallar, derz dolgusu ve montaj işçiliği dahildir. İmalat sonrası koruma tedbirleri ve şantiye içi taşımalar birim fiyata dahildir.
+
+content_en:
+### DESCRIPTION OF WORK
+Natural stone flooring using 3cm thick sandwashed Afyon or Mugla Marble per architectural drawings.
+
+### UNIT PRICE INCLUDES
+Natural stone material, sizing, adhesives, joint filling, and assembly labor. Includes post-installation protection and on-site horizontal/vertical transport.
+
+[[SECTION_BREAK]]
+xcode: F01
+content_tr:
+### İŞ TANIMI
+Köprüler üzerinde suya ve güneş ışığına (UV) dayanıklı Iroko veya benzeri thermowood ahşap deck kaplaması yapılması işidir.
+
+### BİRİM FİYAT TARİFİ
+Ahşap malzemenin temini, ebatlanması, alt karkas, paslanmaz çelik bağlantı elemanları, koruyucu bezir yağı/vernik uygulaması ve montaj işçiliği dahildir.
+
+content_en:
+### DESCRIPTION OF WORK
+Outdoor wood floor decking made of impregnated timber (Iroko) resistant to water and UV radiation, specifically for pedestrian bridges.
+
+### UNIT PRICE INCLUDES
+Timber material, floor fixing systems (screws/anchors), sub-carcass, protective oil/varnish coatings, and specialized installation over steel structures.
+
+[[SECTION_BREAK]]
+xcode: H07
+content_tr:
+### İŞ TANIMI
+3mm kalınlığında alüminyum plakalar ile alt konstrüksiyonu dahil elektrostatik toz boyalı yağmur oluğu yapılması işidir.
+
+### BİRİM FİYAT TARİFİ
+Alüminyum levha, toz boya, galvanizli kutu profiller, sızdırmazlık fitil ve bantları, ankrajlar ve montaj elemanları dahildir.
+
+content_en:
+### DESCRIPTION OF WORK
+Application of electrostatic powder-coated metal gutters with 3mm aluminum plates, including necessary substructure.
+
+### UNIT PRICE INCLUDES
+Aluminum plates, powder coating, galvanized profiles, sealing accessories, anchors, and specialized mechanical/chemical assembly elements.
+
+[[SECTION_BREAK]]
+xcode: J02
+content_tr:
+### İŞ TANIMI
+Projesine ve DIN1055 standartlarına uygun, kedi yollarıyla birlikte giydirme cephe yapılması işidir.
+
+### BİRİM FİYAT TARİFİ
+Statik hesaplar, alüminyum profiller, ısıcam/spandral cam, ankrajlar, sızdırmazlık elemanları ve cephe arkası kedi yollarının (galvanizli ızgara) teşkili dahildir.
+
+content_en:
+### DESCRIPTION OF WORK
+Procurement and manufacture of curtain walls per architectural drawings and DIN1055 structural standards, including integrated maintenance catwalks.
+
+### UNIT PRICE INCLUDES
+Shop drawings, structural calculations, aluminum profiles, insulated glass units, anchors with 3D adjustment, and galvanized grated catwalk systems.
+
+[[SECTION_BREAK]]
+xcode: M01
+content_tr:
+### İŞ TANIMI
+İç mekan duvarlara makine ile alçı sıva ve saten boya yapılması işidir.
+
+### BİRİM FİYAT TARİFİ
+TS EN 13279-1 uyumlu alçı malzemesi, makine ile uygulama, yüzey zımparalama, köşe profilleri ve pürüzsüz yüzey elde edilene kadar yapılan işçilikler dahildir.
+
+content_en:
+### DESCRIPTION OF WORK
+Applying high-quality gypsum plaster on internal walls using a Tyrolean machine per project specifications.
+
+### UNIT PRICE INCLUDES
+TS EN 13279-1 compliant gypsum, machine application (min 3mm), surface smoothing/patching, corner profiles, and all labor for a satin finish.
+
+[[SECTION_BREAK]]
+xcode: N11
+content_tr:
+### İŞ TANIMI
+Ofislerde 60x60cm panelli, antistatik vinil kaplı "heavy duty" yükseltilmiş döşeme yapılması işidir.
+
+### BİRİM FİYAT TARİFİ
+Galvanize çelik ayak sistemi, 38mm yüksek yoğunluklu yonga levha paneller, antistatik vinil üst kaplama, yangın bariyerleri ve buat rezervasyonları dahildir.
+
+content_en:
+### DESCRIPTION OF WORK
+Snap-on Stringer Access Flooring with 60x60 cm panels for heavy-duty office environments.
+
+### UNIT PRICE INCLUDES
+Galvanized steel pedestal system, 38mm high-density core panels, 2mm antistatic vinyl finish, fire barriers, and MEP cutouts/junction box reservations.
+
+[[SECTION_BREAK]]
+xcode: S05
+content_tr:
+### İŞ TANIMI
+12 mm kalınlığında kompakt laminat malzemeden hazır sistem WC kabinleri montajı işidir.
+
+### BİRİM FİYAT TARİFİ
+Kompakt laminat levhalar, paslanmaz çelik bağlantı aksesuarları (kilit, menteşe, ayak), montaj elemanları ve koruma tedbirleri dahildir.
+
+content_en:
+### DESCRIPTION OF WORK
+Procurement and assembly of ready-system WC compartments made from 12mm thick massive compact laminate.
+
+### UNIT PRICE INCLUDES
+Compact laminate plates, assembly hardware (screws/plugs), system-specific accessories for panel joints, and post-installation protection.
+
+[[SECTION_BREAK]]
+xcode: S12
+content_tr:
+### İŞ TANIMI
+Engelli tuvaletlerinde onaylanmış örneklere uygun metal tutamak temini ve montajı işidir.
+
+### BİRİM FİYAT TARİFİ
+Krom veya toz boyalı metal tutamaklar, montaj aksesuarları (flanş, dübel), kimyasal dübeller ve ergonomik montaj işçiliği dahildir.
+
+content_en:
+### DESCRIPTION OF WORK
+Provision and installation of stainless steel or powder-coated grip-bars for disabled toilets per approved standards.
+
+### UNIT PRICE INCLUDES
+Metal holding bars, mounting accessories (flanges/bolts), chemical or mechanical anchors, and specialized installation labor.
+
+[[SECTION_BREAK]]
+xcode: X01
+content_tr:
+### İŞ TANIMI
+Yumuşak ve sert toprakta makine veya elle kazı yapılması işidir.
+
+### BİRİM FİYAT TARİFİ
+Kazı yapılması, çıkan toprağın saha içi nakli/istifi, fazla toprağın saha dışına dökümü, gerekirse iksa ve zemin suyunun giderilmesi dahildir.
+
+content_en:
+### DESCRIPTION OF WORK
+Manual or mechanical excavation in soft and hard soil per general specifications.
+
+### UNIT PRICE INCLUDES
+Excavation labor/machinery, on-site soil transport and stacking, disposal of extra soil off-site, shoring if required, and groundwater management.
+
+[[SECTION_BREAK]]
+xcode: X08
+content_tr:
+### İŞ TANIMI
+TS EN 752-2 standartlarına uygun bina çeperlerinde drenaj sistemi imalatıdır.
+
+### BİRİM FİYAT TARİFİ
+Kazı, drenaj borularının temini/döşenmesi, filtrasyon katmanları için uygun agrega temini, serilmesi ve sıkıştırılması işleri dahildir.
+
+content_en:
+### DESCRIPTION OF WORK
+Construction of building perimeter drainage systems compliant with TS EN 752-2 standards.
+
+### UNIT PRICE INCLUDES
+Excavation, drainage pipe procurement and placement, filtration layer aggregate supply, filling, and mechanical compaction.
+
+[[SECTION_BREAK]]
+xcode: S16
+content_tr:
+### İŞ TANIMI
+Islak hacimlerde vitrifiye alafranga klozet takımı temini ve montajını kapsar.
+
+### BİRİM FİYAT TARİFİ
+Onaylı klozet taşı, rezervuar, iç takım, kapak, atıksu sifon bağlantısı, sızdırmazlık elemanları ve montaj sonrası testler dahildir.
+
+content_en:
+### DESCRIPTION OF WORK
+Procurement and installation of residential vitrifying water closet sets in wet areas.
+
+### UNIT PRICE INCLUDES
+Vitrified closet unit, reservoir, internal fittings, seat cover, wastewater siphon connection, and performance testing.
+
+[[SECTION_BREAK]]
+xcode: T05
+content_tr:
+### İŞ TANIMI
+Giydirme cephe ve cam yüzeylerin temizliği için gerekli donanımın kurulumu işidir.
+
+### BİRİM FİYAT TARİFİ
+Düşey iç/dış yüzey temizlik donanımı, raylar, sepet mekanizması, montaj aksesuarları ve alt yüklenici karı dahildir.
+
+content_en:
+### DESCRIPTION OF WORK
+Procurement and installation of cleaning systems for curtain walls and large glass surfaces.
+
+### UNIT PRICE INCLUDES
+Vertical cleaning equipment, guide rails, gondola/basket systems, assembly accessories, and specialized installation labor.
+
+[[SECTION_BREAK]]
+xcode: X05
+content_tr:
+### İŞ TANIMI
+Yol ve otopark alanlarında projesine uygun 6cm kalınlığında asfalt dökülmesi işidir.
+
+### BİRİM FİYAT TARİFİ
+Asfalt malzemesi, yüzey temizliği, 155-160°C sıcaklıkta serme, 120°C-80°C arası silindirlenerek sıkıştırma ve laboratuvar giderleri dahildir.
+
+content_en:
+### DESCRIPTION OF WORK
+Application of single layer 6cm thick asphaltic concrete for roads and parking areas.
+
+### UNIT PRICE INCLUDES
+Asphalt material, surface preparation, hot-mix laying (155-160°C), rolling/compaction until 80°C, and laboratory testing expenses.
+
+[[SECTION_BREAK]]
+xcode: Z02
+content_tr:
+### İŞ TANIMI
+İnşaat sahasının kurulması ve geçici tesislerin mobilizasyonu işidir.
+
+### BİRİM FİYAT TARİFİ
+Şantiye binaları, geçici yollar, enerji ve su bağlantıları, iş güvenliği tabelaları ve mobilizasyon için gerekli tüm lojistik giderler dahildir.
+
+content_en:
+### DESCRIPTION OF WORK
+Setup of the construction site and mobilization of temporary facilities and equipment.
+
+### UNIT PRICE INCLUDES
+Site offices, temporary roads, utility connections (power/water), safety signage, and all logistics required for mobilization.
+

@@ -1,0 +1,1332 @@
+[[SECTION_BREAK]]
+xcode: A01
+title: Structural Tunnel Forming / Beton Tünel Kalıp İşleri
+tr_category: PER
+ifc_class: IfcWall
+uniclass_ss: Ss_15_10_28
+[cite_start]body_tr: Proje ve genel şartnamede belirtilen özellikler ile ilgili uluslararası üretim ve inşaat tekniklerine uygun tünel kalıp malzemesinin temini ve projesine uygun montaj ve söküm işlerini kapsar. [cite: 1]
+[cite_start]body_en: Procurement and manufacturing of the tunnel formwork for structural elements according to international construction techniques and approved project documentation. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: A02
+title: Reinforcing Steel / Çelik Donatı Demirleri
+tr_category: DON
+ifc_class: IfcReinforcingBar
+uniclass_pr: Pr_20_85_15
+[cite_start]body_tr: Temel, kolon, kiriş ve döşemelerde şantiyede ebatlandırma, bükme, montaj gibi işçilik kalemlerini içeren demir donatı hazırlama işidir. [cite: 1]
+[cite_start]body_en: Forming, assembling and placing reinforcing steel which requires specific labor such as, sizing, bending, supporting and connecting bars in foundations, slabs, columns and beams. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: A03
+title: Welded Wire Fabric Reinforcing / Çelik Hasır Donatı
+tr_category: DON
+ifc_class: IfcReinforcingMesh
+uniclass_pr: Pr_20_85_15
+[cite_start]body_tr: Betonarme perde duvarlarda, döşemelerde ve şantiyede üretilen prefabrik elemanlarda TS 4559’a uygun, kaynak yöntemi ile imal edilmiş olan hasır çelik kullanılan donatı işlerini kapsar. [cite: 1]
+[cite_start]body_en: Forming, assembling and placing welded wire reinforcing steel mesh compliant to TS 4559, in shear walls, slabs and precast concrete elements. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: A04
+title: Rubble Concrete (BS14) / Grobeton
+tr_category: TEM
+ifc_class: IfcFooting
+uniclass_pr: Pr_20_85_15
+[cite_start]body_tr: Proje ve genel şartnamede belirtilen özellikler ile ilgili uluslararası üretim ve inşaat tekniklerine, ve TS 1247’ye uygun olarak grobeton dökülmesi işidir. [cite: 1]
+[cite_start]body_en: The work of production of the light-aggregate rubble concrete according to the rules set out in general specifications and TS 1247. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: A05
+title: Ready Mixed Concrete (BS35) / Hazır Beton
+tr_category: KOL
+ifc_class: IfcColumn
+uniclass_pr: Pr_20_85_15
+[cite_start]body_tr: En az BS35 dayanımındaki TS 11222’ye uygun hazır betonun TS 500’e uygun şekilde yerinde dökülmesi sureti ile kolon kiriş ve döşemelerin imalatı işidir. [cite: 1]
+[cite_start]body_en: Erecting reinforced concrete frame structure with BS 35 (min.) ready mixed concrete compliant to TS 11222 and TS 500. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: A06
+title: Surface Hardened Screed / Yüzeyi Sertleştirilmiş Şap
+tr_category: DOS
+ifc_class: IfcSlab
+uniclass_pr: Pr_35_31_30
+[cite_start]body_tr: Proje ve genel şartnamede belirtilen tekniklerde çimento-kum karışımlı, yüzey sertleştiricili şap yapılması işidir. [cite: 1]
+[cite_start]body_en: Producing the cement-sand mixture screed with surface hardener with 6 mm thick materials according to specifications. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: A07
+title: Patterned Screed / Yüzeyi Dokulu Şap
+tr_category: DOS
+ifc_class: IfcSlab
+uniclass_pr: Pr_35_31_30
+[cite_start]body_tr: Yüzeyi özel kalıplar ile dokulu hale getirilmiş sertleştiricili şap uygulamasıdır. [cite: 1]
+[cite_start]body_en: Application of surface hardened screed with patterned textures as specified in the project. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: A08
+title: Sub-flooring (Screed) / Şap Uygulanmış Altlık
+tr_category: DOS
+ifc_class: IfcSlab
+uniclass_ss: Ss_30_20_70
+[cite_start]body_tr: Hafif agregalı şap yapılması (0331-2), malzeme ve zayiatı, beton kür kontrolünü kapsayan bitirme işlerine hazır altlık. [cite: 1]
+[cite_start]body_en: Sub-flooring with screed providing a smooth surface for flooring, including lightweight concrete screed and curing. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: B01
+title: Precast Stair Threads / Prekast Merdiven Basamakları
+tr_category: MRK
+ifc_class: IfcStairFlight
+uniclass_pr: Pr_20_85_08_68
+[cite_start]body_tr: Prekast merdiven ünitelerinin üretimi ve/veya temini ve yerine montajı işidir. [cite: 1]
+[cite_start]body_en: Procurement or production, and erection of precast stairs within the quality and conditions determined by regulations. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: B02
+title: Precast Cornice / Prekast Korniş
+tr_category: CPH
+ifc_class: IfcCovering
+uniclass_pr: Pr_20_85_15_12
+[cite_start]body_tr: Prekast cephe elemanlarının temini ve yerlerine montajı, birleşim yerlerinin çimento harcı ile kapatılması işidir. [cite: 1]
+[cite_start]body_en: Procurement and installation of precast trim border stone (cornice) as indicated in architectural details. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: B03
+title: Precast Façade Accessories / Prekast Cephe Süsleri
+tr_category: CPH
+ifc_class: IfcCovering
+uniclass_pr: Pr_20_85_15_12
+[cite_start]body_tr: Prefabrik cephe süsleme elemanlarının temini veya imalatı ve montajının yapılması işidir. [cite: 1]
+[cite_start]body_en: Procurement or production, and erection of precast façade decorative accessories per international techniques. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: B04
+title: Precast Architectural Columns / Prekast Dekoratif Kolonlar
+tr_category: KOL
+ifc_class: IfcColumn
+uniclass_pr: Pr_20_85_15_12
+[cite_start]body_tr: Dekoratif amaçlı prefabrik cephe kolonlarının temini ve montajı işidir. [cite: 1]
+[cite_start]body_en: Procurement or production, and erection of precast architectural decorative columns. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: B05
+title: Precast Terrace Railings / Prekast Teras Korkulukları
+tr_category: KOR
+ifc_class: IfcRailing
+uniclass_pr: Pr_25_30_36_12
+[cite_start]body_tr: Prefabrik balkon ve teras korkuluklarının temini veya imalatı ve montajı işidir. [cite: 1]
+[cite_start]body_en: Procurement or production, and erection of precast trim border stone for terrace and balcony railings. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: B06
+title: Precast Concrete Unit Paving / Prekast Blok Yer Kaplaması
+tr_category: DOS
+ifc_class: IfcSlab
+uniclass_pr: Pr_35_31_30
+[cite_start]body_tr: Dış mekan zeminlerinde kum üzerine beton küptaş veya prekast bloklarla döşeme yapılması işidir. [cite: 1]
+[cite_start]body_en: Cobble stone or masonry precast concrete unit paving for outdoor areas laid on sand layer. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: C01
+title: Hollow Brick Wall / Tuğla Duvar (9cm)
+tr_category: DKV
+ifc_class: IfcWall
+uniclass_pr: Pr_20_85_12_12
+[cite_start]body_tr: 9 cm yatay delikli fabrika tuğlalarıyla iç bölme duvar yapılması işidir. [cite: 1]
+[cite_start]body_en: Unit masonry wall erection work using manufactured 9cm hollow clay bricks. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: C02
+title: AAC Block Wall (10cm) / Gazbeton Duvar (10cm)
+tr_category: DKV
+ifc_class: IfcWall
+uniclass_pr: Pr_20_85_12_02
+[cite_start]body_tr: 10 cm kalınlıkta gazbeton bloklarla (Ytong vb.) iç bölme duvarı örülmesi işidir. [cite: 1]
+[cite_start]body_en: Constructing internal walls using 10 cm factory-made lightweight autoclaved aerated concrete blocks. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: C03
+title: AAC Block Wall (15cm) / Gazbeton Duvar (15cm)
+tr_category: DKV
+ifc_class: IfcWall
+uniclass_pr: Pr_20_85_12_02
+[cite_start]body_tr: 15 cm kalınlıkta gazbeton bloklarla iç bölme duvarı örülmesi işidir. [cite: 1]
+[cite_start]body_en: Constructing internal walls using 15 cm factory-made lightweight autoclaved aerated concrete blocks. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: C04
+title: AAC Block Wall (20cm) / Gazbeton Duvar (20cm)
+tr_category: DKV
+ifc_class: IfcWall
+uniclass_pr: Pr_20_85_12_02
+[cite_start]body_tr: 20 cm kalınlıkta gazbeton bloklarla dış veya iç duvar örülmesi işidir. [cite: 1]
+[cite_start]body_en: Constructing external or internal walls using 20 cm factory-made lightweight autoclaved aerated concrete blocks. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: C05
+title: Lightweight Concrete Blocks / Briket Duvar
+tr_category: DKV
+ifc_class: IfcWall
+uniclass_pr: Pr_20_85_12_12
+[cite_start]body_tr: Dış sahada 20 cm delikli briket bloklarla duvar örülmesi işidir. [cite: 1]
+[cite_start]body_en: Constructing external walls for landscape using factory-made 20 cm thick light-aggregate concrete briquettes. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: C06
+title: Special Thickness AAC / Özel Kalınlıkta Gazbeton
+tr_category: DKV
+ifc_class: IfcWall
+uniclass_pr: Pr_20_85_12_02
+[cite_start]body_tr: Projesine uygun özel ölçü ve kalınlıkta gazbeton bloklarla duvar örülmesi işidir. [cite: 1]
+[cite_start]body_en: Constructing walls using factory-made lightweight autoclaved aerated concrete blocks of special thickness. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: D01
+title: Natural Stone Flooring / Doğal Taş Yer Kaplaması
+tr_category: DOS
+ifc_class: IfcSlab
+uniclass_pr: Pr_35_31_30
+[cite_start]body_tr: 3cm kalınlığında kumlanmış Afyon ya da Muğla mermeri ile döşeme kaplaması yapılması işidir. [cite: 1]
+[cite_start]body_en: Natural stone flooring using 3cm thick sandwashed Afyon or Mugla Marble. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: D02
+title: Natural Stone Sill / Doğal Taş Denizlik
+tr_category: DEN
+ifc_class: IfcCovering
+uniclass_pr: Pr_20_85_15_12
+[cite_start]body_tr: 4 cm kalınlıkta doğal taş plakadan meyil ve damlalığı hazırlanmış dış denizliğin yerine konması işidir. [cite: 1]
+[cite_start]body_en: Provision and installation of 4 cm natural stone sills with required slope and drip details. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: E01
+title: Suspended Ceiling Edge Joist / Asma Tavan Çevresi Çelik Profili
+tr_category: PRF
+ifc_class: IfcMember
+uniclass_pr: Pr_25_30_36_03
+[cite_start]body_tr: Taşıyıcı çelik profilden asma tavan çevre profillerinin galvanizli veya boyalı imalatıdır. [cite: 1]
+[cite_start]body_en: Manufacturing steel joists at suspended ceiling edges from galvanized or paint coated steel profiles. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: E03
+title: Steel Bridges / Çelik Köprüler
+tr_category: KOP
+ifc_class: IfcBridge
+uniclass_ss: Ss_15_10_10_10
+[cite_start]body_tr: Çelik konstrüksiyon yaya köprülerinin galvanizli profillerden imalatı ve montajıdır. [cite: 1]
+[cite_start]body_en: Manufacturing steel construction bridges for pedestrian access from galvanized steel bearing profiles. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: E04
+title: Metal Catwalks / Çelik Kedi Yolları
+tr_category: PRF
+ifc_class: IfcMember
+uniclass_pr: Pr_30_59_15_15
+[cite_start]body_tr: Perfore metal mesh ve taşıyıcı lamalarla yürüme yolu platformu oluşturulması işidir. [cite: 1]
+[cite_start]body_en: Procurement and manufacture of catwalks composed of galvanized perforated metal mesh. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: E05
+title: Metal Fence / Metal Panjur
+tr_category: PRF
+ifc_class: IfcCovering
+uniclass_pr: Pr_30_59_15_15
+[cite_start]body_tr: Cephelerde ve pencere önlerinde elektrostatik toz boyalı metal panjur yapılması işidir. [cite: 1]
+[cite_start]body_en: Manufacturing electrostatic powder coated metal fences on façade and windows. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: E07
+title: Metal Structural Elements / Diğer Çelik İmalatlar
+tr_category: PRF
+ifc_class: IfcMember
+uniclass_pr: Pr_25_30_36_03
+[cite_start]body_tr: Projede belirtilen diğer yardımcı çelik konstrüksiyon elemanlarının imalatıdır. [cite: 1]
+[cite_start]body_en: Manufacturing of various steel profiles and components as defined in architectural details. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: F01
+title: Wood Decking (Bridges) / Köprüler Üzerinde Ahşap Döşeme
+tr_category: DOS
+ifc_class: IfcCovering
+uniclass_pr: Pr_35_31_30_91
+[cite_start]body_tr: Köprüler üzerinde Iroko veya benzeri thermowood ahşap deck kaplaması yapılması işidir. [cite: 1]
+[cite_start]body_en: Outdoor wood floor decking made of impregnated timber (Iroko) over steel bridges. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: F02
+title: Plexwood Cladding / Ahşap Plexwood Kaplama
+tr_category: CPH
+ifc_class: IfcCovering
+uniclass_pr: Pr_25_30_96_64
+[cite_start]body_tr: İç veya dış mekanlarda dekoratif plexwood ahşap kaplama yapılması işidir. [cite: 1]
+[cite_start]body_en: Decorative plexwood cladding resistant to water and UV radiation per architectural drawings. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: F04
+title: Wood Block Flooring / Ahşap Döşeme Kaplaması (Iroko)
+tr_category: DOS
+ifc_class: IfcCovering
+uniclass_pr: Pr_35_31_30_91
+[cite_start]body_tr: Belirtilen ölçülerde ve tipte güneşe dayanıklı ahşap döşeme kaplaması yapılması işidir. [cite: 1]
+[cite_start]body_en: Outdoor wood floor block flooring made of impregnated timber resistant to sunlight. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: G01
+title: Epoxy Coating / Epoksi Yer Kaplaması
+tr_category: DOS
+ifc_class: IfcCovering
+uniclass_pr: Pr_35_31_30_27
+[cite_start]body_tr: Yüzeyi sertleştirilmiş şap üzerine 3mm kalınlığında solventsiz epoksi kaplama yapılması işidir. [cite: 1]
+[cite_start]body_en: Fluid-applied epoxy flooring on surface hardened screed, including primer and finish coats. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: H01
+title: Foundation Waterproofing / Temel Yalıtımı
+tr_category: YLT
+ifc_class: IfcCovering
+uniclass_ss: Ss_30_10_30_95
+[cite_start]body_tr: Temel ve perde beton yüzeylerinde su yalıtımı yapılması işidir. [cite: 1]
+[cite_start]body_en: Waterproofing applications for foundations and retaining walls as per specifications. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: H02
+title: Liquid Waterproofing (Cisterns) / Su Depolarında Sürme Yalıtım
+tr_category: YLT
+ifc_class: IfcCovering
+uniclass_pr: Pr_35_31_90_12
+[cite_start]body_tr: Su depolarında çimento esaslı çift bileşenli esnek sürme izolasyon yapılması işidir. [cite: 1]
+[cite_start]body_en: Cement based liquid waterproofing membrane application for water cisterns. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: H03
+title: Bituminous Sheet Waterproofing / Bitümlü Membran Su Yalıtımı
+tr_category: YLT
+ifc_class: IfcCovering
+uniclass_pr: Pr_35_31_90_07
+[cite_start]body_tr: 4+4mm polyester keçeli bitümlü yalıtım örtüsünün serilmesi ve sıcak hava kaynağı ile birleştirilmesidir. [cite: 1]
+[cite_start]body_en: Application of two layers of bituminous waterproofing membrane reinforced with polyester. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: H04
+title: Precast Coping / Prekast Harpuşta
+tr_category: DEN
+ifc_class: IfcCovering
+uniclass_pr: Pr_20_85_15_12
+[cite_start]body_tr: Parapet üstlerine prekast harpuşta elemanlarının montajı ve derzlerinin kapatılmasıdır. [cite: 1]
+[cite_start]body_en: Application of precast coping including substructure and 400 dose cement grouting. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: H05
+title: Metal Coping / Metal Harpuşta
+tr_category: DEN
+ifc_class: IfcCovering
+uniclass_pr: Pr_30_59_15_02
+[cite_start]body_tr: Alüminyum veya galvanizli sacdan, toz boyalı metal harpuşta imalatı ve montajıdır. [cite: 1]
+[cite_start]body_en: Metal coping application with aluminum plates including substructure and powder coating. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: H06
+title: Natural Stone Coping / Doğal Taş Harpuşta
+tr_category: DEN
+ifc_class: IfcCovering
+uniclass_pr: Pr_20_85_15_12
+[cite_start]body_tr: Onaylanmış numuneye uygun doğal taş malzemeden harpuşta yapılması işidir. [cite: 1]
+[cite_start]body_en: Natural stone coping application per approved samples and architectural details. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: H07
+title: Metal Gutters / Metal Yağmur Oluğu
+tr_category: ALY
+ifc_class: IfcPipeSegment
+uniclass_pr: Pr_30_59_15_02
+[cite_start]body_tr: 3mm alüminyum plakalarla alt konstrüksiyonu dahil toz boyalı yağmur oluğu yapılmasıdır. [cite: 1]
+[cite_start]body_en: Application of electrostatic powder coated metal gutters with folded aluminum plates. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: H08
+title: Pig Iron Grilles + PP Duct / Pik Izgara + Polipropilen Oluk
+tr_category: ALY
+ifc_class: IfcPipeSegment
+uniclass_pr: Pr_40_30_31_13
+[cite_start]body_tr: Polipropilen olukların üzerine pik döküm ızgaraların temini ve döşenmesi işidir. [cite: 1]
+[cite_start]body_en: Procurement and installation of pig iron grilles over polypropylene ducts. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: H09
+title: Rainwater Downpipes / Yağmur Suyu İniş Boruları
+tr_category: ALY
+ifc_class: IfcPipeSegment
+uniclass_pr: Pr_65_52_63_71
+[cite_start]body_tr: Metal yağmur suyu dereleri ve iniş borularının temini ve montajı işidir. [cite: 1]
+[cite_start]body_en: Procurement and montage of metal gutters and rainwater downspouts/pipes. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: H10
+title: Expansion Joints (Floor) / Dilatasyon Profili (Döşeme)
+tr_category: GEN
+ifc_class: IfcBuildingElement
+uniclass_pr: Pr_20_29_88_26
+[cite_start]body_tr: Zeminlerde alüminyum eloksal veya toz boyalı su geçirimsiz dilatasyon yapılmasıdır. [cite: 1]
+[cite_start]body_en: Constructing waterproof expansion joint profiles for floors per architectural details. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: H11
+title: Expansion Joints (Wall) / Dilatasyon Profili (Duvar)
+tr_category: GEN
+ifc_class: IfcBuildingElement
+uniclass_pr: Pr_20_29_88_26
+[cite_start]body_tr: İç ve dış duvarlarda dikey su geçirimsiz dilatasyon profili uygulamasıdır. [cite: 1]
+[cite_start]body_en: Constructing expansion joint profiles for interior and exterior walls. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: H12
+title: Expansion Joints (Ceiling) / Dilatasyon Profili (Tavan)
+tr_category: GEN
+ifc_class: IfcBuildingElement
+uniclass_pr: Pr_20_29_88_26
+[cite_start]body_tr: Tavanda projesine uygun su geçirimsiz dilatasyon profili uygulamasıdır. [cite: 1]
+[cite_start]body_en: Constructing expansion joint profiles for ceilings per architectural drawings. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: H13
+title: Expansion Joints (Exterior) / Dilatasyon Profili (Dış Cephe)
+tr_category: GEN
+ifc_class: IfcBuildingElement
+uniclass_pr: Pr_20_29_88_26
+[cite_start]body_tr: Dış cephede düşey su geçirimsiz dilatasyon profili uygulamasıdır. [cite: 1]
+[cite_start]body_en: Constructing expansion joint profiles specifically for exterior building facades. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: H14
+title: Expansion Joints (Roof) / Dilatasyon Profili (Çatı)
+tr_category: GEN
+ifc_class: IfcBuildingElement
+uniclass_pr: Pr_20_29_88_26
+[cite_start]body_tr: Çatılarda su geçirimsiz yatay dilatasyon profili uygulamasıdır. [cite: 1]
+[cite_start]body_en: Constructing waterproof expansion joint profiles for roofing systems. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: H15
+title: Expansion Joints (Corners) / Dilatasyon Profili (Köşe)
+tr_category: GEN
+ifc_class: IfcBuildingElement
+uniclass_pr: Pr_20_29_88_26
+[cite_start]body_tr: Köşe birleşim noktalarında uygun tipte dilatasyon profili uygulamasıdır. [cite: 1]
+[cite_start]body_en: Constructing expansion joint profiles at corner intersections. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: I01
+title: Gravel Finish Roof / Çakıl Serili Teras Çatı
+tr_category: CAT
+ifc_class: IfcRoof
+uniclass_ss: Ss_30_10_30_45
+[cite_start]body_tr: Betonarme döşeme üzerine serme çakıl ile bitirilen yürünmeyen teras çatı yapılmasıdır. [cite: 1]
+[cite_start]body_en: Constructing inverted roof with gravel finish material over concrete slabs. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: I02
+title: Shingle Roofing / Shingle Çatı Kaplaması
+tr_category: CAT
+ifc_class: IfcRoof
+uniclass_pr: Pr_35_80_04_07
+[cite_start]body_tr: Çatı yüzeylerini kaplamak üzere shingle malzemesinin temini ve uygulamasıdır. [cite: 1]
+[cite_start]body_en: Procurement and cladding of Shingle sheets on roof per approved samples. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: I03
+title: Sheet Metal Roofing / Metal Kaplama Çatı
+tr_category: CAT
+ifc_class: IfcRoof
+uniclass_pr: Pr_35_80_52_02
+[cite_start]body_tr: Çinko veya metal çatı üst kaplamasının alt konstrüksiyonu ile birlikte imalatıdır. [cite: 1]
+[cite_start]body_en: Construction of zinc-clad or sheet metal roof including load bearing structure. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: I07
+title: Textile Canopy / Tekstil Revak Elemanları
+tr_category: CAT
+ifc_class: IfcRoof
+uniclass_pr: Pr_25_71_11_12
+[cite_start]body_tr: Özel projelendirilmiş tekstil ve çelik güneş kontrol elemanlarının imalatı ve montajıdır. [cite: 1]
+[cite_start]body_en: Procurement and manufacturing of textile canopies and standalone solar control structures. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: J01
+title: Smoke Rectifiers / Duman Tahliye Kapakları
+tr_category: KAP
+ifc_class: IfcDoor
+uniclass_pr: Pr_30_59_81_80
+[cite_start]body_tr: Pistonlu motorlu, 24V açılır kanatlı duman tahliye kapaklarının yapılması işidir. [cite: 1]
+[cite_start]body_en: Smoke rectifier covers and opening system with 24V piston engine. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: J02
+title: Curtain Wall / Giydirme Cephe
+tr_category: CPH
+ifc_class: IfcCurtainWall
+uniclass_ss: Ss_25_10_20
+[cite_start]body_tr: Projesine uygun kedi yollarıyla birlikte giydirme cephe sistemi imalatı ve montajıdır. [cite: 1]
+[cite_start]body_en: Procurement and manufacture of curtain walls including substructure and catwalks. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: J03
+title: Windows / Doğrama ve Pencereler
+tr_category: PNC
+ifc_class: IfcWindow
+uniclass_ss: Ss_25_30_95
+[cite_start]body_tr: Alüminyum doğrama profilleri ile projeye uygun pencere doğraması yapılması işidir. [cite: 1]
+[cite_start]body_en: Procurement and montage of aluminum framed windows per facade type drawings. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: J04
+title: French Balcony Doors / Fransız Balkon Doğramaları
+tr_category: KAP
+ifc_class: IfcDoor
+uniclass_ss: Ss_25_30_20
+[cite_start]body_tr: Fransız balkon tipi kapı ve pencere doğramalarının imalatı ve montajı işidir. [cite: 1]
+[cite_start]body_en: Procurement and montage of French balcony aluminum doors and windows. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: K601
+title: Fire Doors (60 min) / Yangın Kapıları (60 dk)
+tr_category: KAP
+ifc_class: IfcDoor
+uniclass_pr: Pr_30_59_24_30
+[cite_start]body_tr: 60 dakika yangın dayanımlı, sertifikalı elektrostatik boyalı metal kapı imalatıdır. [cite: 1]
+[cite_start]body_en: Manufacturing 60-minute fire-resistant metal doors certified to EN 13501-2 standards. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: KE01
+title: Electrical Access Doors / Elektrik Müdahale Kapakları
+tr_category: KAP
+ifc_class: IfcDoor
+uniclass_pr: Pr_30_59_24_02
+[cite_start]body_tr: Şaftlarda yer alan metal müdahale kapaklarının temini ve montajı işidir. [cite: 1]
+[cite_start]body_en: Procurement and installation of electrical utility access doors. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: KG01
+title: Coiling Grilles / Sarmal Kepenk (Otopark)
+tr_category: KAP
+ifc_class: IfcDoor
+uniclass_pr: Pr_30_59_24_72
+[cite_start]body_tr: Otopark girişlerinde otomatik sarmal kapı ve emniyet sistemleri yapılması işidir. [cite: 1]
+[cite_start]body_en: Procurement and manufacturing of painted automatic spiral coiling doors and grilles. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: KL06
+title: American Panel Doors / Amerikan Panel Kapılar
+tr_category: KAP
+ifc_class: IfcDoor
+uniclass_pr: Pr_30_59_24_96
+[cite_start]body_tr: MDF üzeri CPL laminat presli Amerikan panel iç mekan kapı imalatı ve montajıdır. [cite: 1]
+[cite_start]body_en: Procurement and manufacturing of internal American Panel Doors with casing and borders. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: KS01
+title: Steel Doors / Standart Sac Kapılar
+tr_category: KAP
+ifc_class: IfcDoor
+uniclass_pr: Pr_30_59_24_02
+[cite_start]body_tr: Yangın dayanımı gerekmeyen standart sac kapıların imalatı ve montajıdır. [cite: 1]
+[cite_start]body_en: Manufacturing electrostatic powder painted metal sheet doors and frames. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: L01
+title: Access Doors / Müdahale Kapakları
+tr_category: KAP
+ifc_class: IfcDoor
+uniclass_pr: Pr_30_59_24_02
+[cite_start]body_tr: Cephelerde veya iç mekanda yer alan müdahale kapaklarının temini ve montajıdır. [cite: 1]
+[cite_start]body_en: Procurement and montage of utility access doors on facades or internal shafts. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: L02
+title: Aluminum Louvers / Alüminyum Menfez
+tr_category: PRF
+ifc_class: IfcCovering
+uniclass_pr: Pr_30_59_15_02
+[cite_start]body_tr: Havalandırma bacaları için alüminyum ızgara ve menfez imalatı ve montajıdır. [cite: 1]
+[cite_start]body_en: Procurement and montage of aluminum louvers for ventilation shafts. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: M01
+title: Gypsum Plaster / Makinalı Alçı Sıva
+tr_category: SIV
+ifc_class: IfcCovering
+uniclass_pr: Pr_20_29_33_34
+[cite_start]body_tr: İç mekan duvarlara makine ile alçı sıva ve saten boya yapılması işidir. [cite: 1]
+[cite_start]body_en: Applying high-quality gypsum plaster on internal walls with tyrolean machine. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: M02
+title: Portland Cement Plastering / Kara Sıva
+tr_category: SIV
+ifc_class: IfcCovering
+uniclass_pr: Pr_20_29_33_11
+[cite_start]body_tr: İç ve dış duvarlara çimento harçlı kaba ve ince sıva yapılması işidir. [cite: 1]
+[cite_start]body_en: Applying the lime, sand, and cement mix mortar on internal or external walls. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: M03
+title: Gypsum Wall Board / Alçıpan Duvar Paneli
+tr_category: BOL
+ifc_class: IfcWall
+uniclass_ss: Ss_25_10_65
+[cite_start]body_tr: Mevcut konstrüksiyon üzerine neme dayanıklı yeşil alçı levha ile kaplama yapılmasıdır. [cite: 1]
+[cite_start]body_en: Gypsum Wall Board vertical cladding on steel or reinforced concrete construction. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: M04
+title: Gypsum Ceiling (Wet) / Neme Dayanıklı Alçıpan Asma Tavan
+tr_category: TVN
+ifc_class: IfcCovering
+uniclass_ss: Ss_30_25_30
+[cite_start]body_tr: Banyo ve mutfak gibi ıslak hacimlerde yeşil alçıpan ile asma tavan yapılmasıdır. [cite: 1]
+[cite_start]body_en: Gypsum panel suspended ceiling with moisture resistant green boards in wet spaces. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: M05
+title: Gypsum Ceiling (Regular) / Beyaz Alçıpan Asma Tavan
+tr_category: TVN
+ifc_class: IfcCovering
+uniclass_ss: Ss_30_25_30
+[cite_start]body_tr: Kuru hacimlerde beyaz alçıpan levha ile asma tavan yapılması işidir. [cite: 1]
+[cite_start]body_en: Gypsum panel suspended ceiling with regular white boards per architectural details. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: N02
+title: Wall Ceramic (Bath) / Duvar Fayans Kaplama (Banyo)
+tr_category: KAP
+ifc_class: IfcCovering
+uniclass_pr: Pr_35_31_30
+[cite_start]body_tr: Banyo ve tuvaletlerde 1. sınıf seramik duvar kaplaması yapılması işidir. [cite: 1]
+[cite_start]body_en: Thin-set ceramic tiling on the walls of wet areas (Bathroom, WC). [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: N03
+title: Wall Ceramic (Kitchen) / Duvar Fayans Kaplama (Mutfak)
+tr_category: KAP
+ifc_class: IfcCovering
+uniclass_pr: Pr_35_31_30
+[cite_start]body_tr: Mutfak ve benzeri alanlarda 1. sınıf seramik duvar kaplaması işidir. [cite: 1]
+[cite_start]body_en: Thin-set ceramic tiling on the walls of kitchens and utility areas. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: N04
+title: Granite Ceramic Floor / Granit Seramik Döşeme (30x30)
+tr_category: DOS
+ifc_class: IfcCovering
+uniclass_pr: Pr_35_31_30
+[cite_start]body_tr: Genel mekan zeminlerinde 30x30 granit seramik döşeme kaplaması yapılmasıdır. [cite: 1]
+[cite_start]body_en: Floor Ceramic Porcelain Tile 30x30 (Gra-Ceramic) on mortar bed. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: N05
+title: Ceramic Floor (Wet) / Seramik Döşeme (Banyo ve WC)
+tr_category: DOS
+ifc_class: IfcCovering
+uniclass_pr: Pr_35_31_30
+[cite_start]body_tr: Banyo ve tuvalet zeminlerinde 1. sınıf seramik döşeme yapılması işidir. [cite: 1]
+[cite_start]body_en: First quality floor ceramic tile application in bathroom and WC areas. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: N06
+title: Industrial Ceramic Floor / Endüstriyel Seramik Döşeme
+tr_category: DOS
+ifc_class: IfcCovering
+uniclass_pr: Pr_35_31_30
+[cite_start]body_tr: Endüstriyel alanlarda 24x24 ağır hizmet tipi seramik döşeme kaplamasıdır. [cite: 1]
+[cite_start]body_en: Floor Ceramic Tile 24x24 for industrial or heavy-duty applications. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: N07
+title: Ceramic Floor (Kitchen) / Seramik Döşeme (Mutfak vb.)
+tr_category: DOS
+ifc_class: IfcCovering
+uniclass_pr: Pr_35_31_30
+[cite_start]body_tr: Mutfak ve servis alanlarında 1. sınıf seramik döşeme yapılması işidir. [cite: 1]
+[cite_start]body_en: First quality floor ceramic tile application in kitchens and similar service areas. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: N09
+title: Other Floor Finishes / Diğer Döşeme Kaplamaları
+tr_category: DOS
+ifc_class: IfcCovering
+uniclass_pr: Pr_35_31_30
+[cite_start]body_tr: Projede belirtilen diğer tip zemin kaplama uygulamalarıdır. [cite: 1]
+[cite_start]body_en: Application of miscellaneous floor finish materials as specified in schedules. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: N10
+title: Resilient Flooring / Vinil Döşeme Kaplaması
+tr_category: DOS
+ifc_class: IfcCovering
+uniclass_pr: Pr_35_31_30_74
+[cite_start]body_tr: Mevcut zemin üzerine 2mm kalınlığında antistatik vinil kaplama yapılmasıdır. [cite: 1]
+[cite_start]body_en: Resilient flooring with 2 mm thick antistatic vinyl coating per approved samples. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: N11
+title: Access Flooring / Yükseltilmiş Döşeme (Ofis)
+tr_category: DOS
+ifc_class: IfcCovering
+uniclass_pr: Pr_35_31_02_64
+[cite_start]body_tr: Ofislerde vinil kaplı, 60x60cm panelli "heavy duty" yükseltilmiş döşeme yapılmasıdır. [cite: 1]
+[cite_start]body_en: Snap-on Stringer Access Flooring with antistatic vinyl sheet for office spaces. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: N12
+title: Ceramic Floor (Terrace) / Seramik Döşeme (Teras)
+tr_category: DOS
+ifc_class: IfcCovering
+uniclass_pr: Pr_35_31_30
+[cite_start]body_tr: Teraslarda dış hava şartlarına uygun 1. sınıf seramik döşeme kaplamasıdır. [cite: 1]
+[cite_start]body_en: First quality floor ceramic tile application for outdoor terrace areas. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: N13
+title: Sandwashed Screed / Yüzeyi Kumlanmış Şap
+tr_category: DOS
+ifc_class: IfcCovering
+uniclass_pr: Pr_35_31_30
+[cite_start]body_tr: Yüzeyi kumlanarak tekstür verilmiş sertleştiricili şap uygulamasıdır. [cite: 1]
+[cite_start]body_en: Surface sandwashed screed with aggregate finish per architectural details. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: N14
+title: Elastic Flooring / Darbe Emici Elastik Zemin
+tr_category: DOS
+ifc_class: IfcCovering
+uniclass_pr: Pr_35_31_30_71
+[cite_start]body_tr: Spor salonlarında ahşap parke altına darbe emici elastik sistem yapılmasıdır. [cite: 1]
+[cite_start]body_en: Shock absorbent elastic flooring with grid system for enclosed sports areas. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: N15
+title: Granule Rubber Flooring / Lastik Granül Zemin
+tr_category: DOS
+ifc_class: IfcCovering
+uniclass_pr: Pr_35_31_30_71
+[cite_start]body_tr: Yüksek yoğunluklu granül lastikten imal karolar ile döşeme kaplamasıdır. [cite: 1]
+[cite_start]body_en: Resilient flooring using granule rubber tiles of high-density monoblock plates. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: O01
+title: Ceramic Skirting / Seramik Süpürgelik
+tr_category: KAP
+ifc_class: IfcCovering
+uniclass_pr: Pr_35_31_30
+[cite_start]body_tr: 100mm yüksekliğinde granit seramik süpürgelik yapılması işidir. [cite: 1]
+[cite_start]body_en: Manufacture and installation of 100mm granite ceramic skirting. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: O02
+title: First Class Ceramic Skirting / 1. Sınıf Seramik Süpürgelik
+tr_category: KAP
+ifc_class: IfcCovering
+uniclass_pr: Pr_35_31_30
+[cite_start]body_tr: 100mm yüksekliğinde 1. sınıf seramik süpürgelik yapılması işidir. [cite: 1]
+[cite_start]body_en: Manufacture and installation of 100mm first class ceramic skirting. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: O03
+title: Natural Stone Skirting / Doğal Taş Süpürgelik
+tr_category: KAP
+ifc_class: IfcCovering
+uniclass_pr: Pr_35_31_30
+[cite_start]body_tr: 100mm yüksekliğinde mermer veya doğal taş süpürgelik yapılması işidir. [cite: 1]
+[cite_start]body_en: Manufacture and installation of 100mm natural stone (marble) skirting. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: O04
+title: Timber Skirting / Ahşap Süpürgelik
+tr_category: KAP
+ifc_class: IfcCovering
+uniclass_pr: Pr_35_31_30_91
+[cite_start]body_tr: 100mm yüksekliğinde masif veya kaplama ahşap süpürgelik yapılması işidir. [cite: 1]
+[cite_start]body_en: Manufacture and installation of 100mm timber baseboards. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: O05
+title: PVC Skirting / PVC Süpürgelik
+tr_category: KAP
+ifc_class: IfcCovering
+uniclass_pr: Pr_35_31_30_74
+[cite_start]body_tr: 100mm yüksekliğinde PVC esaslı süpürgelik yapılması işidir. [cite: 1]
+[cite_start]body_en: Manufacture and installation of 100mm resilient PVC skirting. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: O06
+title: Terrazzo Skirting / Terazzo Süpürgelik
+tr_category: KAP
+ifc_class: IfcCovering
+uniclass_pr: Pr_35_31_30
+[cite_start]body_tr: 63mm yüksekliğinde terazzo (sunu mermer) süpürgelik yapılması işidir. [cite: 1]
+[cite_start]body_en: Manufacture and installation of 63mm terrazzo skirting. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: O07
+title: Stone Cladding (High) / Taş Kaplama (h=1.2)
+tr_category: KAP
+ifc_class: IfcCovering
+uniclass_pr: Pr_35_31_30
+[cite_start]body_tr: Duvarlarda 1.2 metre yüksekliğinde doğal taş süpürgelik/kaplama yapılmasıdır. [cite: 1]
+[cite_start]body_en: Installation of high-profile natural stone wall cladding (baseboard) at h=1.2m. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: P01
+title: EIFS Facade / Dış Cephe Isı Yalıtım Sistemi
+tr_category: CPH
+ifc_class: IfcCovering
+uniclass_ss: Ss_25_20_35
+[cite_start]body_tr: Dış duvarlara astar ve silikon esaslı cephe boyası ile mantolama yapılmasıdır. [cite: 1]
+[cite_start]body_en: Application of Exterior Insulated Façade System (EIFS) with silicone render. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: P02
+title: Acrylic Paint / Akrilik Boya
+tr_category: BOY
+ifc_class: IfcCovering
+uniclass_pr: Pr_35_31_60_01
+[cite_start]body_tr: İç mekan duvarlarda su bazlı akrilik emülsiyon boya uygulamasıdır. [cite: 1]
+[cite_start]body_en: Application of semi-gloss acrylic emulsion paint on internal walls. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: P03
+title: Plastic Paint / Plastik Boya
+tr_category: BOY
+ifc_class: IfcCovering
+uniclass_pr: Pr_35_31_60_13
+[cite_start]body_tr: İç mekan duvarlarda su bazlı plastik boya uygulamasıdır. [cite: 1]
+[cite_start]body_en: Application of water-based plastic emulsion paint on internal surfaces. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: P04
+title: Paint for Ceilings / Tavan Boyası
+tr_category: BOY
+ifc_class: IfcCovering
+uniclass_pr: Pr_35_31_60_13
+[cite_start]body_tr: Tavan yüzeylerinde projesine uygun tavan boyası uygulamasıdır. [cite: 1]
+[cite_start]body_en: Application of specialized breathable paint for ceiling surfaces. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: P05
+title: Exterior Color Render / Renkli Dış Cephe Sıvası
+tr_category: BOY
+ifc_class: IfcCovering
+uniclass_pr: Pr_20_29_33_11
+[cite_start]body_tr: Dış cephelerde silikon bazlı hazır renkli sıva uygulamasıdır. [cite: 1]
+[cite_start]body_en: Application of silicon-based ready-mixed color render on exterior facades. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: P06
+title: Self Colored Render (Int) / Renkli İç Cephe Hazır Sıva
+tr_category: BOY
+ifc_class: IfcCovering
+uniclass_pr: Pr_20_29_33_34
+[cite_start]body_tr: İç mekanlarda dekoratif hazır renkli sıva uygulamasıdır. [cite: 1]
+[cite_start]body_en: Application of self-colored decorative ready-mixed render for interiors. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: P07
+title: Non-toxic Paint / Yangın Merdiveni Zehirsiz Boya
+tr_category: BOY
+ifc_class: IfcCovering
+uniclass_pr: Pr_35_31_60_13
+[cite_start]body_tr: Yangın merdivenleri ve şaftlarında zehirsiz (non-toxic) boya uygulamasıdır. [cite: 1]
+[cite_start]body_en: Application of non-toxic emulsion paint for fire escape shafts. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: P08
+title: Exterior Ceiling Paint / Tavan Renkli Dış Cephe Sıvası
+tr_category: BOY
+ifc_class: IfcCovering
+uniclass_pr: Pr_20_29_33_11
+[cite_start]body_tr: Dış mekan tavanlarında renkli silikon bazlı sıva uygulamasıdır. [cite: 1]
+[cite_start]body_en: Application of colored exterior render specifically for ceiling surfaces. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: R01
+title: Directional Signage / İç ve Dış Yönlendirmeler
+tr_category: DON
+ifc_class: IfcSign
+uniclass_pr: Pr_40_10_54_81
+[cite_start]body_tr: Alüminyum veya akrilik levhadan piktogramlı yönlendirme elemanlarıdır. [cite: 1]
+[cite_start]body_en: Procurement and montage of indoor and outdoor directional signage. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: R03
+title: Emergency Signage / Acil Durum Işıklı Yönergeler
+tr_category: DON
+ifc_class: IfcSign
+uniclass_pr: Pr_40_10_54_81
+[cite_start]body_tr: Acil aydınlatma sistemli, tavana veya duvara asılan yönlendirme elemanlarıdır. [cite: 1]
+[cite_start]body_en: Procurement and montage of emergency illuminated signage. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: R04
+title: Traffic Signs / Trafik İşaret Levhaları
+tr_category: DON
+ifc_class: IfcSign
+uniclass_pr: Pr_40_10_54_81
+[cite_start]body_tr: Otoparklarda kullanılacak tüm trafik yönlendirme ve işaret levhalarıdır. [cite: 1]
+[cite_start]body_en: Procurement and montage of car access traffic signs and directives. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: R05
+title: Zebra Marking / Kolon ve Döşeme İşaretleme
+tr_category: BOY
+ifc_class: IfcCovering
+uniclass_pr: Pr_35_31_60_01
+[cite_start]body_tr: Otopark kolonlarında 120cm yüksekliğinde akrilik zebra boyaları yapılmasıdır. [cite: 1]
+[cite_start]body_en: Zebra striping of columns and floors in parking lots per international standards. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: S01
+title: Protection Bumper / Koruyucu Çelik Bariyerler
+tr_category: KOR
+ifc_class: IfcRailing
+uniclass_pr: Pr_30_59_15_15
+[cite_start]body_tr: Giriş kapılarında çarpmalara karşı toz boyalı çelik boru bariyer yapılmasıdır. [cite: 1]
+[cite_start]body_en: Manufacturing steel tube profile bumpers for entrance hall protection. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: S02
+title: Acoustic Ceiling / Taşyünü Asma Tavan (60x60)
+tr_category: TVN
+ifc_class: IfcCovering
+uniclass_ss: Ss_30_25_30_02
+[cite_start]body_tr: 60x60cm alüminyum ızgara üzerine taşyünü panel asma tavan yapılmasıdır. [cite: 1]
+[cite_start]body_en: Procurement and installation of 60x60cm mineral wool panel suspended ceilings. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: S03
+title: Marble Countertop / Hilton Lavabo Tezgahı (Mermer)
+tr_category: MRK
+ifc_class: IfcCovering
+uniclass_pr: Pr_40_20_96_17
+[cite_start]body_tr: Tuvaletlerde projesine uygun 3cm kalınlığında doğal taş (granit/mermer) lavabo tezgahı yapılmasıdır. [cite: 1]
+[cite_start]body_en: Procurement and installation of Hilton-type natural stone lavatory countertops. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: S04
+title: Plaster Ceiling / Alçı Sıva Tavan
+tr_category: TVN
+ifc_class: IfcCovering
+uniclass_pr: Pr_20_29_33_34
+[cite_start]body_tr: İç ve dış mekan tavanlarına alçı sıva ve saten boya yapılması işidir. [cite: 1]
+[cite_start]body_en: Applying high-quality gypsum plaster on ceiling surfaces with steel trowel. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: S05
+title: Toilet Compartments / Tuvalet Kabinleri
+tr_category: BOL
+ifc_class: IfcWall
+uniclass_pr: Pr_25_10_61_15
+[cite_start]body_tr: 12 mm kalınlığında kompakt laminat malzemeden hazır sistem WC kabinleri montajıdır. [cite: 1]
+[cite_start]body_en: Procurement and assembly of WC compartments made from massive compact laminate. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: S06
+title: Wall Guards / Duvar ve Köşe Koruyucular
+tr_category: KOR
+ifc_class: IfcRailing
+uniclass_pr: Pr_30_59_15_15
+[cite_start]body_tr: Servis mekanlarında araç çarpmalarına karşı duvar üstü çarpma bandı yapılmasıdır. [cite: 1]
+[cite_start]body_en: Procurement and installation of resilient wall and corner protective railings. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: S07
+title: Toilet Roll Container / Tuvalet Kağıtlığı
+tr_category: VIT
+ifc_class: IfcSanitaryTerminal
+uniclass_pr: Pr_40_20_96_87
+[cite_start]body_tr: Islak hacimlerde paslanmaz çelik tuvalet kağıtlığı temini ve montajıdır. [cite: 1]
+[cite_start]body_en: Provision and installation of stainless steel toilet roll containers. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: S08
+title: Paper Towel Container / Kağıt Havluluk
+tr_category: VIT
+ifc_class: IfcSanitaryTerminal
+uniclass_pr: Pr_40_20_96_57
+[cite_start]body_tr: Islak hacimlerde paslanmaz çelik kağıt havluluk temini ve montajıdır. [cite: 1]
+[cite_start]body_en: Provision and installation of stainless steel paper towel containers. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: S09
+title: Liquid Soap Container / Sıvı Sabunluk
+tr_category: VIT
+ifc_class: IfcSanitaryTerminal
+uniclass_pr: Pr_40_20_96_76
+[cite_start]body_tr: Islak hacimlerde paslanmaz çelik sıvı sabunluk temini ve montajıdır. [cite: 1]
+[cite_start]body_en: Provision and installation of stainless steel liquid soap containers. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: S10
+title: Shower Cabinets / Duş Kabinleri
+tr_category: BOL
+ifc_class: IfcWall
+uniclass_pr: Pr_40_20_96_78
+[cite_start]body_tr: Alüminyum çerçeveli akrilik panelli sürme kapılı duş kabini montajıdır. [cite: 1]
+[cite_start]body_en: Procurement and assembly of ready-system shower cabinets with aluminum frames. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: S11
+title: Baby Changing Station / Bebek Bakım Tablası
+tr_category: DON
+ifc_class: IfcFurniture
+uniclass_pr: Pr_40_20_96_04
+[cite_start]body_tr: Islak hacimlerde PVC esaslı katlanır bebek alt değiştirme ünitesi montajıdır. [cite: 1]
+[cite_start]body_en: Provision and installation of ready-modular PVC baby changing stations. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: S12
+title: Holding Bars / Engelli Tutunma Barları
+tr_category: KOR
+ifc_class: IfcRailing
+uniclass_pr: Pr_40_20_96_35
+[cite_start]body_tr: Engelli tuvaletlerinde paslanmaz çelik veya boyalı tutamak montajıdır. [cite: 1]
+[cite_start]body_en: Provision and installation of stainless steel grip-bars for disabled toilets. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: S13
+title: Lockers / Soyunma Dolapları
+tr_category: DON
+ifc_class: IfcFurniture
+uniclass_pr: Pr_40_30_20_11
+[cite_start]body_tr: Personel soyunma odalarında raflı ve askılı dolap temini ve montajıdır. [cite: 1]
+[cite_start]body_en: Procurement and installation of project-specified personnel lockers. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: S14
+title: Urinal Separators / Pisuar Arası Dikey Ayraçlar
+tr_category: VIT
+ifc_class: IfcSanitaryTerminal
+uniclass_pr: Pr_40_20_96_92
+[cite_start]body_tr: Islak hacimlerde pisuarlar arası dikey bölücü panellerin montajıdır. [cite: 1]
+[cite_start]body_en: Procurement and installation of vertical separators between urinals. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: S15
+title: Countertops / Lavabo Tezgahları
+tr_category: MRK
+ifc_class: IfcCovering
+uniclass_pr: Pr_40_20_96_17
+[cite_start]body_tr: Akrilik polimer veya benzeri malzemeden imal lavabo tezgahı montajıdır. [cite: 1]
+[cite_start]body_en: Procurement and installation of acrylic polymer or approved stone countertops. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: S16
+title: Residential Water Closets / Alafranga Klozet Takımı
+tr_category: VIT
+ifc_class: IfcSanitaryTerminal
+uniclass_pr: Pr_40_20_96_98
+[cite_start]body_tr: Konutlarda kullanılacak vitrifiye alafranga klozet takımı montajıdır. [cite: 1]
+[cite_start]body_en: Procurement and installation of residential vitrifying water closet sets. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: S17
+title: Under Counter Lavatory / Tezgah Altı Lavabo
+tr_category: VIT
+ifc_class: IfcSanitaryTerminal
+uniclass_pr: Pr_40_20_96_44
+[cite_start]body_tr: Tezgah altına monte edilen vitrifiye lavabo temini ve montajıdır. [cite: 1]
+[cite_start]body_en: Procurement and installation of under-counter vitrifying lavatories. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: S18
+title: Overcounter Lavatory / Tezgah Üstü Lavabo
+tr_category: VIT
+ifc_class: IfcSanitaryTerminal
+uniclass_pr: Pr_40_20_96_44
+[cite_start]body_tr: Tezgah üstüne monte edilen dekoratif vitrifiye lavabo montajıdır. [cite: 1]
+[cite_start]body_en: Procurement and installation of over-counter vitrifying lavatories. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: S19
+title: Kitchen Sink / Mutfak Eviyesi
+tr_category: VIT
+ifc_class: IfcSanitaryTerminal
+uniclass_pr: Pr_40_20_96_74
+[cite_start]body_tr: Mutfak tezgahlarına monte edilen eviye temini ve montajıdır. [cite: 1]
+[cite_start]body_en: Procurement and installation of residential stainless steel or ceramic kitchen sinks. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: S20
+title: Residential Bathtubs / Banyo Küveti
+tr_category: VIT
+ifc_class: IfcSanitaryTerminal
+uniclass_pr: Pr_40_20_96_07
+[cite_start]body_tr: Konut banyolarında akrilik banyo küveti temini ve montajıdır. [cite: 1]
+[cite_start]body_en: Procurement and installation of residential acrylic bathtubs per approved samples. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: S21
+title: Shower Receptors / Akrilik Duş Teknesi
+tr_category: VIT
+ifc_class: IfcSanitaryTerminal
+uniclass_pr: Pr_40_20_96_78
+[cite_start]body_tr: Projesine uygun ölçülerde TS EN 263 uyumlu akrilik duş teknesi montajıdır. [cite: 1]
+[cite_start]body_en: Procurement and installation of acrylic shower receptors compliant with TS EN 263. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: S22
+title: Commercial Urinals / Pisuvarlar
+tr_category: VIT
+ifc_class: IfcSanitaryTerminal
+uniclass_pr: Pr_40_20_96_92
+[cite_start]body_tr: Ortak alan tuvaletlerinde pisuvar temini ve montajı işidir. [cite: 1]
+[cite_start]body_en: Procurement and installation of commercial vitrified urinals. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: S23
+title: Commercial Water Closets / Ortak Alan Klozet Takımı
+tr_category: VIT
+ifc_class: IfcSanitaryTerminal
+uniclass_pr: Pr_40_20_96_98
+[cite_start]body_tr: AVM veya ofis gibi ortak mahallerde alafranga klozet takımı montajıdır. [cite: 1]
+[cite_start]body_en: Procurement and installation of commercial-grade water closet sets. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: S24
+title: Authentic Closets / Alaturka Klozet Takımı
+tr_category: VIT
+ifc_class: IfcSanitaryTerminal
+uniclass_pr: Pr_40_20_96_98
+[cite_start]body_tr: Geleneksel tipte alaturka klozet taşı ve aksesuarları montajıdır. [cite: 1]
+[cite_start]body_en: Procurement and installation of commercial authentic (Ala-turka) closets. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: S25
+title: Commercial Under Counter Lavatory / Ortak Alan Tezgah Altı Lavabo
+tr_category: VIT
+ifc_class: IfcSanitaryTerminal
+uniclass_pr: Pr_40_20_96_44
+[cite_start]body_tr: Ortak alanlarda tezgah altına monte edilen vitrifiye lavabo montajıdır. [cite: 1]
+[cite_start]body_en: Procurement and installation of commercial-grade under-counter lavatories. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: S26
+title: Commercial Overcounter Lavatory / Ortak Alan Tezgah Üstü Lavabo
+tr_category: VIT
+ifc_class: IfcSanitaryTerminal
+uniclass_pr: Pr_40_20_96_44
+[cite_start]body_tr: Ortak alanlarda tezgah üstüne monte edilen vitrifiye lavabo montajıdır. [cite: 1]
+[cite_start]body_en: Procurement and installation of commercial-grade over-counter lavatories. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: S27
+title: Disabled Lavatory / Engelli Lavabo
+tr_category: VIT
+ifc_class: IfcSanitaryTerminal
+uniclass_pr: Pr_40_20_96_44
+[cite_start]body_tr: Engelli kullanımına uygun ergonomik vitrifiye lavabo montajıdır. [cite: 1]
+[cite_start]body_en: Procurement and installation of vitrified lavatories designed for disabled users. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: S28
+title: Commercial Shower Receptors / Ortak Alan Duş Teknesi
+tr_category: VIT
+ifc_class: IfcSanitaryTerminal
+uniclass_pr: Pr_40_20_96_78
+[cite_start]body_tr: Sosyal alanlarda kullanılacak ağır hizmet tipi akrilik duş teknesi montajıdır. [cite: 1]
+[cite_start]body_en: Procurement and installation of commercial-grade acrylic shower receptors. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: S29
+title: Kitchen Countertop / Mutfak Tezgahı
+tr_category: MRK
+ifc_class: IfcCovering
+uniclass_pr: Pr_40_30_20_42
+[cite_start]body_tr: Laminat kaplı, postformingli mutfak tezgahı temini ve montajıdır. [cite: 1]
+[cite_start]body_en: Procurement and installation of laminate-clad postformed kitchen countertops. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: S30
+title: Kitchen Cupboards / Mutfak Dolapları
+tr_category: DON
+ifc_class: IfcFurniture
+uniclass_pr: Pr_40_30_20_42
+[cite_start]body_tr: Yonga levha üzerine laminat kaplı mutfak mobilyası montajıdır. [cite: 1]
+[cite_start]body_en: Procurement and manufacturing of laminate-clad kitchen cupboards and units. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: S31
+title: French Balcony Railings / Fransız Balkon Korkulukları
+tr_category: KOR
+ifc_class: IfcRailing
+uniclass_pr: Pr_25_30_36_01
+[cite_start]body_tr: Alüminyum profillerden imal Fransız balkon korkulukları montajıdır. [cite: 1]
+[cite_start]body_en: Procurement and installation of French balcony railings (Aluminum). [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: S32
+title: Painted Steel Railings / Boyalı Çelik Korkuluk (Yangın)
+tr_category: KOR
+ifc_class: IfcRailing
+uniclass_pr: Pr_25_30_36_10
+[cite_start]body_tr: Yangın merdivenlerinde boyalı çelik profil korkuluk ve küpeşte yapılmasıdır. [cite: 1]
+[cite_start]body_en: Painted steel balustrades and railings for fire escapes. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: S33
+title: Staircase Railings / Merdiven Kovaları Korkuluk ve Küpeşte
+tr_category: KOR
+ifc_class: IfcRailing
+uniclass_pr: Pr_25_30_36_10
+[cite_start]body_tr: Merdiven kenarlarında boru profilden basamağa montajlı korkuluk yapılmasıdır. [cite: 1]
+[cite_start]body_en: Construction of steel profile balustrades and railings for staircases. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: S34
+title: Handrail over Parapets / Parapet Üstü Küpeşteler
+tr_category: KOR
+ifc_class: IfcRailing
+uniclass_pr: Pr_25_30_36_10
+[cite_start]body_tr: Parapet betonları üzerine çelik veya alüminyum küpeşte montajıdır. [cite: 1]
+[cite_start]body_en: Procurement and installation of handrails over parapet surfaces. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: T01
+title: Mirror (Flat) / Ayna (Düz)
+tr_category: DON
+ifc_class: IfcFurniture
+uniclass_pr: Pr_40_20_96_51
+[cite_start]body_tr: Tuvaletlerde 4mm kalınlığında flotal cam ayna temini ve montajıdır. [cite: 1]
+[cite_start]body_en: Provision and installation of flat mirrors (min. 4mm thick) in toilets. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: T02
+title: Mirror (Angled) / Açılı Ayna (Engelli)
+tr_category: DON
+ifc_class: IfcFurniture
+uniclass_pr: Pr_40_20_96_51
+[cite_start]body_tr: Engelli tuvaletlerinde açısı ayarlanabilir flotal ayna montajıdır. [cite: 1]
+[cite_start]body_en: Provision and installation of angled mirrors for disabled toilets. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: T03
+title: Flagpoles / Bayrak Direği
+tr_category: DON
+ifc_class: IfcBuildingElement
+uniclass_pr: Pr_40_10_31_30
+[cite_start]body_tr: 16m yüksekliğinde elektrostatik boyalı galvaniz çelik bayrak direği montajıdır. [cite: 1]
+[cite_start]body_en: Procurement and manufacture of 16m height electrostatically painted flag poles. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: T04
+title: Sunken Floormat / Gömme Giriş Paspasları
+tr_category: DOS
+ifc_class: IfcCovering
+uniclass_pr: Pr_35_31_30_51
+[cite_start]body_tr: Girişlerde 22mm yüksekliğinde alüminyum çerçeveli gömme paspas yapılmasıdır. [cite: 1]
+[cite_start]body_en: Providing sunken aluminum framework mats in front of entrances. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: T05
+title: Facade Cleaning System / Cephe Temizlik Sistemi
+tr_category: EKP
+ifc_class: IfcAsset
+uniclass_ss: Ss_70_80_10
+[cite_start]body_tr: Giydirme cephelerin temizliği için gerekli sepet ve ray sistemlerinin kurulumudur. [cite: 1]
+[cite_start]body_en: Procurement and installation of specialized window/facade washing systems. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: W01
+title: Masonry Brick Paving / Tuğla Yer Kaplaması
+tr_category: DOS
+ifc_class: IfcSlab
+uniclass_pr: Pr_35_31_30
+[cite_start]body_tr: Dış mekanlarda serme kum üzerine fırınlanmış tuğla ile döşeme yapılmasıdır. [cite: 1]
+[cite_start]body_en: Masonry brick paving for outdoor areas laid on sand layer. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: X01
+title: Excavation / Kazı
+tr_category: TEM
+ifc_class: IfcEarthworksElement
+uniclass_ss: Ss_15_10_30_25
+[cite_start]body_tr: Genel şartnameye uygun makine veya elle kazı ve çıkan toprağın nakli işidir. [cite: 1]
+[cite_start]body_en: Manual or mechanical excavation including transport and stacking of soil. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: X02
+title: Backfilling / Dolgu
+tr_category: TEM
+ifc_class: IfcEarthworksElement
+uniclass_ss: Ss_15_10_30_05
+[cite_start]body_tr: Kazılan yerlerin tabakalar halinde sulanarak sıkıştırılması ve doldurulmasıdır. [cite: 1]
+[cite_start]body_en: Backfilling with excavated material in layers and well compacted. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: X03
+title: Compacted Granular Fill / Temel Altı Blokajı
+tr_category: TEM
+ifc_class: IfcEarthworksElement
+uniclass_ss: Ss_15_10_30_05
+[cite_start]body_tr: Temel altında ocak taşı veya kırma taş ile blokaj yapılması işidir. [cite: 1]
+[cite_start]body_en: Sub-base course with rubble stone or granular compactable fill under foundations. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: X04
+title: Lightweight Granular Fill / Çakıl - Kum Dolgu
+tr_category: TEM
+ifc_class: IfcEarthworksElement
+uniclass_ss: Ss_15_10_30_05
+[cite_start]body_tr: Projesine uygun tipte çakıl veya kum ile blokaj/dolgu yapılması işidir. [cite: 1]
+[cite_start]body_en: Sub-base course with lightweight granular fill material as required. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: X05
+title: Asphaltic Concrete Paving / Asfalt Dökülmesi (6cm)
+tr_category: DOS
+ifc_class: IfcSlab
+uniclass_pr: Pr_35_31_04_04
+[cite_start]body_tr: Otopark ve yollarda 6cm kalınlığında asfalt beton kaplama yapılması işidir. [cite: 1]
+[cite_start]body_en: Application of single layer 6cm thick asphaltic concrete finishing. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: X07
+title: Protective Wire Fence / Açık Otopark Güvenlik Çiti
+tr_category: KOR
+ifc_class: IfcRailing
+uniclass_pr: Pr_30_59_15_15
+[cite_start]body_tr: Otopark çevrelerinde demir profil ve tel kafes korkuluk yapılması işidir. [cite: 1]
+[cite_start]body_en: Constructing metal-profile and wire mesh railing for parking lots. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: X08
+title: Drainage / Drenaj
+tr_category: ALY
+ifc_class: IfcPipeSegment
+uniclass_ss: Ss_50_30_22
+[cite_start]body_tr: Bina çeperlerinde drenaj borularının döşenmesi ve filtrasyon katmanı imalatıdır. [cite: 1]
+[cite_start]body_en: Construction of drainage systems compliant with TS EN 752-2. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: Z01
+title: General Site Prep / Genel Saha Hazırlığı
+tr_category: TEM
+ifc_class: IfcEarthworksElement
+uniclass_ss: Ss_15_10
+[cite_start]body_tr: İnşaat öncesi sahanın temizlenmesi ve hazırlık işlerini kapsar. [cite: 1]
+[cite_start]body_en: General site preparation and clearing activities as per project requirements. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: Z02
+title: Mobilization / Mobilizasyon
+tr_category: GEN
+ifc_class: IfcAsset
+uniclass_ss: Ss_15_50
+[cite_start]body_tr: Şantiye kurulumu ve gerekli tesislerin mobilizasyonu işidir. [cite: 1]
+[cite_start]body_en: Site mobilization including setup of temporary facilities and infrastructure. [cite: 1]
+
+[[SECTION_BREAK]]
+xcode: Z03
+title: Demobilization / Demobilizasyon
+tr_category: GEN
+ifc_class: IfcAsset
+uniclass_ss: Ss_15_50
+[cite_start]body_tr: Şantiyenin kaldırılması ve sahanın iade edilmesi işidir. [cite: 1]
+[cite_start]body_en: Project closeout and demobilization of site facilities and equipment. [cite: 1]
+
