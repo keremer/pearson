@@ -26,6 +26,9 @@ from pearson.interop.google_docs.config import GoogleDocsConfig
 
 logger = logging.getLogger(__name__)
 
+import webbrowser
+
+
 class DocumentContentExtractor:
     """Embedded content extractor for Google Docs"""
     
@@ -70,6 +73,8 @@ class GoogleDocsClient(BaseInteropClient):
             self.authenticate()
         except Exception as e:
             logger.warning(f"Initial authentication deferred: {e}")
+    
+    
 
     def authenticate(self) -> bool:
         """Authenticate with Google API using OAuth 2.0."""
@@ -98,6 +103,13 @@ class GoogleDocsClient(BaseInteropClient):
                     flow = InstalledAppFlow.from_client_secrets_file(
                         self.config.client_secrets_path, self.config.scopes
                     )
+
+                    # This generates the URL and opens it in your browser automatically
+                    auth_url, _ = flow.authorization_url(prompt='consent')
+                    print(f"🌐 Opening browser for Google Authorization: {auth_url}")
+                    webbrowser.open(auth_url)
+            
+                    # This line will still wait for the redirect callback
                     # CRITICAL: prompt='select_account' forces the UI to let you pick the right email
                     creds = flow.run_local_server(port=0, prompt='select_account')
 

@@ -13,6 +13,8 @@ from werkzeug.utils import secure_filename
 
 from pearson.cli.course_injector import CourseInjector
 from pearson.cli.setup import DatabaseSetup
+from pearson.interop.google_docs.client import GoogleDocsClient
+from pearson.interop.google_docs.config import GoogleDocsConfig
 from pearson.models import (AssessmentFormat, Course, LearningOutcome, Lesson,
                             Tool)
 from pearson.web import web_bp
@@ -440,3 +442,81 @@ def api_course_lessons(course_id):
         return jsonify(lessons_data)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@web_bp.route('/sync-status')
+def sync_status():
+    # 1. Initialize Client using your specific C: drive secrets
+    config = GoogleDocsConfig(user_id="doarch")
+    client = GoogleDocsClient(config)
+    
+    remote_titles = set()
+    auth_warning = False
+
+    # 2. Try to get Remote Files (Google Drive)
+    try:
+        remote_docs = client.list_documents()
+        remote_titles = {doc['name'] for doc in remote_docs}
+    except Exception as e:
+        auth_warning = True # Token might be expired/missing
+    
+    # 3. Get Local Files (A01.md - Z03.md)
+    # We use current_app.root_path to find the content folder reliably
+    specs_path = os.path.join(current_app.root_path, '..', 'content', 'specs')
+    
+    sync_data = []
+    if os.path.exists(specs_path):
+        local_files = [f for f in os.listdir(specs_path) if f.endswith('.md')]
+        for f in local_files:
+            x_code = f.replace('.md', '')
+            # Match the X-CODE inside the Google Doc title
+            is_synced = any(x_code in title for title in remote_titles)
+            sync_data.append({
+                'code': x_code,
+                'status': '✅ Synced' if is_synced else '☁️ Local Only',
+                'filename': f
+            })
+    
+    return render_template('sync_log.html', 
+                           sync_data=sync_data, 
+                           auth_warning=auth_warning)
+
+@web_bp.route('/sync-all-specs', methods=['POST'])
+def sync_all_specs():
+    # 1. Initialize Client
+    config = GoogleDocsConfig(user_id="doarch")
+    client = GoogleDocsClient(config)
+    
+    if not client.authenticated:
+        flash("❌ Authentication required. Please log in first.", "danger")
+        return redirect(url_for('web_bp.sync_status'))
+
+    # 2. Define Paths
+    specs_path = os.path.join(current_app.root_path, '..', 'content', 'specs')
+    
+    # 3. Get Existing Remote Titles to Avoid Duplicates
+    remote_docs = client.list_documents()
+    remote_titles = {doc['name'] for doc in remote_docs}
+    
+    sync_count = 0
+    for filename in os.listdir(specs_path):
+        if filename.endswith('.md'):
+            x_code = filename.replace('.md', '')
+            
+            # Skip if already in Drive
+            if any(x_code in title for title in remote_titles):
+                continue
+                
+            # Read local Markdown content
+            with open(os.path.join(specs_path, filename), 'r', encoding='utf-8') as f:
+                md_content = f.read()
+            
+            # Create the Doc (The client handles the conversion/upload)
+            # We title it with the X-CODE for easy searching
+            doc_id = client.create_document(title=f"AEC Spec: {x_code}")
+            if doc_id:
+                # Update the blank doc with the content
+                client.update_content(doc_id, {'content': md_content})
+                sync_count += 1
+                
+    flash(f"🚀 Successfully synced {sync_count} new specifications to Google Drive!", "success")
+    return redirect(url_for('web_bp.sync_status'))

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="mb-3 text-end">
+    <form action="{{ url_for('web_bp.sync_all_specs') }}" method="POST">
+        <button type="submit" class="btn btn-lg btn-success shadow">
+            🚀 Sync All Local Specs to Drive
+        </button>
+    </form>
+</div>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>🏗️ Specification Sync Registry</h1>
+        <span class="badge bg-primary">2026 Digital Regulation Ready</span>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>X-CODE</th>
+                        <th>Filename</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in sync_data %}
+                    <tr>
+                        <td><strong>{{ item.code }}</strong></td>
+                        <td class="text-muted">{{ item.filename }}</td>
+                        <td>
+                            {% if 'Synced' in item.status %}
+                            <span class="badge bg-success">{{ item.status }}</span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark">{{ item.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary">View</button>
+                            {% if 'Local' in item.status %}
+                            <button class="btn btn-sm btn-primary">🚀 Sync Now</button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
