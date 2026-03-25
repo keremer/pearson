@@ -4,8 +4,8 @@ Functional tests for web routes.
 import pytest
 import io
 from flask import url_for
-import pearson.tests.conftest as conftest
-import PythonProjects.pearson.models as models
+import crminaec.tests.conftest as conftest
+import PythonProjects.crminaec.models as models
 
 class TestIndexRoute:
     """Tests for the index route."""

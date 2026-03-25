@@ -1,5 +1,5 @@
 """
-CLI module for Pearson Course Management System.
+CLI module for crminaec Course Management System.
 """
 from .commands import CLICommands
 from .setup import DatabaseSetup

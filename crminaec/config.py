@@ -1,5 +1,5 @@
 """
-Configuration management for Pearson.
+Configuration management for crminaec.
 """
 import os
 from pathlib import Path

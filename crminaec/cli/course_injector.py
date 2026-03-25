@@ -10,8 +10,8 @@ from pathlib import Path
 from typing import List, Dict, Any
 
 # Fix imports for new structure
-from pearson.cli.setup import DatabaseSetup
-from pearson.models import Course, Lesson, LearningOutcome, AssessmentFormat, Tool, lesson_learning_outcome
+from crminaec.cli.setup import DatabaseSetup
+from crminaec.models import Course, Lesson, LearningOutcome, AssessmentFormat, Tool, lesson_learning_outcome
 
 
 class CourseInjector:

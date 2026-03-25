@@ -47,7 +47,7 @@ if __name__ == "__main__":
     # Quick test without pytest
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
-    from PythonProjects.pearson.models import Base
+    from PythonProjects.crminaec.models import Base
     
     engine = create_engine('sqlite:///:memory:')
     Session = sessionmaker(bind=engine)

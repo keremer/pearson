@@ -17,13 +17,13 @@ class CLICommands:
         self.verbose = verbose
         
         # Import components
-        from pearson.cli.setup import DatabaseSetup
-        from pearson.models import Course, Lesson  # Fixed import
+        from crminaec.cli.setup import DatabaseSetup
+        from crminaec.models import Course, Lesson  # Fixed import
         
         # Import reports and exporters if available
         try:
-            from pearson.reports.template_manager import TemplateManager, CourseDataBuilder
-            from pearson.reports.multi_exporter import MultiExporter
+            from crminaec.reports.template_manager import TemplateManager, CourseDataBuilder
+            from crminaec.reports.multi_exporter import MultiExporter
             self.template_manager = TemplateManager()
             self.data_builder = CourseDataBuilder(self.template_manager)
             self.exporter = MultiExporter(output_dir)

@@ -1,4 +1,4 @@
-# pearson/interop/google_docs/client.py (fixed)
+# crminaec/interop/google_docs/client.py (fixed)
 """
 Google Docs Client with OAuth 2.0 Authentication
 Implements BaseInteropClient interface
@@ -21,8 +21,8 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-from pearson.interop import BaseInteropClient
-from pearson.interop.google_docs.config import GoogleDocsConfig
+from crminaec.interop import BaseInteropClient
+from crminaec.interop.google_docs.config import GoogleDocsConfig
 
 logger = logging.getLogger(__name__)
 

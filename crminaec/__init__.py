@@ -1,5 +1,5 @@
 """
-Pearson Course Management System
+crminaec Course Management System
 A comprehensive system for managing courses, lessons, and learning outcomes.
 """
 __version__ = '1.0.0'
@@ -20,7 +20,7 @@ __all__ = [
     '__version__', '__author__', '__email__'
 ]
 
-class PearsonApp(Flask):
+class crminaecApp(Flask):
     """Custom Flask subclass to provide type hints for app attributes."""
     interop_manager: 'InteropManager'
 
@@ -32,12 +32,12 @@ CONFIG_DIR = PROJECT_ROOT / "config"
 TESTS_DIR = PROJECT_ROOT / "tests"
 
 if TYPE_CHECKING:
-    from pearson.interop.manager import InteropManager
+    from crminaec.interop.manager import InteropManager
 
 def get_data_dir() -> Path:
     """Get the data directory path at project root."""
-    # PACKAGE_ROOT is .../pearson/pearson
-    # PROJECT_ROOT is .../pearson
+    # PACKAGE_ROOT is .../crminaec/crminaec
+    # PROJECT_ROOT is .../crminaec
     package_root = Path(__file__).parent.absolute()
     project_root = package_root.parent.absolute()
     
@@ -59,25 +59,25 @@ def get_database_url(db_name: str = 'courses.db') -> str:
     return f'sqlite:///{db_path.as_posix()}'
 
 
-def create_app(config: Optional[Dict[str, Any]] = None) -> PearsonApp:
+def create_app(config: Optional[Dict[str, Any]] = None) -> crminaecApp:
     """
     Create and configure the Flask application.
     
     Returns:
         Flask: Configured Flask application instance
     """
-    # PACKAGE_ROOT is .../pearson/pearson
+    # PACKAGE_ROOT is .../crminaec/crminaec
     package_root = Path(__file__).parent.absolute()
-    # PROJECT_ROOT is .../pearson
+    # PROJECT_ROOT is .../crminaec
     project_root = package_root.parent.absolute()
 
     # Create Flask app
-    app = PearsonApp(__name__, 
+    app = crminaecApp(__name__, 
                 instance_relative_config=True,
                 static_folder=str(project_root / 'static'),
                 static_url_path='/static')
     
-    from pearson.interop.manager import create_interop_manager
+    from crminaec.interop.manager import create_interop_manager
     app.interop_manager = create_interop_manager()
     
     # Default configuration
@@ -111,7 +111,7 @@ def create_app(config: Optional[Dict[str, Any]] = None) -> PearsonApp:
         """Initialize database on first request."""
         nonlocal _db_initialized
         if not _db_initialized:
-            from pearson.cli.setup import DatabaseSetup
+            from crminaec.cli.setup import DatabaseSetup
             db_setup = DatabaseSetup(app.config['DATABASE_URL'])
             app.config['db_setup'] = db_setup
             print(f"📦 Database initialized: {app.config['DATABASE_URL']}")
@@ -119,15 +119,15 @@ def create_app(config: Optional[Dict[str, Any]] = None) -> PearsonApp:
     
     # Register Web Blueprints
     try:
-        from pearson.web import web_bp
-        app.register_blueprint(web_bp)
+        from crminaec.web import pearson_bp
+        app.register_blueprint(pearson_bp)
     except ImportError as e:
         print(f"⚠️  Could not register web blueprint: {e}")
 
     # --- NEW: Proper API Binding ---
     try:
         # Import and initialize the course-related API routes
-        from pearson.api.courses import init_course_routes
+        from crminaec.api.courses import init_course_routes
         init_course_routes(app)
         print("🔗 API routes bound successfully")
     except ImportError as e:
@@ -138,7 +138,7 @@ def create_app(config: Optional[Dict[str, Any]] = None) -> PearsonApp:
     @app.cli.command("init-db")
     def init_db_command():
         """Initialize the database."""
-        from pearson.cli.setup import DatabaseSetup
+        from crminaec.cli.setup import DatabaseSetup
         db_setup = DatabaseSetup(app.config['DATABASE_URL'])
         db_setup.create_tables()
         print("Database initialized.")
@@ -146,13 +146,13 @@ def create_app(config: Optional[Dict[str, Any]] = None) -> PearsonApp:
     @app.cli.command("reset-db")
     def reset_db_command():
         """Reset the database."""
-        from pearson.cli.setup import DatabaseSetup
+        from crminaec.cli.setup import DatabaseSetup
         db_setup = DatabaseSetup(app.config['DATABASE_URL'])
         db_setup.drop_tables()
         db_setup.create_tables()
         print("Database reset.")
     
-    print(f"📦 Pearson package initialized (root: {PROJECT_ROOT})")
+    print(f"📦 crminaec package initialized (root: {PROJECT_ROOT})")
     
     return app
 
@@ -167,7 +167,7 @@ def init_app(config: Optional[Dict[str, Any]] = None):
     app = create_app(config)
     
     # Initialize db_setup immediately for backward compatibility
-    from pearson.cli.setup import DatabaseSetup
+    from crminaec.cli.setup import DatabaseSetup
     db_setup = DatabaseSetup(app.config['DATABASE_URL'])
     app.config['db_setup'] = db_setup
     

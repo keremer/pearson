@@ -1,8 +1,8 @@
 from setuptools import find_packages, setup
 
 setup(
-    name="pearson",
+    name="crminaec",
     version="1.0.0",
-    packages=find_packages(),   # automatically finds the inner 'pearson' package
+    packages=find_packages(),   # automatically finds the inner 'crminaec' package
     install_requires=[],        # list your dependencies here
 )

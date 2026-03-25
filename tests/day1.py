@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 # Add the project root to Python path
-project_root = Path(__file__).parent.parent.parent  # Goes from tests/ to pearson_app/
+project_root = Path(__file__).parent.parent.parent  # Goes from tests/ to crminaec_app/
 sys.path.insert(0, str(project_root))
 
 def main():

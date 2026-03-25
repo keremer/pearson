@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Pearson Course Management System - Unified Entry Point
+crminaec Course Management System - Unified Entry Point
 Uses Click for CLI management
 """
 import os
@@ -16,18 +16,18 @@ if str(PROJECT_ROOT) not in sys.path:
 import click
 from flask import Flask
 
-# Now import from the pearson package
-from pearson import create_app, get_database_url
-from pearson.cli import (CLICommands, CourseInjector,  # Fixed imports
+# Now import from the crminaec package
+from crminaec import create_app, get_database_url
+from crminaec.cli import (CLICommands, CourseInjector,  # Fixed imports
                          DatabaseSetup)
-from pearson.cli.report_commands import report
+from crminaec.cli.report_commands import report
 
 app = create_app()
 
 @click.group(context_settings={'help_option_names': ['-h', '--help']})
-@click.version_option(version='1.0.0', prog_name='Pearson Course Manager')
+@click.version_option(version='1.0.0', prog_name='crminaec Course Manager')
 def cli():
-    """Pearson Course Management System - Unified CLI"""
+    """crminaec Course Management System - Unified CLI"""
     pass
 
 
@@ -43,7 +43,7 @@ def web(host: str, port: int, debug: bool):
     # })
     """CLI entry point for manual runs."""
     
-    click.echo(f"🌐 Starting Pearson Web Interface...")
+    click.echo(f"🌐 Starting crminaec Web Interface...")
     click.echo(f"   URL: http://{host}:{port}")
     click.echo(f"   Debug: {debug}")
     
@@ -194,15 +194,15 @@ def export(course_id: int, export_format: str, output: Optional[str]):
 def api(host: str, port: int, debug: bool):
     """Start the REST API server"""
     try:
-        from pearson.run_api import start_api
-        click.echo(f"🚀 Starting Pearson REST API...")
+        from crminaec.run_api import start_api
+        click.echo(f"🚀 Starting crminaec REST API...")
         click.echo(f"   URL: http://{host}:{port}/api")
         click.echo(f"   Debug: {debug}")
         
         start_api(port=port, debug=debug)
     except ImportError as e:
         click.echo(f"❌ API module not available: {e}")
-        click.echo("Install API dependencies: pip install 'pearson-course-manager[api]'")
+        click.echo("Install API dependencies: pip install 'crminaec-course-manager[api]'")
         sys.exit(1)
 
 
@@ -210,7 +210,7 @@ def api(host: str, port: int, debug: bool):
 @click.option('--db-name', default='courses.db', help='Database name')
 def check(db_name: str):
     """Check system health and configuration"""
-    click.echo("🔍 Pearson System Check")
+    click.echo("🔍 crminaec System Check")
     click.echo("=" * 40)
     
     # Check Python version
@@ -257,7 +257,7 @@ def inspect(model_name: str, count: int):
         from sqlalchemy import create_engine
         from sqlalchemy import inspect as sa_inspect
 
-        from pearson.models import Base
+        from crminaec.models import Base
 
         # Create a database engine
         engine = create_engine(get_database_url())
@@ -265,23 +265,23 @@ def inspect(model_name: str, count: int):
         inspector = sa_inspect(engine)
         
         if model_name == 'course':
-            from pearson.models import Course
+            from crminaec.models import Course
             table_name = Course.__tablename__
             model_class = Course
         elif model_name == 'lesson':
-            from pearson.models import Lesson
+            from crminaec.models import Lesson
             table_name = Lesson.__tablename__
             model_class = Lesson
         elif model_name == 'learningoutcome':
-            from pearson.models import LearningOutcome
+            from crminaec.models import LearningOutcome
             table_name = LearningOutcome.__tablename__
             model_class = LearningOutcome
         elif model_name == 'tool':
-            from pearson.models import Tool
+            from crminaec.models import Tool
             table_name = Tool.__tablename__
             model_class = Tool
         elif model_name == 'assessment':
-            from pearson.models import AssessmentFormat
+            from crminaec.models import AssessmentFormat
             table_name = AssessmentFormat.__tablename__
             model_class = AssessmentFormat
         else:

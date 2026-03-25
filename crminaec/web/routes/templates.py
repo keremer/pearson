@@ -16,8 +16,8 @@ def add_template():
         category = request.form["category"]
         file_path = request.form["file_path"]
         format = request.form["format"]
-        pearson_link = request.form["pearson_link"]
-        new_template = Template(name=name, category=category, file_path=file_path, format=format, pearson_link=pearson_link)
+        crminaec_link = request.form["crminaec_link"]
+        new_template = Template(name=name, category=category, file_path=file_path, format=format, crminaec_link=crminaec_link)
         db.session.add(new_template)
         db.session.commit()
         return redirect(url_for("templates.index"))

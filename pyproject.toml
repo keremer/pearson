@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "pearson-course-manager"
+name = "Course-manager"
 version = "1.0.0"
 description = "Course Management System with Learning Outcome Tracking"
 readme = "README.md"
@@ -69,13 +69,13 @@ Documentation = "https://github.com/keremer/pearson/wiki"
 
 [project.scripts]
 # Updated to point to the main module within the pearson package
-pearson = "pearson.main:cli"
+crminaec = "crminaec.main:cli"
 
 [tool.setuptools.packages.find]
 where = ["."]
-# Focus on the 'pearson' root package; setuptools will find the 
+# Focus on the 'crminaec' root package; setuptools will find the 
 # sub-packages (web, api, cli, interop) automatically if they contain __init__.py
-include = ["pearson*"]
+include = ["crminaec*"]
 exclude = ["tests*", "*.tests", "*.tests.*", "tests.*"]
 
 [tool.black]

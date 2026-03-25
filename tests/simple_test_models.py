@@ -1,9 +1,9 @@
 """
-Simple model tests for the Pearson Course Management System.
+Simple model tests for the crminaec Course Management System.
 """
 import pytest
 from datetime import datetime
-from PythonProjects.pearson.models import Course, Lesson
+from PythonProjects.crminaec.models import Course, Lesson
 
 def test_course_creation():
     """Test creating a Course instance."""

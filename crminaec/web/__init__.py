@@ -1,9 +1,9 @@
 """
-Web interface blueprint for Pearson Course Management System.
+Web interface blueprint for crminaec Course Management System.
 """
 from flask import Blueprint
 
-web_bp = Blueprint('web', __name__, 
+pearson_bp = Blueprint('web', __name__, 
                    template_folder='templates',
                    static_folder='static',
                    url_prefix='')
@@ -34,9 +34,9 @@ web_bp = Blueprint('web', __name__,
 #         app.config.update(config)
     
 #     # Register blueprint
-#     app.register_blueprint(web_bp)
+#     app.register_blueprint(pearson_bp)
     
 #     return app
 
 # Import routes after creating blueprint to avoid circular imports
-from pearson.web import routes
+from crminaec.web import routes

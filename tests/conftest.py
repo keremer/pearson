@@ -1,5 +1,5 @@
 """
-Pytest configuration and fixtures for Pearson Course Management System.
+Pytest configuration and fixtures for crminaec Course Management System.
 """
 import os
 import sys
@@ -15,9 +15,9 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from flask import Flask
-from PythonProjects.pearson.models import Base, Course, Lesson, LearningOutcome, AssessmentFormat, Tool, LessonLearningOutcome
-from pearson.cli.setup import DatabaseSetup
-from pearson.web import web_bp  # Now this works!
+from PythonProjects.crminaec.models import Base, Course, Lesson, LearningOutcome, AssessmentFormat, Tool, LessonLearningOutcome
+from crminaec.cli.setup import DatabaseSetup
+from crminaec.web import pearson_bp  # Now this works!
 
 # ============================================================================
 # DATABASE FIXTURES
@@ -100,7 +100,7 @@ def app(test_database_url):
     })
     
     # Register blueprint
-    app.register_blueprint(web_bp, url_prefix='/')
+    app.register_blueprint(pearson_bp, url_prefix='/')
     
     # Setup database (matching your routes' expectations)
     db_setup = DatabaseSetup(test_database_url)

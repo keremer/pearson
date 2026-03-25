@@ -12,7 +12,7 @@ def test_current_factories():
     session = Session()
     
     # Create tables
-    from PythonProjects.pearson.models import Base
+    from PythonProjects.crminaec.models import Base
     Base.metadata.create_all(engine)
     
     try:

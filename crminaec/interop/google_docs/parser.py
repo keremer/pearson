@@ -1,4 +1,4 @@
-# pearson/interop/google_docs/parser.py (updated with improvements)
+# crminaec/interop/google_docs/parser.py (updated with improvements)
 """
 Google Docs Document Parser - Structured content extraction with improved parsing.
 """

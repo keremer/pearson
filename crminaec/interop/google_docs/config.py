@@ -53,8 +53,8 @@ class GoogleDocsConfig:
 
     def __post_init__(self):
         """Validate configuration and set user-specific token path."""
-        # 🏗️ Define Project Root (C:\inGitHub\pythonapps\pearson)
-        # We go up 4 levels from pearson/interop/google_docs/config.py
+        # 🏗️ Define Project Root (C:\inGitHub\pythonapps\crminaec)
+        # We go up 4 levels from crminaec/interop/google_docs/config.py
         root = Path(__file__).parent.parent.parent.parent
         
         # 1. Resolve Client Secrets (Outside Project Folder)
@@ -64,12 +64,12 @@ class GoogleDocsConfig:
             self.client_secrets_path = str(root / self.client_secrets_path)
         
         # 2. Setup Tokens Directory (Local to Project Root)
-        # Path: C:\inGitHub\pythonapps\pearson\tokens\
+        # Path: C:\inGitHub\pythonapps\crminaec\tokens\
         token_dir = root / "tokens"
         token_dir.mkdir(parents=True, exist_ok=True) 
         
         # 3. Force User-Specific Token Filename
-        # Result: C:\inGitHub\pythonapps\pearson\tokens\token_default.json
+        # Result: C:\inGitHub\pythonapps\crminaec\tokens\token_default.json
         self.token_path = str(token_dir / f"token_{self.user_id}.json")
         
         # 4. Sync Folder ID Attributes

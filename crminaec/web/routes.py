@@ -11,14 +11,14 @@ from flask import (current_app, flash, g, jsonify, redirect, render_template,
                    request, session, url_for)
 from werkzeug.utils import secure_filename
 
-from pearson.cli.course_injector import CourseInjector
-from pearson.cli.setup import DatabaseSetup
-from pearson.interop.google_docs.client import GoogleDocsClient
-from pearson.interop.google_docs.config import GoogleDocsConfig
-from pearson.models import (AssessmentFormat, Course, LearningOutcome, Lesson,
+from crminaec.cli.course_injector import CourseInjector
+from crminaec.cli.setup import DatabaseSetup
+from crminaec.interop.google_docs.client import GoogleDocsClient
+from crminaec.interop.google_docs.config import GoogleDocsConfig
+from crminaec.models import (AssessmentFormat, Course, LearningOutcome, Lesson,
                             Tool)
-from pearson.web import web_bp
-from pearson.web.forms import CourseForm, ImportForm, LessonForm
+from crminaec.web import pearson_bp
+from crminaec.web.forms import CourseForm, ImportForm, LessonForm
 
 
 def get_db_session():
@@ -37,7 +37,7 @@ def get_db_session():
     
     return g.db_session
 
-@web_bp.before_app_request
+@pearson_bp.before_app_request
 def setup_db():
     """
     Ensure database session is available for every request.
@@ -47,7 +47,7 @@ def setup_db():
     # This is cleaner than duplicating logic here
     get_db_session()
 
-@web_bp.teardown_app_request
+@pearson_bp.teardown_app_request
 def teardown_db(exception=None):
     """
     Close database session at the end of each request.
@@ -57,7 +57,7 @@ def teardown_db(exception=None):
     if db_session is not None:
         db_session.close()
 
-@web_bp.route('/')
+@pearson_bp.route('/')
 def index():
     """Home page with overview"""
     try:
@@ -78,7 +78,7 @@ def index():
         flash(f"Database Error: {e}", "error")
         return render_template('index.html', stats={}, courses=[])
 
-@web_bp.route('/courses')
+@pearson_bp.route('/courses')
 def list_courses():
     """List all courses"""
     try:
@@ -89,7 +89,7 @@ def list_courses():
         flash(f'Error loading courses: {str(e)}', 'error')
         return render_template('courses.html', courses=[])
 
-@web_bp.route('/course/<int:course_id>')
+@pearson_bp.route('/course/<int:course_id>')
 def course_detail(course_id):
     """Show course details and lessons"""
     try:
@@ -111,7 +111,7 @@ def course_detail(course_id):
         flash(f'Error loading course: {str(e)}', 'error')
         return redirect(url_for('web.list_courses'))
 
-@web_bp.route('/course/<int:course_id>/lessons')
+@pearson_bp.route('/course/<int:course_id>/lessons')
 def course_lessons(course_id):
     """Show lessons for a specific course"""
     try:
@@ -133,7 +133,7 @@ def course_lessons(course_id):
         flash(f'Error loading lessons: {str(e)}', 'error')
         return redirect(url_for('web.list_courses'))
 
-@web_bp.route('/course/create', methods=['GET', 'POST'])
+@pearson_bp.route('/course/create', methods=['GET', 'POST'])
 def create_course():
     """Create a new course"""
     form = CourseForm()
@@ -186,7 +186,7 @@ def create_course():
         flash(f'Error creating course: {str(e)}', 'error')
         return render_template('course_edit.html', form=form, course=None)
 
-@web_bp.route('/course/<int:course_id>/edit', methods=['GET', 'POST'])
+@pearson_bp.route('/course/<int:course_id>/edit', methods=['GET', 'POST'])
 def edit_course(course_id):
     """Edit an existing course"""
     db_session = get_db_session()
@@ -221,7 +221,7 @@ def edit_course(course_id):
         flash(f'Error updating course: {str(e)}', 'error')
         return render_template('course_edit.html', course=course)
 
-@web_bp.route('/course/<int:course_id>/delete', methods=['POST'])
+@pearson_bp.route('/course/<int:course_id>/delete', methods=['POST'])
 def delete_course(course_id):
     """Delete a course"""
     db_session = get_db_session()
@@ -240,7 +240,7 @@ def delete_course(course_id):
     
     return redirect(url_for('web.list_courses'))
 
-@web_bp.route('/course/<int:course_id>/lesson/create', methods=['GET', 'POST'])
+@pearson_bp.route('/course/<int:course_id>/lesson/create', methods=['GET', 'POST'])
 def create_lesson(course_id):
     """Create a new lesson for a course"""
     db_session = get_db_session()
@@ -287,7 +287,7 @@ def create_lesson(course_id):
         flash(f'Error creating lesson: {str(e)}', 'error')
         return render_template('lesson_edit.html', course=course, lesson=None)
 
-@web_bp.route('/lesson/<int:lesson_id>/edit', methods=['GET', 'POST'])
+@pearson_bp.route('/lesson/<int:lesson_id>/edit', methods=['GET', 'POST'])
 def edit_lesson(lesson_id):
     """Edit an existing lesson"""
     db_session = get_db_session()
@@ -330,7 +330,7 @@ def edit_lesson(lesson_id):
         flash(f'Error updating lesson: {str(e)}', 'error')
         return render_template('lesson_edit.html', course=course, lesson=lesson)
 
-@web_bp.route('/lesson/<int:lesson_id>/delete', methods=['POST'])
+@pearson_bp.route('/lesson/<int:lesson_id>/delete', methods=['POST'])
 def delete_lesson(lesson_id):
     """Delete a lesson"""
     db_session = get_db_session()
@@ -351,7 +351,7 @@ def delete_lesson(lesson_id):
     
     return redirect(url_for('web.list_courses'))
 
-@web_bp.route('/course/import', methods=['GET', 'POST'])
+@pearson_bp.route('/course/import', methods=['GET', 'POST'])
 def import_syllabus():
     """Handle Markdown file uploads and trigger CourseInjector."""
     if request.method == 'GET':
@@ -403,7 +403,7 @@ def import_syllabus():
             os.remove(temp_path)
 
 # API endpoints for potential AJAX functionality
-@web_bp.route('/api/courses')
+@pearson_bp.route('/api/courses')
 def api_courses():
     """JSON API for courses"""
     try:
@@ -421,7 +421,7 @@ def api_courses():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@web_bp.route('/api/course/<int:course_id>/lessons')
+@pearson_bp.route('/api/course/<int:course_id>/lessons')
 def api_course_lessons(course_id):
     """JSON API for course lessons"""
     try:
@@ -443,7 +443,7 @@ def api_course_lessons(course_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@web_bp.route('/sync-status')
+@pearson_bp.route('/sync-status')
 def sync_status():
     # 1. Initialize Client using your specific C: drive secrets
     config = GoogleDocsConfig(user_id="doarch")
@@ -482,7 +482,7 @@ def sync_status():
                            sync_data=sync_data, 
                            auth_warning=auth_warning)
 
-@web_bp.route('/sync-all-specs', methods=['POST'])
+@pearson_bp.route('/sync-all-specs', methods=['POST'])
 def sync_all_specs():
     # 1. Initialize Client
     config = GoogleDocsConfig(user_id="doarch")
@@ -523,7 +523,7 @@ def sync_all_specs():
     flash(f"🚀 Successfully synced {sync_count} new specifications to Google Drive!", "success")
     return redirect(url_for('web.sync_status'))
 
-@web_bp.route('/folders')
+@pearson_bp.route('/folders')
 def folder_registry():
     config = GoogleDocsConfig(user_id="kerem")
     client = GoogleDocsClient(config)

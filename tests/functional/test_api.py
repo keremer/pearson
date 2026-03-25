@@ -3,7 +3,7 @@ Tests for API endpoints.
 """
 import pytest
 import json
-import pearson.tests.conftest
+import crminaec.tests.conftest
 
 class TestAPIRoutes:
     """Tests for JSON API endpoints."""
@@ -19,8 +19,8 @@ class TestAPIRoutes:
     
     def test_api_courses_with_data(self, client, db_session):
         """Test API courses endpoint with courses."""
-        pearson.tests.conftest.create_test_course(db_session, title='API Course 1')
-        pearson.tests.conftest.create_test_course(db_session, title='API Course 2')
+        crminaec.tests.conftest.create_test_course(db_session, title='API Course 1')
+        crminaec.tests.conftest.create_test_course(db_session, title='API Course 2')
         
         response = client.get('/api/courses')
         assert response.status_code == 200
@@ -34,9 +34,9 @@ class TestAPIRoutes:
     
     def test_api_course_lessons(self, client, db_session):
         """Test API course lessons endpoint."""
-        course = pearson.tests.conftest.create_test_course(db_session)
-        pearson.tests.conftest.create_test_lesson(db_session, course.id, title='Lesson 1', order=1)
-        pearson.tests.conftest.create_test_lesson(db_session, course.id, title='Lesson 2', order=2)
+        course = crminaec.tests.conftest.create_test_course(db_session)
+        crminaec.tests.conftest.create_test_lesson(db_session, course.id, title='Lesson 1', order=1)
+        crminaec.tests.conftest.create_test_lesson(db_session, course.id, title='Lesson 2', order=2)
         
         response = client.get(f'/api/course/{course.id}/lessons')
         assert response.status_code == 200

@@ -8,8 +8,8 @@ import time
 from pathlib import Path
 from typing import Dict, Any
 
-from pearson.interop.manager import InteropManager, Platform
-from pearson.interop.google_docs import GoogleDocsConfig, GoogleDocsClient
+from crminaec.interop.manager import InteropManager, Platform
+from crminaec.interop.google_docs import GoogleDocsConfig, GoogleDocsClient
 
 def test_full_workflow(user_email: str):
     print(f"\n🚀 Starting Workflow Test for: {user_email}")
@@ -38,7 +38,7 @@ def test_full_workflow(user_email: str):
 
     try:
         # 3. Create Test Doc
-        doc_name = f"Pearson Test - {int(time.time())}"
+        doc_name = f"crminaec Test - {int(time.time())}"
         print(f"📝 Creating: {doc_name}")
         doc_id = client.create_document(doc_name)
         

@@ -1,4 +1,4 @@
-# pearson/cli/report_commands.py
+# crminaec/cli/report_commands.py
 """
 CLI commands for report generation.
 """
@@ -7,8 +7,8 @@ from pathlib import Path
 from typing import List, Optional
 from sqlalchemy.orm import Session
 
-from pearson.models import Course
-from pearson.reports import TemplateManager, CourseDataBuilder, MultiExporter
+from crminaec.models import Course
+from crminaec.reports import TemplateManager, CourseDataBuilder, MultiExporter
 
 
 @click.group()
