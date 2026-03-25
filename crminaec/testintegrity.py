@@ -49,5 +49,5 @@ def run_integrity_audit(specs_dir):
         print("✅ All files meet metadata and length requirements.")
 
 # Execute
-specs_path = os.path.join('..', 'content', 'specs')
+specs_path = os.path.join('..', 'static', 'content', 'specs')
 run_integrity_audit(specs_path)

@@ -1,5 +1,6 @@
 import os
 
+
 def process_master_lib(file_path, output_dir):
     with open(file_path, 'r', encoding='utf-8') as f:
         content = f.read()
@@ -14,4 +15,4 @@ def process_master_lib(file_path, output_dir):
             print(f"✅ Deployed: {xcode}.md")
 
 # Usage
-process_master_lib('master_lib.txt', '../content/specs')
+process_master_lib('master_lib.txt', '../static/content/specs')

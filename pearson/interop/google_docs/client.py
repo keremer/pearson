@@ -478,3 +478,52 @@ class GoogleDocsClient(BaseInteropClient):
         except Exception as e:
             logger.error(f"❌ Error listing documents: {e}")
             return []
+        
+    def list_folders(self) -> List[Dict[str, Any]]:
+        """List all folders accessible to the user in Google Drive."""
+        try:
+            self._ensure_drive_service()
+            
+            # Query only for folders that are not in the trash
+            query = "mimeType='application/vnd.google-apps.folder' and trashed=false"
+            
+            results = self.drive_service.files().list(  # type: ignore
+                q=query,
+                fields="files(id, name, parents, webViewLink)",
+                orderBy="name"
+            ).execute()
+            
+            return results.get('files', [])
+        except Exception as e:
+            logger.error(f"❌ Error listing folders: {e}")
+            return []
+    def apply_aec_styling(self, document_id: str, title: str):
+        """Applies EMEK Architecture branding and professional AEC typography."""
+        self._ensure_docs_service()
+        if self.docs_service is None:
+            raise RuntimeError("Google Docs service not initialized")
+        requests = [
+            # 1. Style the Title (The X-CODE)
+            {
+                'updateParagraphStyle': {
+                    'range': {'startIndex': 1, 'endIndex': len(title) + 1},
+                    'paragraphStyle': {'namedStyleType': 'HEADING_1'},
+                    'fields': 'namedStyleType'
+                }
+            },
+            # 2. Add a blue horizontal line/border effect
+            {
+                'updateTextStyle': {
+                    'range': {'startIndex': 1, 'endIndex': len(title) + 1},
+                    'textStyle': {
+                        'foregroundColor': {'color': {'rgbColor': {'blue': 0.6, 'red': 0.1, 'green': 0.2}}},
+                        'bold': True,
+                        'fontSize': {'magnitude': 18, 'unit': 'PT'}
+                    },
+                    'fields': 'foregroundColor,bold,fontSize'
+                }
+            }
+        ]
+        self.docs_service.documents().batchUpdate(
+            document_id=document_id, body={'requests': requests}
+        ).execute()

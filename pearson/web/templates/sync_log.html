@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="mb-3 text-end">
-    <form action="{{ url_for('web_bp.sync_all_specs') }}" method="POST">
+    <form action="{{ url_for('web.sync_all_specs') }}" method="POST">
         <button type="submit" class="btn btn-lg btn-success shadow">
             🚀 Sync All Local Specs to Drive
         </button>

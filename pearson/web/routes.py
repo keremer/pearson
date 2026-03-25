@@ -455,10 +455,12 @@ def sync_status():
     # 2. Try to get Remote Files (Google Drive)
     try:
         remote_docs = client.list_documents()
-        remote_titles = {doc['name'] for doc in remote_docs}
+        
     except Exception as e:
         auth_warning = True # Token might be expired/missing
     
+    remote_titles = {doc['name'] for doc in remote_docs}
+
     # 3. Get Local Files (A01.md - Z03.md)
     # We use current_app.root_path to find the content folder reliably
     specs_path = os.path.join(current_app.root_path, '..', 'content', 'specs')
@@ -488,13 +490,13 @@ def sync_all_specs():
     
     if not client.authenticated:
         flash("❌ Authentication required. Please log in first.", "danger")
-        return redirect(url_for('web_bp.sync_status'))
+        return redirect(url_for('web.sync_status'))
 
     # 2. Define Paths
     specs_path = os.path.join(current_app.root_path, '..', 'content', 'specs')
     
-    # 3. Get Existing Remote Titles to Avoid Duplicates
-    remote_docs = client.list_documents()
+    # 3. Get Existing Remote Titles to Avoid Duplicates 
+    remote_docs = client.list_documents()   
     remote_titles = {doc['name'] for doc in remote_docs}
     
     sync_count = 0
@@ -519,4 +521,18 @@ def sync_all_specs():
                 sync_count += 1
                 
     flash(f"🚀 Successfully synced {sync_count} new specifications to Google Drive!", "success")
-    return redirect(url_for('web_bp.sync_status'))
+    return redirect(url_for('web.sync_status'))
+
+@web_bp.route('/folders')
+def folder_registry():
+    config = GoogleDocsConfig(user_id="kerem")
+    client = GoogleDocsClient(config)
+    
+    folders = client.list_folders()
+    
+    # Optional: Highlight the default project folder from your .env
+    default_id = config.default_folder_id
+    
+    return render_template('folders.html', 
+                        folders=folders, 
+                        default_id=default_id)

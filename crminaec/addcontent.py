@@ -18,4 +18,4 @@ def inject_content(master_file, specs_dir):
                 print(f"✅ Injected content into {xcode}.md")
 
 # Run it
-inject_content('adddetails.txt', '../content/specs')
+inject_content('adddetails.txt', '../static/content/specs')
