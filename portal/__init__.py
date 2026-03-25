@@ -32,7 +32,7 @@ CONFIG_DIR = PROJECT_ROOT / "config"
 TESTS_DIR = PROJECT_ROOT / "tests"
 
 if TYPE_CHECKING:
-    from crminaec.interop.manager import InteropManager
+    from portal.core.interop.manager import InteropManager
 
 def get_data_dir() -> Path:
     """Get the data directory path at project root."""
@@ -77,7 +77,7 @@ def create_app(config: Optional[Dict[str, Any]] = None) -> crminaecApp:
                 static_folder=str(project_root / 'static'),
                 static_url_path='/static')
     
-    from crminaec.interop.manager import create_interop_manager
+    from portal.core.interop.manager import create_interop_manager
     app.interop_manager = create_interop_manager()
     
     # Default configuration
@@ -111,7 +111,7 @@ def create_app(config: Optional[Dict[str, Any]] = None) -> crminaecApp:
         """Initialize database on first request."""
         nonlocal _db_initialized
         if not _db_initialized:
-            from crminaec.cli.setup import DatabaseSetup
+            from portal.core.cli.setup import DatabaseSetup
             db_setup = DatabaseSetup(app.config['DATABASE_URL'])
             app.config['db_setup'] = db_setup
             print(f"📦 Database initialized: {app.config['DATABASE_URL']}")
@@ -119,7 +119,7 @@ def create_app(config: Optional[Dict[str, Any]] = None) -> crminaecApp:
     
     # Register Web Blueprints
     try:
-        from crminaec.web import pearson_bp
+        from portal.web import pearson_bp
         app.register_blueprint(pearson_bp)
     except ImportError as e:
         print(f"⚠️  Could not register web blueprint: {e}")
@@ -127,7 +127,7 @@ def create_app(config: Optional[Dict[str, Any]] = None) -> crminaecApp:
     # --- NEW: Proper API Binding ---
     try:
         # Import and initialize the course-related API routes
-        from crminaec.api.courses import init_course_routes
+        from portal.api.courses import init_course_routes
         init_course_routes(app)
         print("🔗 API routes bound successfully")
     except ImportError as e:
@@ -138,7 +138,7 @@ def create_app(config: Optional[Dict[str, Any]] = None) -> crminaecApp:
     @app.cli.command("init-db")
     def init_db_command():
         """Initialize the database."""
-        from crminaec.cli.setup import DatabaseSetup
+        from portal.core.cli.setup import DatabaseSetup
         db_setup = DatabaseSetup(app.config['DATABASE_URL'])
         db_setup.create_tables()
         print("Database initialized.")
@@ -146,7 +146,7 @@ def create_app(config: Optional[Dict[str, Any]] = None) -> crminaecApp:
     @app.cli.command("reset-db")
     def reset_db_command():
         """Reset the database."""
-        from crminaec.cli.setup import DatabaseSetup
+        from portal.core.cli.setup import DatabaseSetup
         db_setup = DatabaseSetup(app.config['DATABASE_URL'])
         db_setup.drop_tables()
         db_setup.create_tables()
@@ -167,7 +167,7 @@ def init_app(config: Optional[Dict[str, Any]] = None):
     app = create_app(config)
     
     # Initialize db_setup immediately for backward compatibility
-    from crminaec.cli.setup import DatabaseSetup
+    from portal.core.cli.setup import DatabaseSetup
     db_setup = DatabaseSetup(app.config['DATABASE_URL'])
     app.config['db_setup'] = db_setup
     

@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 # Import crminaec models for type hints
 try:
-    from crminaec.models import Course, Lesson, LearningOutcome, AssessmentFormat, Tool
+    from portal.platforms.pearson.models import Course, Lesson, LearningOutcome, AssessmentFormat, Tool
 except ImportError:
     # For standalone testing
     pass

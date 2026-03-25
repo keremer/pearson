@@ -2,12 +2,12 @@
 """
 CLI Commands for Course Automation System - OPTIMIZED VERSION
 """
+import csv
+import json
 import os
 import sys
-import json
-import csv
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
 
 
 class CLICommands:
@@ -17,13 +17,15 @@ class CLICommands:
         self.verbose = verbose
         
         # Import components
-        from crminaec.cli.setup import DatabaseSetup
-        from crminaec.models import Course, Lesson  # Fixed import
-        
+        from portal.core.cli.setup import DatabaseSetup
+        from portal.platforms.pearson.models import Course  # Fixed import
+        from portal.platforms.pearson.models import Lesson
+
         # Import reports and exporters if available
         try:
-            from crminaec.reports.template_manager import TemplateManager, CourseDataBuilder
-            from crminaec.reports.multi_exporter import MultiExporter
+            from portal.core.reporting.multi_exporter import MultiExporter
+            from portal.core.reporting.template_manager import (
+                CourseDataBuilder, TemplateManager)
             self.template_manager = TemplateManager()
             self.data_builder = CourseDataBuilder(self.template_manager)
             self.exporter = MultiExporter(output_dir)

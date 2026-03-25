@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Optional
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import sessionmaker, scoped_session
-from crminaec.models import Base, Course, Lesson
+from portal.platforms.pearson.models import Base, Course, Lesson
 
 
 class DatabaseSetup:
@@ -22,7 +22,7 @@ class DatabaseSetup:
         """
         if database_url is None:
             # Use default data folder
-            from crminaec import get_database_url
+            from portal import get_database_url
             database_url = get_database_url()
         
         self.database_url = database_url

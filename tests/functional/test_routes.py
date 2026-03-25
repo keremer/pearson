@@ -4,7 +4,7 @@ Functional tests for web routes.
 import pytest
 import io
 from flask import url_for
-import crminaec.tests.conftest as conftest
+import portal.tests.conftest as conftest
 import PythonProjects.crminaec.models as models
 
 class TestIndexRoute:

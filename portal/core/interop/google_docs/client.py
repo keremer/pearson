@@ -21,8 +21,8 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-from crminaec.interop import BaseInteropClient
-from crminaec.interop.google_docs.config import GoogleDocsConfig
+from portal.interop import BaseInteropClient
+from portal.interop.google_docs.config import GoogleDocsConfig
 
 logger = logging.getLogger(__name__)
 

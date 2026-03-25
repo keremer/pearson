@@ -1,5 +1,5 @@
 from flask import jsonify, request
-from crminaec.models import Course
+from portal.platforms.pearson.models import Course
 from cli.setup import DatabaseSetup
 
 def init_course_routes(app):

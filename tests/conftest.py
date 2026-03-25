@@ -16,8 +16,8 @@ sys.path.insert(0, str(project_root))
 
 from flask import Flask
 from PythonProjects.crminaec.models import Base, Course, Lesson, LearningOutcome, AssessmentFormat, Tool, LessonLearningOutcome
-from crminaec.cli.setup import DatabaseSetup
-from crminaec.web import pearson_bp  # Now this works!
+from portal.cli.setup import DatabaseSetup
+from portal.web import pearson_bp  # Now this works!
 
 # ============================================================================
 # DATABASE FIXTURES

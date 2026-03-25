@@ -11,7 +11,7 @@ from typing import Dict, Any, List, Optional
 
 from interop.manager import InteropManager
 from interop import Platform
-from crminaec.models import Course, Lesson, LearningOutcome, AssessmentFormat, Tool
+from portal.platforms.pearson.models import Course, Lesson, LearningOutcome, AssessmentFormat, Tool
 from cli.setup import DatabaseSetup
 
 class GoogleDocsWebhookProcessor:

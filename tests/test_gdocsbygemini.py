@@ -8,8 +8,8 @@ import time
 from pathlib import Path
 from typing import Dict, Any
 
-from crminaec.interop.manager import InteropManager, Platform
-from crminaec.interop.google_docs import GoogleDocsConfig, GoogleDocsClient
+from portal.interop.manager import InteropManager, Platform
+from portal.interop.google_docs import GoogleDocsConfig, GoogleDocsClient
 
 def test_full_workflow(user_email: str):
     print(f"\n🚀 Starting Workflow Test for: {user_email}")

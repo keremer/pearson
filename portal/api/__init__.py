@@ -7,7 +7,7 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
-from crminaec.api.webhooks import init_webhook_routes
+from portal.api.webhooks import init_webhook_routes
 
 init_webhook_routes(app)
 

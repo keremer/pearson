@@ -17,10 +17,10 @@ import click
 from flask import Flask
 
 # Now import from the crminaec package
-from crminaec import create_app, get_database_url
-from crminaec.cli import (CLICommands, CourseInjector,  # Fixed imports
-                         DatabaseSetup)
-from crminaec.cli.report_commands import report
+from portal import create_app, get_database_url
+from portal.core.cli import (CLICommands, CourseInjector,  # Fixed imports
+                             DatabaseSetup)
+from portal.core.cli.report_commands import report
 
 app = create_app()
 
@@ -194,7 +194,7 @@ def export(course_id: int, export_format: str, output: Optional[str]):
 def api(host: str, port: int, debug: bool):
     """Start the REST API server"""
     try:
-        from crminaec.run_api import start_api
+        from portal.run_api import start_api
         click.echo(f"🚀 Starting crminaec REST API...")
         click.echo(f"   URL: http://{host}:{port}/api")
         click.echo(f"   Debug: {debug}")
@@ -257,7 +257,7 @@ def inspect(model_name: str, count: int):
         from sqlalchemy import create_engine
         from sqlalchemy import inspect as sa_inspect
 
-        from crminaec.models import Base
+        from portal.platforms.pearson.models import Base
 
         # Create a database engine
         engine = create_engine(get_database_url())
@@ -265,23 +265,23 @@ def inspect(model_name: str, count: int):
         inspector = sa_inspect(engine)
         
         if model_name == 'course':
-            from crminaec.models import Course
+            from portal.platforms.pearson.models import Course
             table_name = Course.__tablename__
             model_class = Course
         elif model_name == 'lesson':
-            from crminaec.models import Lesson
+            from portal.platforms.pearson.models import Lesson
             table_name = Lesson.__tablename__
             model_class = Lesson
         elif model_name == 'learningoutcome':
-            from crminaec.models import LearningOutcome
+            from portal.platforms.pearson.models import LearningOutcome
             table_name = LearningOutcome.__tablename__
             model_class = LearningOutcome
         elif model_name == 'tool':
-            from crminaec.models import Tool
+            from portal.platforms.pearson.models import Tool
             table_name = Tool.__tablename__
             model_class = Tool
         elif model_name == 'assessment':
-            from crminaec.models import AssessmentFormat
+            from portal.platforms.pearson.models import AssessmentFormat
             table_name = AssessmentFormat.__tablename__
             model_class = AssessmentFormat
         else:

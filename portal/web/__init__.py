@@ -39,4 +39,4 @@ pearson_bp = Blueprint('web', __name__,
 #     return app
 
 # Import routes after creating blueprint to avoid circular imports
-from crminaec.web import routes
+from portal.platforms.pearson import routes
