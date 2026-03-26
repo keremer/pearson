@@ -18,9 +18,9 @@ from flask import Flask
 
 # Now import from the crminaec package
 from portal import create_app, get_database_url
-from portal.core.cli import (CLICommands, CourseInjector,  # Fixed imports
+from ..cli import (CLICommands, CourseInjector,  # Fixed imports
                              DatabaseSetup)
-from portal.core.cli.report_commands import report
+from ..cli.report_commands import report
 
 app = create_app()
 

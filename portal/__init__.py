@@ -10,9 +10,9 @@ import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
+from config import Config
 from flask import Flask
 from markupsafe import Markup
-from config import Config
 
 # Package metadata
 __all__ = [
@@ -63,7 +63,6 @@ def get_database_url(db_name: str = 'courses.db') -> str:
 def create_app(config: Optional[Dict[str, Any]] = None) -> crminaecApp:
     """
     Create and configure the Flask application.
-    
     Returns:
         Flask: Configured Flask application instance
     """
@@ -72,6 +71,7 @@ def create_app(config: Optional[Dict[str, Any]] = None) -> crminaecApp:
     # PROJECT_ROOT is .../crminaec
     project_root = package_root.parent.absolute()
 
+    
     # Create Flask app
     app = crminaecApp(__name__, 
                 instance_relative_config=True,
@@ -112,7 +112,7 @@ def create_app(config: Optional[Dict[str, Any]] = None) -> crminaecApp:
         """Initialize database on first request."""
         nonlocal _db_initialized
         if not _db_initialized:
-            from portal.core.cli.setup import DatabaseSetup
+            from ..cli.setup import DatabaseSetup
             db_setup = DatabaseSetup(app.config['DATABASE_URL'])
             app.config['db_setup'] = db_setup
             print(f"📦 Database initialized: {app.config['DATABASE_URL']}")
@@ -139,7 +139,7 @@ def create_app(config: Optional[Dict[str, Any]] = None) -> crminaecApp:
     @app.cli.command("init-db")
     def init_db_command():
         """Initialize the database."""
-        from portal.core.cli.setup import DatabaseSetup
+        from ..cli.setup import DatabaseSetup
         db_setup = DatabaseSetup(app.config['DATABASE_URL'])
         db_setup.create_tables()
         print("Database initialized.")
@@ -147,7 +147,7 @@ def create_app(config: Optional[Dict[str, Any]] = None) -> crminaecApp:
     @app.cli.command("reset-db")
     def reset_db_command():
         """Reset the database."""
-        from portal.core.cli.setup import DatabaseSetup
+        from ..cli.setup import DatabaseSetup
         db_setup = DatabaseSetup(app.config['DATABASE_URL'])
         db_setup.drop_tables()
         db_setup.create_tables()
@@ -168,7 +168,7 @@ def init_app(config: Optional[Dict[str, Any]] = None):
     app = create_app(config)
     
     # Initialize db_setup immediately for backward compatibility
-    from portal.core.cli.setup import DatabaseSetup
+    from ..cli.setup import DatabaseSetup
     db_setup = DatabaseSetup(app.config['DATABASE_URL'])
     app.config['db_setup'] = db_setup
     
