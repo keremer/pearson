@@ -7,169 +7,79 @@ __author__ = 'Dr. Kerem ERCOŞKUN'
 __email__ = 'ercoskunkerem@gmail.com'
 
 import os
-from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import cast
 
 from config import Config
-from flask import Flask
-from markupsafe import Markup
+from flask import Blueprint, Flask, render_template
 
-# Package metadata
-__all__ = [
-    'create_app', 'get_database_url', 'get_database_path', 'get_data_dir',
-    'PROJECT_ROOT', 'DATA_DIR', 'CONFIG_DIR', 'TESTS_DIR',
-    '__version__', '__author__', '__email__'
-]
+# Define the blueprint here
+# Note: name='pearson' is better than 'web' to avoid confusion with Arkhon
+pearson_bp = Blueprint(
+    'pearson', 
+    __name__, 
+    template_folder='templates',
+    static_folder='static'
+)
 
-class crminaecApp(Flask):
-    """Custom Flask subclass to provide type hints for app attributes."""
-    interop_manager: 'InteropManager'
+arkhon_bp = Blueprint(
+    'arkhon', 
+    __name__, 
+    template_folder='templates',
+    static_folder='static'
+)
 
-# Export commonly used paths
-PACKAGE_ROOT = Path(__file__).parent.absolute()
-PROJECT_ROOT = PACKAGE_ROOT.parent.absolute()
-DATA_DIR = PROJECT_ROOT / "data"
-CONFIG_DIR = PROJECT_ROOT / "config"
-TESTS_DIR = PROJECT_ROOT / "tests"
-
-if TYPE_CHECKING:
-    from portal.core.interop.manager import InteropManager
-
-def get_data_dir() -> Path:
-    """Get the data directory path at project root."""
-    # PACKAGE_ROOT is .../crminaec/crminaec
-    # PROJECT_ROOT is .../crminaec
-    package_root = Path(__file__).parent.absolute()
-    project_root = package_root.parent.absolute()
+emek_bp = Blueprint(
+    'emek', 
+    __name__, 
+    template_folder='templates',
+    static_folder='static'
+)
+class AppFactory:
+    """The dedicated class for creating and configuring the crminaec Portal"""
     
-    data_dir = project_root / "data"
-    
-    # Force creation of the directory with parents
-    data_dir.mkdir(parents=True, exist_ok=True)
-    return data_dir
+    @staticmethod
+    def create_app(config_class=Config):
+        app = Flask(__name__)
+        app.config.from_object(config_class)
 
-def get_database_path(db_name: str = 'courses.db') -> Path:
-    """Get the full path to the database file."""
-    return get_data_dir() / db_name
+        # Ensure required folders exist (Academic Specs, Uploads, etc.)
+        AppFactory._prepare_environment(app)
 
+        # Register Blueprints (The Platforms)
+        AppFactory._register_blueprints(app)
 
-def get_database_url(db_name: str = 'courses.db') -> str:
-    """Get the SQLAlchemy database URL with a clean absolute path."""
-    db_path = get_database_path(db_name)
-    # On Windows, we need to ensure the path is absolute and uses forward slashes
-    return f'sqlite:///{db_path.as_posix()}'
+        # Global Portal Landing Page
+        @app.route('/')
+        def index():
+            return render_template('portal_home.html')
 
+        return app
 
-def create_app(config: Optional[Dict[str, Any]] = None) -> crminaecApp:
-    """
-    Create and configure the Flask application.
-    Returns:
-        Flask: Configured Flask application instance
-    """
-    # PACKAGE_ROOT is .../crminaec/crminaec
-    package_root = Path(__file__).parent.absolute()
-    # PROJECT_ROOT is .../crminaec
-    project_root = package_root.parent.absolute()
+    @staticmethod
+    def _prepare_environment(app):
+        """Logic to ensure local storage and content folders exist"""
+        folders = [
+            app.config.get('CONTENT_DIR', 'content'),
+            app.config.get('UPLOAD_FOLDER', 'content/uploads'),
+            'data'
+        ]
+        for folder in folders:
+            os.makedirs(folder, exist_ok=True)
 
-    
-    # Create Flask app
-    app = crminaecApp(__name__, 
-                instance_relative_config=True,
-                static_folder=str(project_root / 'static'),
-                static_url_path='/static')
-    
-    from portal.core.interop.manager import create_interop_manager
-    app.interop_manager = create_interop_manager()
-    
-    # Default configuration
-    app.config.from_mapping(
-        SECRET_KEY=os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production'),
-        DATABASE_URL=os.environ.get('DATABASE_URL', get_database_url()),
-        DATA_DIR=str(get_data_dir()),
-        WTF_CSRF_ENABLED=True,
-        TESTING=False,
-        DEBUG=os.environ.get('FLASK_DEBUG', '0').lower() in ['1', 'true', 'yes'],
-        MAX_CONTENT_LENGTH=16 * 1024 * 1024,  # 16MB max upload
-        UPLOAD_FOLDER=str(PROJECT_ROOT / 'static' / 'uploads'),
-        ALLOWED_EXTENSIONS={'md'},
-    )
-    
-    # Update with any provided config
-    if config:
-        app.config.update(config)
-    
-    # Ensure instance folder exists
-    try:
-        os.makedirs(app.instance_path, exist_ok=True)
-    except OSError:
-        pass
-    
-    # Initialize database setup in app context
-    _db_initialized = False
+    @staticmethod
+    def _register_blueprints(app):
+        # """Wiring up Pearson and Arkhon platforms"""
+        # from portal.platforms.pearson import pearson_bp
+        # # from portal.platforms.arkhon import arkhon_bp
         
-    @app.before_request
-    def initialize_database():
-        """Initialize database on first request."""
-        nonlocal _db_initialized
-        if not _db_initialized:
-            from ..cli.setup import DatabaseSetup
-            db_setup = DatabaseSetup(app.config['DATABASE_URL'])
-            app.config['db_setup'] = db_setup
-            print(f"📦 Database initialized: {app.config['DATABASE_URL']}")
-            _db_initialized = True
-    
-    # Register Web Blueprints
-    try:
-        from portal.web import pearson_bp
-        app.register_blueprint(pearson_bp)
-    except ImportError as e:
-        print(f"⚠️  Could not register web blueprint: {e}")
+        app.register_blueprint(pearson_bp, url_prefix='/pearson')
+        app.register_blueprint(arkhon_bp, url_prefix='/arkhon')
+        app.register_blueprint(emek_bp, url_prefix='/emek')
+# The standard entry point for Flask extensions and run.py
+def create_app():
+    return AppFactory.create_app()
 
-    # --- NEW: Proper API Binding ---
-    try:
-        # Import and initialize the course-related API routes
-        from portal.api.courses import init_course_routes
-        init_course_routes(app)
-        print("🔗 API routes bound successfully")
-    except ImportError as e:
-        print(f"⚠️  Could not initialize API routes: {e}")
-    # -------------------------------
-    
-    # Register CLI commands
-    @app.cli.command("init-db")
-    def init_db_command():
-        """Initialize the database."""
-        from ..cli.setup import DatabaseSetup
-        db_setup = DatabaseSetup(app.config['DATABASE_URL'])
-        db_setup.create_tables()
-        print("Database initialized.")
-    
-    @app.cli.command("reset-db")
-    def reset_db_command():
-        """Reset the database."""
-        from ..cli.setup import DatabaseSetup
-        db_setup = DatabaseSetup(app.config['DATABASE_URL'])
-        db_setup.drop_tables()
-        db_setup.create_tables()
-        print("Database reset.")
-    
-    print(f"📦 crminaec package initialized (root: {PROJECT_ROOT})")
-    
-    return app
-
-
-# Backward compatibility function
-def init_app(config: Optional[Dict[str, Any]] = None):
-    """
-    Backward compatibility wrapper for create_app.
-    Returns tuple (app, db_setup) for compatibility with existing code.
-    """
-    print("⚠️  init_app is deprecated, use create_app instead")
-    app = create_app(config)
-    
-    # Initialize db_setup immediately for backward compatibility
-    from ..cli.setup import DatabaseSetup
-    db_setup = DatabaseSetup(app.config['DATABASE_URL'])
-    app.config['db_setup'] = db_setup
-    
-    return app, db_setup
+def get_database_url() -> str:
+    # Use 'or' to provide a fallback, ensuring the return is always a str
+    url = Config.SQLALCHEMY_DATABASE_URI or "sqlite:///data/courses.db"
+    return cast(str, url)

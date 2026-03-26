@@ -1,9 +1,13 @@
 """
 Configuration management for crminaec.
 """
+__version__ = '1.0.0'
+__author__ = 'Dr. Kerem ERCOŞKUN'
+__email__ = 'ercoskunkerem@gmail.com'
+
 import os
 from pathlib import Path
-from typing import Optional, ClassVar
+from typing import ClassVar, Optional
 
 from dotenv import load_dotenv
 
@@ -19,6 +23,7 @@ class Config:
 
     # Database - will be set by create_app
     DATABASE_URL: Optional[str] = None
+    SQLALCHEMY_DATABASE_URI: Optional[str] = None
 
     # Uploads
     MAX_CONTENT_LENGTH: int = 16 * 1024 * 1024  # 16MB max upload

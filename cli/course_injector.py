@@ -9,10 +9,11 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List
 
-# Fix imports for new structure
-from portal.cli.setup import DatabaseSetup
 from portal.core.edumodels import (AssessmentFormat, Course, LearningOutcome,
                                    Lesson, Tool, lesson_learning_outcome)
+
+# Fix imports for new structure
+from .setup import DatabaseSetup
 
 
 class CourseInjector:
