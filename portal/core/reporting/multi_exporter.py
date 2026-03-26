@@ -1,14 +1,15 @@
 # crminaec/reports/multi_exporter.py
 """
-Multi-Format Exporter for Course Materials
+Multi-Format Exporter for EMEK portal
 Export to PDF, HTML, and Markdown formats.
 """
 import os
-import markdown
-from pathlib import Path
-from typing import List, Dict, Any, Optional, Union
-from xhtml2pdf import pisa
 from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
+
+import markdown
+from xhtml2pdf import pisa
 
 
 class MultiExporter:

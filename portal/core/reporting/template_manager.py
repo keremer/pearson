@@ -4,15 +4,17 @@ Template Manager for Course Materials.
 Provides Jinja2 template rendering for course reports.
 """
 import os
-import jinja2
-from pathlib import Path
 from datetime import datetime
-from typing import Dict, Any, List, Optional, Union
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
+
+import jinja2
 from sqlalchemy.orm import Session
 
 # Import crminaec models for type hints
 try:
-    from portal.platforms.pearson.models import Course, Lesson, LearningOutcome, AssessmentFormat, Tool
+    from portal.core.edumodels import (AssessmentFormat, Course,
+                                       LearningOutcome, Lesson, Tool)
 except ImportError:
     # For standalone testing
     pass

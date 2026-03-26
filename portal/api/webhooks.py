@@ -2,17 +2,20 @@
 Unified webhook handler for Google Docs interoperability
 FIXED: Proper Google Docs webhook processing and security
 """
-from flask import request, jsonify
-import hmac
 import hashlib
+import hmac
 import json
 import os
-from typing import Dict, Any, List, Optional
+from typing import Any, Dict, List, Optional
 
-from interop.manager import InteropManager
-from interop import Platform
-from portal.platforms.pearson.models import Course, Lesson, LearningOutcome, AssessmentFormat, Tool
-from cli.setup import DatabaseSetup
+from flask import jsonify, request
+
+from portal.core.cli.setup import DatabaseSetup
+from portal.core.edumodels import (AssessmentFormat, Course, LearningOutcome,
+                                   Lesson, Tool)
+from portal.core.interop import Platform
+from portal.core.interop.manager import InteropManager
+
 
 class GoogleDocsWebhookProcessor:
     def __init__(self):

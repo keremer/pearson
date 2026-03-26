@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from flask import Flask
 from markupsafe import Markup
+from config import Config
 
 # Package metadata
 __all__ = [

@@ -18,8 +18,8 @@ class CLICommands:
         
         # Import components
         from portal.core.cli.setup import DatabaseSetup
-        from portal.platforms.pearson.models import Course  # Fixed import
-        from portal.platforms.pearson.models import Lesson
+        from portal.core.edumodels import Course  # Fixed import
+        from portal.core.edumodels import Lesson
 
         # Import reports and exporters if available
         try:

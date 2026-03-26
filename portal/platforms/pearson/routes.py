@@ -13,10 +13,10 @@ from werkzeug.utils import secure_filename
 
 from portal.cli.course_injector import CourseInjector
 from portal.cli.setup import DatabaseSetup
+from portal.core.edumodels import (AssessmentFormat, Course, LearningOutcome,
+                                   Lesson, Tool)
 from portal.interop.google_docs.client import GoogleDocsClient
 from portal.interop.google_docs.config import GoogleDocsConfig
-from portal.platforms.pearson.models import (AssessmentFormat, Course, LearningOutcome, Lesson,
-                            Tool)
 from portal.web import pearson_bp
 from portal.web.forms import CourseForm, ImportForm, LessonForm
 

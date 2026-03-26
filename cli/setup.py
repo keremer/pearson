@@ -4,9 +4,11 @@ Database setup and configuration for crminaec.
 import os
 from pathlib import Path
 from typing import Optional
+
 from sqlalchemy import create_engine, inspect, text
-from sqlalchemy.orm import sessionmaker, scoped_session
-from portal.platforms.pearson.models import Base, Course, Lesson
+from sqlalchemy.orm import scoped_session, sessionmaker
+
+from portal.core.edumodels import Base, Course, Lesson
 
 
 class DatabaseSetup:

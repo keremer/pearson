@@ -2,13 +2,15 @@
 """
 CLI commands for report generation.
 """
-import click
 from pathlib import Path
 from typing import List, Optional
+
+import click
 from sqlalchemy.orm import Session
 
-from portal.platforms.pearson.models import Course
-from portal.reports import TemplateManager, CourseDataBuilder, MultiExporter
+from portal.core.edumodels import Course
+from portal.core.reporting import (CourseDataBuilder, MultiExporter,
+                                   TemplateManager)
 
 
 @click.group()

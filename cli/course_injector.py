@@ -7,11 +7,12 @@ FIXED: Uses association table instead of non-existent LessonLearningOutcome mode
 import re
 import sys
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import Any, Dict, List
 
 # Fix imports for new structure
 from portal.cli.setup import DatabaseSetup
-from portal.platforms.pearson.models import Course, Lesson, LearningOutcome, AssessmentFormat, Tool, lesson_learning_outcome
+from portal.core.edumodels import (AssessmentFormat, Course, LearningOutcome,
+                                   Lesson, Tool, lesson_learning_outcome)
 
 
 class CourseInjector:

@@ -257,7 +257,7 @@ def inspect(model_name: str, count: int):
         from sqlalchemy import create_engine
         from sqlalchemy import inspect as sa_inspect
 
-        from portal.platforms.pearson.models import Base
+        from portal.core.edumodels import Base
 
         # Create a database engine
         engine = create_engine(get_database_url())
@@ -265,23 +265,23 @@ def inspect(model_name: str, count: int):
         inspector = sa_inspect(engine)
         
         if model_name == 'course':
-            from portal.platforms.pearson.models import Course
+            from portal.core.edumodels import Course
             table_name = Course.__tablename__
             model_class = Course
         elif model_name == 'lesson':
-            from portal.platforms.pearson.models import Lesson
+            from portal.core.edumodels import Lesson
             table_name = Lesson.__tablename__
             model_class = Lesson
         elif model_name == 'learningoutcome':
-            from portal.platforms.pearson.models import LearningOutcome
+            from portal.core.edumodels import LearningOutcome
             table_name = LearningOutcome.__tablename__
             model_class = LearningOutcome
         elif model_name == 'tool':
-            from portal.platforms.pearson.models import Tool
+            from portal.core.edumodels import Tool
             table_name = Tool.__tablename__
             model_class = Tool
         elif model_name == 'assessment':
-            from portal.platforms.pearson.models import AssessmentFormat
+            from portal.core.edumodels import AssessmentFormat
             table_name = AssessmentFormat.__tablename__
             model_class = AssessmentFormat
         else:

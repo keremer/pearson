@@ -1,6 +1,8 @@
 from flask import jsonify, request
-from portal.platforms.pearson.models import Course
-from cli.setup import DatabaseSetup
+
+from portal.core.cli.setup import DatabaseSetup
+from portal.core.edumodels import Course
+
 
 def init_course_routes(app):
     db_setup = DatabaseSetup()
