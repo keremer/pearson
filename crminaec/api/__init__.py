@@ -7,7 +7,7 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
-from portal.api.webhooks import init_webhook_routes
+from crminaec.api.webhooks import init_webhook_routes
 
 init_webhook_routes(app)
 
@@ -22,7 +22,7 @@ def health_check():
 
 # Import and register routes
 try:
-    from api.courses import init_course_routes
+    from crminaec.api.courses import init_course_routes
     init_course_routes(app)
     print("✅ Course routes registered")
 except ImportError as e:

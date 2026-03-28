@@ -11,14 +11,14 @@ from flask import (current_app, flash, g, jsonify, redirect, render_template,
                    request, session, url_for)
 from werkzeug.utils import secure_filename
 
-from portal.cli.course_injector import CourseInjector
-from portal.cli.setup import DatabaseSetup
-from portal.core.edumodels import (AssessmentFormat, Course, LearningOutcome,
+from crminaec.cli.course_injector import CourseInjector
+from crminaec.cli.setup import DatabaseSetup
+from crminaec.platforms.pearson.models import (AssessmentFormat, Course, LearningOutcome,
                                    Lesson, Tool)
-from portal.interop.google_docs.client import GoogleDocsClient
-from portal.interop.google_docs.config import GoogleDocsConfig
-from portal.web import pearson_bp
-from portal.web.forms import CourseForm, ImportForm, LessonForm
+from crminaec.interop.google_docs.client import GoogleDocsClient
+from crminaec.interop.google_docs.config import GoogleDocsConfig
+from crminaec.web import pearson_bp
+from crminaec.web.forms import CourseForm, ImportForm, LessonForm
 
 
 def get_db_session():

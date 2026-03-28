@@ -5,7 +5,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from waitress import serve
 
-from portal.main import app
+from crminaec.main import app
 
 script_name = os.environ.get('SCRIPT_NAME', '')
 if script_name:

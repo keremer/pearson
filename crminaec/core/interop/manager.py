@@ -10,9 +10,9 @@ from . import BaseContentParser, BaseInteropClient, Platform
 
 # Type-only imports (erased at runtime)
 if TYPE_CHECKING:
-    from .google_docs.client import GoogleDocsClient
-    from .google_docs.config import GoogleDocsConfig
-    from .google_docs.parser import GoogleDocsParser
+    from crminaec.core.interop.google_docs.client import GoogleDocsClient
+    from crminaec.core.interop.google_docs.config import GoogleDocsConfig
+    from crminaec.core.interop.google_docs.parser import GoogleDocsParser
 
 logger = logging.getLogger(__name__)
 

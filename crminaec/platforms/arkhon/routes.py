@@ -1,8 +1,8 @@
 # portal/platforms/arkhon/routes.py
 from flask import Blueprint, request, render_template, send_file
-from portal.core.coremodels import db, Order, Customer, OrderItem
-from portal.platforms.arkhon.orderparser import parse_order_html
-from portal.core.reporting import multi_exporter
+from crminaec.core.models import db, Order, Customer, OrderItem
+from crminaec.platforms.arkhon.orderparser import parse_order_html
+from crminaec.core.reporting import multi_exporter
 import io
 
 arkhon_bp = Blueprint('arkhon', __name__, url_prefix='/arkhon',

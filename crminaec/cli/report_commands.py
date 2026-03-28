@@ -1,16 +1,16 @@
-# crminaec/cli/report_commands.py
 """
 CLI commands for report generation.
+Fully Integrated with crminaec Data-First Architecture
 """
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, cast
 
 import click
 from sqlalchemy.orm import Session
 
-from portal.core.edumodels import Course
-from portal.core.reporting import (CourseDataBuilder, MultiExporter,
-                                   TemplateManager)
+from crminaec.core.models import Course, db
+from crminaec.core.reporting import (CourseDataBuilder, MultiExporter,
+                                     TemplateManager)
 
 
 @click.group()
@@ -29,32 +29,37 @@ def report():
               default=['syllabus'], show_default=True,
               type=click.Choice(['syllabus', 'lesson_plan', 'overview', 'all']),
               help='Type of report(s) to generate')
-@click.option('--output-dir', '-o', default='reports', show_default=True,
+@click.option('--output-dir', '-o', default='output', show_default=True,
               help='Output directory')
 @click.pass_context
 def generate(ctx, course_id: int, formats: List[str], 
             report_types: List[str], output_dir: str):
     """Generate reports for a course."""
-    app = ctx.obj['app']
+    # The 'app' object is injected by run.py
+    app = ctx.obj['app'] if ctx.obj and 'app' in ctx.obj else None
     
+    # Fallback if someone tries to run this command directly instead of through run.py
+    if not app:
+        from crminaec import create_app
+        app = create_app()
+
     with app.app_context():
-        db_session: Session = app.extensions['sqlalchemy'].db.session
-        
-        # Get course
-        course = db_session.get(Course, course_id)
+        # Get course using the new SQLAlchemy 2.0 syntax via our global 'db'
+        course = db.session.get(Course, course_id)
         if not course:
             click.echo(f"❌ Course with ID {course_id} not found", err=True)
             return
         
-        click.echo(f"📊 Generating reports for: {course.title} ({course.course_code})")
+        # Updated to use course_title
+        click.echo(f"📊 Generating reports for: {course.course_title} ({course.course_code})")
         
         # Initialize reporting components
         template_manager = TemplateManager()
         data_builder = CourseDataBuilder(template_manager)
         exporter = MultiExporter(output_dir=output_dir)
         
-        # Build course data
-        course_data = data_builder.build_course_data(course, db_session)
+        # Cast the scoped_session to a standard Session to satisfy Pylance
+        course_data = data_builder.build_course_data(course, cast(Session, db.session))
         
         # Handle 'all' options
         if 'all' in formats:
@@ -76,6 +81,7 @@ def generate(ctx, course_id: int, formats: List[str],
                 # Export report
                 files = exporter.export_content(content, base_name, list(formats))
                 generated_files.extend(files)
+                
             elif report_type == 'overview':
                 content = template_manager.render_course_overview(course_data)
                 base_name = f"{course.course_code}_overview"
@@ -83,8 +89,9 @@ def generate(ctx, course_id: int, formats: List[str],
                 # Export report
                 files = exporter.export_content(content, base_name, list(formats))
                 generated_files.extend(files)
+                
             elif report_type == 'lesson_plan':
-                # Generate individual lesson plans
+                # Generate individual lesson plans using the sorted course.lessons array
                 for lesson in course.lessons:
                     lesson_data = data_builder.build_lesson_data(lesson, course)
                     content = template_manager.render_lesson_plan(lesson_data)
@@ -97,7 +104,12 @@ def generate(ctx, course_id: int, formats: List[str],
         # Summary
         click.echo(f"\n✅ Generated {len(generated_files)} file(s):")
         for file in generated_files:
-            click.echo(f"  📄 {Path(file).relative_to('.')}")
+            # Safely try to make the path relative for cleaner output, fallback to full path
+            try:
+                display_path = Path(file).relative_to(Path.cwd())
+            except ValueError:
+                display_path = file
+            click.echo(f"  📄 {display_path}")
 
 
 @report.command()
@@ -117,6 +129,7 @@ def templates(ctx, list_templates: bool, template_dir: Optional[str]):
                 click.echo(f"  • {template.name}")
         else:
             click.echo("📭 No templates found")
+            
     elif template_dir:
         # Initialize with custom template directory
         tm = TemplateManager(template_dir)
