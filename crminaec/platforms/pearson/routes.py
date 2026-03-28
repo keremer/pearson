@@ -1,69 +1,40 @@
 #!/usr/bin/env python3
-# type: ignore
 """
-Flask Routes for Course Management Web Interface
-UPDATED FOR NEW PROJECT STRUCTURE
+Flask Routes for Course Management Web Interface (Pearson Platform)
+Fully Integrated with crminaec Data-First Architecture
 """
 import os
 import tempfile
 
-from flask import (current_app, flash, g, jsonify, redirect, render_template,
-                   request, session, url_for)
+from flask import (Blueprint, current_app, flash, jsonify, redirect,
+                   render_template, request, url_for)
 from werkzeug.utils import secure_filename
 
+# You no longer need to import pearson_bp from crminaec.web, 
+# it was already defined in crminaec/__init__.py, but standard practice is 
+# to import it from the __init__ or define it here. Since you are registering it in
+# __init__.py, let's just make sure we export it from this file correctly.
+from crminaec import pearson_bp
+# Fix Imports for new architecture
 from crminaec.cli.course_injector import CourseInjector
-from crminaec.cli.setup import DatabaseSetup
-from crminaec.platforms.pearson.models import (AssessmentFormat, Course, LearningOutcome,
-                                   Lesson, Tool)
-from crminaec.interop.google_docs.client import GoogleDocsClient
-from crminaec.interop.google_docs.config import GoogleDocsConfig
-from crminaec.web import pearson_bp
+# Google Interop Imports
+from crminaec.core.interop.google_docs.client import GoogleDocsClient
+from crminaec.core.interop.google_docs.config import GoogleDocsConfig
+from crminaec.core.models import (AssessmentFormat, Course, LearningOutcome,
+                                  Lesson, Tool, db)
 from crminaec.web.forms import CourseForm, ImportForm, LessonForm
 
-
-def get_db_session():
-    """
-    Get database session from g object if it exists,
-    otherwise create and store it in g.
-    This ensures one session per request.
-    """
-    if 'db_session' not in g:
-        if hasattr(current_app, 'config') and 'db_setup' in current_app.config:
-            g.db_session = current_app.config['db_setup'].Session()
-        else:
-            # Fallback for direct execution
-            db_setup = DatabaseSetup('sqlite:///courses.db')
-            g.db_session = db_setup.Session()
-    
-    return g.db_session
-
-@pearson_bp.before_app_request
-def setup_db():
-    """
-    Ensure database session is available for every request.
-    Using before_app_request ensures this runs before each route.
-    """
-    # Just access g.db_session to trigger creation via get_db_session
-    # This is cleaner than duplicating logic here
-    get_db_session()
-
-@pearson_bp.teardown_app_request
-def teardown_db(exception=None):
-    """
-    Close database session at the end of each request.
-    This runs even if an error occurred.
-    """
-    db_session = g.pop('db_session', None)
-    if db_session is not None:
-        db_session.close()
+# ==============================================================================
+# 🎓 CORE DASHBOARD & COURSE ROUTES
+# ==============================================================================
 
 @pearson_bp.route('/')
 def index():
     """Home page with overview"""
     try:
-        db_session = get_db_session()
-        courses = db_session.query(Course).all()
-        total_lessons = db_session.query(Lesson).count()
+        # Use the globally managed db.session!
+        courses = db.session.query(Course).all()
+        total_lessons = db.session.query(Lesson).count()
         
         stats = {
             'total_courses': len(courses),
@@ -71,9 +42,7 @@ def index():
             'recent_courses': courses[-3:] if len(courses) > 3 else courses
         }
         
-        return render_template('index.html', 
-                             stats=stats, 
-                             courses=courses)
+        return render_template('index.html', stats=stats, courses=courses)
     except Exception as e:
         flash(f"Database Error: {e}", "error")
         return render_template('index.html', stats={}, courses=[])
@@ -82,8 +51,7 @@ def index():
 def list_courses():
     """List all courses"""
     try:
-        db_session = get_db_session()
-        courses = db_session.query(Course).order_by(Course.created_date.desc()).all()
+        courses = db.session.query(Course).order_by(Course.created_date.desc()).all()
         return render_template('courses.html', courses=courses)
     except Exception as e:
         flash(f'Error loading courses: {str(e)}', 'error')
@@ -93,78 +61,66 @@ def list_courses():
 def course_detail(course_id):
     """Show course details and lessons"""
     try:
-        db_session = get_db_session()
-        course = db_session.query(Course).filter_by(id=course_id).first()
+        course = db.session.query(Course).filter_by(course_id=course_id).first()
         if not course:
             flash('Course not found', 'error')
-            return redirect(url_for('web.list_courses'))
+            return redirect(url_for('pearson.list_courses'))
         
-        lessons = (db_session.query(Lesson)
-                  .filter_by(course_id=course_id)
-                  .order_by(Lesson.order)
-                  .all())
+        # We can just pass the course object, as course.lessons is already sorted by the model
+        lessons = course.lessons
         
-        return render_template('course_detail.html', 
-                             course=course, 
-                             lessons=lessons)
+        return render_template('course_detail.html', course=course, lessons=lessons)
     except Exception as e:
         flash(f'Error loading course: {str(e)}', 'error')
-        return redirect(url_for('web.list_courses'))
+        return redirect(url_for('pearson.list_courses'))
 
 @pearson_bp.route('/course/<int:course_id>/lessons')
 def course_lessons(course_id):
     """Show lessons for a specific course"""
     try:
-        db_session = get_db_session()
-        course = db_session.query(Course).filter_by(id=course_id).first()
+        course = db.session.query(Course).filter_by(course_id=course_id).first()
         if not course:
             flash('Course not found', 'error')
-            return redirect(url_for('web.list_courses'))
+            return redirect(url_for('pearson.list_courses'))
         
-        lessons = (db_session.query(Lesson)
-                  .filter_by(course_id=course_id)
-                  .order_by(Lesson.order)
-                  .all())
-        
-        return render_template('lessons.html', 
-                             course=course, 
-                             lessons=lessons)
+        return render_template('lessons.html', course=course, lessons=course.lessons)
     except Exception as e:
         flash(f'Error loading lessons: {str(e)}', 'error')
-        return redirect(url_for('web.list_courses'))
+        return redirect(url_for('pearson.list_courses'))
+
+# ==============================================================================
+# ✍️ COURSE MANAGEMENT (CREATE, EDIT, DELETE)
+# ==============================================================================
 
 @pearson_bp.route('/course/create', methods=['GET', 'POST'])
 def create_course():
     """Create a new course"""
     form = CourseForm()
     if form.validate_on_submit():
-        # Process form data
         course = Course(
-            title=form.title.data,
-            course_code=form.course_code.data,
-            instructor=form.instructor.data,
-            contact_email=form.contact_email.data,
-            level=form.level.data,
-            language=form.language.data,
-            delivery_mode=form.delivery_mode.data,
-            aim=form.aim.data,
-            description=form.description.data,
-            objectives=form.objectives.data
+            course_title=form.title.data or "",
+            course_code=form.course_code.data or "",
+            instructor=form.instructor.data or "",
+            contact_email=form.contact_email.data or "",
+            level=form.level.data or "",
+            language=form.language.data or "English",
+            delivery_mode=form.delivery_mode.data or "",
+            aim=form.aim.data or "",
+            description=form.description.data or "",
+            objectives=form.objectives.data or ""
         )
-        db_session = get_db_session()
-        db_session.add(course)
-        db_session.commit()
-        flash(f'Course "{course.title}" created successfully!', 'success')
-        return redirect(url_for('web.course_detail', course_id=course.id))
+        db.session.add(course)
+        db.session.commit()
+        flash(f'Course "{course.course_title}" created successfully!', 'success')
+        return redirect(url_for('pearson.course_detail', course_id=course.course_id))
     
     if request.method == 'GET':
-        return render_template('course_edit.html', course=None)
+        return render_template('course_edit.html', course=None, form=form)
     
-    # POST method
-    db_session = get_db_session()
+    # POST method (Fallback if not using WTForms)
     try:
         course = Course(
-            title=request.form['title'],
+            course_title=request.form['title'],
             course_code=request.form['course_code'],
             instructor=request.form.get('instructor', ''),
             contact_email=request.form.get('contact_email', ''),
@@ -176,32 +132,30 @@ def create_course():
             objectives=request.form.get('objectives', '')
         )
         
-        db_session.add(course)
-        db_session.commit()
-        flash(f'Course "{course.title}" created successfully!', 'success')
-        return redirect(url_for('web.course_detail', course_id=course.id))
+        db.session.add(course)
+        db.session.commit()
+        flash(f'Course "{course.course_title}" created successfully!', 'success')
+        return redirect(url_for('pearson.course_detail', course_id=course.course_id))
         
     except Exception as e:
-        db_session.rollback()
+        db.session.rollback()
         flash(f'Error creating course: {str(e)}', 'error')
         return render_template('course_edit.html', form=form, course=None)
 
 @pearson_bp.route('/course/<int:course_id>/edit', methods=['GET', 'POST'])
 def edit_course(course_id):
     """Edit an existing course"""
-    db_session = get_db_session()
-    course = db_session.query(Course).filter_by(id=course_id).first()
+    course = db.session.query(Course).filter_by(course_id=course_id).first()
     
     if not course:
         flash('Course not found', 'error')
-        return redirect(url_for('web.list_courses'))
+        return redirect(url_for('pearson.list_courses'))
     
     if request.method == 'GET':
         return render_template('course_edit.html', course=course)
     
-    # POST method
     try:
-        course.title = request.form['title']
+        course.course_title = request.form['title']
         course.course_code = request.form['course_code']
         course.instructor = request.form.get('instructor', '')
         course.contact_email = request.form.get('contact_email', '')
@@ -212,63 +166,63 @@ def edit_course(course_id):
         course.description = request.form.get('description', '')
         course.objectives = request.form.get('objectives', '')
         
-        db_session.commit()
-        flash(f'Course "{course.title}" updated successfully!', 'success')
-        return redirect(url_for('web.course_detail', course_id=course.id))
+        db.session.commit()
+        flash(f'Course "{course.course_title}" updated successfully!', 'success')
+        return redirect(url_for('pearson.course_detail', course_id=course.course_id))
         
     except Exception as e:
-        db_session.rollback()
+        db.session.rollback()
         flash(f'Error updating course: {str(e)}', 'error')
         return render_template('course_edit.html', course=course)
 
 @pearson_bp.route('/course/<int:course_id>/delete', methods=['POST'])
 def delete_course(course_id):
     """Delete a course"""
-    db_session = get_db_session()
     try:
-        course = db_session.query(Course).filter_by(id=course_id).first()
+        course = db.session.query(Course).filter_by(course_id=course_id).first()
         if course:
-            course_title = course.title
-            db_session.delete(course)
-            db_session.commit()
+            course_title = course.course_title
+            db.session.delete(course)
+            db.session.commit()
             flash(f'Course "{course_title}" deleted successfully!', 'success')
         else:
             flash('Course not found', 'error')
     except Exception as e:
-        db_session.rollback()
+        db.session.rollback()
         flash(f'Error deleting course: {str(e)}', 'error')
     
-    return redirect(url_for('web.list_courses'))
+    return redirect(url_for('pearson.list_courses'))
+
+# ==============================================================================
+# 📖 LESSON MANAGEMENT
+# ==============================================================================
 
 @pearson_bp.route('/course/<int:course_id>/lesson/create', methods=['GET', 'POST'])
 def create_lesson(course_id):
     """Create a new lesson for a course"""
-    db_session = get_db_session()
-    course = db_session.query(Course).filter_by(id=course_id).first()
+    course = db.session.query(Course).filter_by(course_id=course_id).first()
     
     if not course:
         flash('Course not found', 'error')
-        return redirect(url_for('web.list_courses'))
+        return redirect(url_for('pearson.list_courses'))
     
     if request.method == 'GET':
         return render_template('lesson_edit.html', course=course, lesson=None)
     
-    # POST method
     try:
-        # Validate order is integer
-        try:
-            order = int(request.form.get('order', 1))
-        except ValueError:
-            order = 1
-            
-        try:
-            duration = int(request.form.get('duration', 60))
-        except ValueError:
-            duration = 60
-            
+        order = int(request.form.get('order', 1))
+    except ValueError:
+        order = 1
+        
+    try:
+        duration = int(request.form.get('duration', 60))
+    except ValueError:
+        duration = 60
+        
+    try:
         lesson = Lesson(
             course_id=course_id,
-            title=request.form['title'],
+            lesson_title=request.form['title'],
             content=request.form.get('content', ''),
             duration=duration,
             order=order,
@@ -277,119 +231,117 @@ def create_lesson(course_id):
             materials_needed=request.form.get('materials_needed', '')
         )
         
-        db_session.add(lesson)
-        db_session.commit()
-        flash(f'Lesson "{lesson.title}" created successfully!', 'success')
-        return redirect(url_for('web.course_lessons', course_id=course_id))
+        db.session.add(lesson)
+        db.session.commit()
+        flash(f'Lesson "{lesson.lesson_title}" created successfully!', 'success')
+        return redirect(url_for('pearson.course_lessons', course_id=course_id))
         
     except Exception as e:
-        db_session.rollback()
+        db.session.rollback()
         flash(f'Error creating lesson: {str(e)}', 'error')
         return render_template('lesson_edit.html', course=course, lesson=None)
 
 @pearson_bp.route('/lesson/<int:lesson_id>/edit', methods=['GET', 'POST'])
 def edit_lesson(lesson_id):
     """Edit an existing lesson"""
-    db_session = get_db_session()
-    lesson = db_session.query(Lesson).filter_by(id=lesson_id).first()
+    lesson = db.session.query(Lesson).filter_by(lesson_id=lesson_id).first()
     
     if not lesson:
         flash('Lesson not found', 'error')
-        return redirect(url_for('web.list_courses'))
+        return redirect(url_for('pearson.list_courses'))
     
-    course = db_session.query(Course).filter_by(id=lesson.course_id).first()
+    course = db.session.query(Course).filter_by(course_id=lesson.course_id).first()
     
     if request.method == 'GET':
         return render_template('lesson_edit.html', course=course, lesson=lesson)
     
-    # POST method
     try:
-        # Validate numeric fields
         try:
-            lesson.order = int(request.form.get('order', 1))
+            lesson.order = int(request.form.get('order', lesson.order))
         except ValueError:
-            pass  # Keep existing value
+            pass
             
         try:
-            lesson.duration = int(request.form.get('duration', 60))
+            lesson.duration = int(request.form.get('duration', lesson.duration))
         except ValueError:
-            pass  # Keep existing value
+            pass
             
-        lesson.title = request.form['title']
+        lesson.lesson_title = request.form['title']
         lesson.content = request.form.get('content', '')
         lesson.activity_type = request.form.get('activity_type', '')
         lesson.assignment_description = request.form.get('assignment_description', '')
         lesson.materials_needed = request.form.get('materials_needed', '')
         
-        db_session.commit()
-        flash(f'Lesson "{lesson.title}" updated successfully!', 'success')
-        return redirect(url_for('web.course_lessons', course_id=lesson.course_id))
+        db.session.commit()
+        flash(f'Lesson "{lesson.lesson_title}" updated successfully!', 'success')
+        return redirect(url_for('pearson.course_lessons', course_id=lesson.course_id))
         
     except Exception as e:
-        db_session.rollback()
+        db.session.rollback()
         flash(f'Error updating lesson: {str(e)}', 'error')
         return render_template('lesson_edit.html', course=course, lesson=lesson)
 
 @pearson_bp.route('/lesson/<int:lesson_id>/delete', methods=['POST'])
 def delete_lesson(lesson_id):
     """Delete a lesson"""
-    db_session = get_db_session()
     try:
-        lesson = db_session.query(Lesson).filter_by(id=lesson_id).first()
+        lesson = db.session.query(Lesson).filter_by(lesson_id=lesson_id).first()
         if lesson:
             course_id = lesson.course_id
-            lesson_title = lesson.title
-            db_session.delete(lesson)
-            db_session.commit()
+            lesson_title = lesson.lesson_title
+            db.session.delete(lesson)
+            db.session.commit()
             flash(f'Lesson "{lesson_title}" deleted successfully!', 'success')
-            return redirect(url_for('web.course_lessons', course_id=course_id))
+            return redirect(url_for('pearson.course_lessons', course_id=course_id))
         else:
             flash('Lesson not found', 'error')
     except Exception as e:
-        db_session.rollback()
+        db.session.rollback()
         flash(f'Error deleting lesson: {str(e)}', 'error')
     
-    return redirect(url_for('web.list_courses'))
+    return redirect(url_for('pearson.list_courses'))
+
+# ==============================================================================
+# 📥 IMPORT SYLLABUS (Markdown)
+# ==============================================================================
 
 @pearson_bp.route('/course/import', methods=['GET', 'POST'])
 def import_syllabus():
-    """Handle Markdown file uploads and trigger CourseInjector."""
     if request.method == 'GET':
         return render_template('import.html')
     
-    # POST method
     if 'file' not in request.files:
         flash('No file part', 'error')
         return redirect(request.url)
     
     file = request.files['file']
-    if file.filename == '':
+    
+    # 🛠️ THE PYLANCE FIX: Check for truthiness (catches both None and "")
+    if not file.filename:
         flash('No file selected', 'error')
         return redirect(request.url)
     
+    # Pylance now knows for an absolute fact that file.filename is a string here
     if not file.filename.endswith('.md'):
         flash('Please upload a valid Markdown (.md) file.', 'error')
         return redirect(request.url)
 
-    # Create temp directory if it doesn't exist
     temp_dir = os.path.join(current_app.instance_path, 'temp')
     os.makedirs(temp_dir, exist_ok=True)
     
-    # Save temporarily
     filename = secure_filename(file.filename)
     temp_path = os.path.join(temp_dir, filename)
     
     try:
         file.save(temp_path)
         
-        # Use existing CourseInjector
-        database_url = current_app.config.get('DATABASE_URL', 'sqlite:///courses.db')
-        injector = CourseInjector(database_url)
+        # We no longer need to pass the database URL to the injector
+        injector = CourseInjector()
         success = injector.inject_comprehensive_course(temp_path)
         
         if success:
             flash(f'Successfully imported course from {filename}!', 'success')
-            return redirect(url_for('web.list_courses'))
+            return redirect(url_for('pearson.list_courses'))
         else:
             flash('Parsing failed. Ensure the Markdown follows the required schema.', 'error')
             return redirect(request.url)
@@ -398,79 +350,34 @@ def import_syllabus():
         flash(f'Import error: {str(e)}', 'error')
         return redirect(request.url)
     finally:
-        # Clean up temp file
         if os.path.exists(temp_path):
             os.remove(temp_path)
 
-# API endpoints for potential AJAX functionality
-@pearson_bp.route('/api/courses')
-def api_courses():
-    """JSON API for courses"""
-    try:
-        db_session = get_db_session()
-        courses = db_session.query(Course).all()
-        courses_data = [{
-            'id': course.id,
-            'title': course.title,
-            'code': course.course_code,
-            'instructor': course.instructor,
-            'lesson_count': len(course.lessons)
-        } for course in courses]
-        
-        return jsonify(courses_data)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@pearson_bp.route('/api/course/<int:course_id>/lessons')
-def api_course_lessons(course_id):
-    """JSON API for course lessons"""
-    try:
-        db_session = get_db_session()
-        lessons = (db_session.query(Lesson)
-                  .filter_by(course_id=course_id)
-                  .order_by(Lesson.order)
-                  .all())
-        
-        lessons_data = [{
-            'id': lesson.id,
-            'title': lesson.title,
-            'order': lesson.order,
-            'duration': lesson.duration,
-            'activity_type': lesson.activity_type
-        } for lesson in lessons]
-        
-        return jsonify(lessons_data)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+# ==============================================================================
+# ☁️ GOOGLE DOCS SYNC OPERATIONS
+# ==============================================================================
 
 @pearson_bp.route('/sync-status')
 def sync_status():
-    # 1. Initialize Client using your specific C: drive secrets
     config = GoogleDocsConfig(user_id="doarch")
     client = GoogleDocsClient(config)
     
     remote_titles = set()
     auth_warning = False
 
-    # 2. Try to get Remote Files (Google Drive)
     try:
         remote_docs = client.list_documents()
-        
+        remote_titles = {doc['name'] for doc in remote_docs}
     except Exception as e:
-        auth_warning = True # Token might be expired/missing
-    
-    remote_titles = {doc['name'] for doc in remote_docs}
+        auth_warning = True 
 
-    # 3. Get Local Files (A01.md - Z03.md)
-    # We use current_app.root_path to find the content folder reliably
-    specs_path = os.path.join(current_app.root_path, '..', 'content', 'specs')
+    specs_path = os.path.join(current_app.root_path, 'static', 'content', 'specs')
     
     sync_data = []
     if os.path.exists(specs_path):
         local_files = [f for f in os.listdir(specs_path) if f.endswith('.md')]
         for f in local_files:
             x_code = f.replace('.md', '')
-            # Match the X-CODE inside the Google Doc title
             is_synced = any(x_code in title for title in remote_titles)
             sync_data.append({
                 'code': x_code,
@@ -478,50 +385,40 @@ def sync_status():
                 'filename': f
             })
     
-    return render_template('sync_log.html', 
-                           sync_data=sync_data, 
-                           auth_warning=auth_warning)
+    return render_template('sync_log.html', sync_data=sync_data, auth_warning=auth_warning)
 
 @pearson_bp.route('/sync-all-specs', methods=['POST'])
 def sync_all_specs():
-    # 1. Initialize Client
     config = GoogleDocsConfig(user_id="doarch")
     client = GoogleDocsClient(config)
     
     if not client.authenticated:
         flash("❌ Authentication required. Please log in first.", "danger")
-        return redirect(url_for('web.sync_status'))
+        return redirect(url_for('pearson.sync_status'))
 
-    # 2. Define Paths
-    specs_path = os.path.join(current_app.root_path, '..', 'content', 'specs')
-    
-    # 3. Get Existing Remote Titles to Avoid Duplicates 
+    specs_path = os.path.join(current_app.root_path, 'static', 'content', 'specs')
     remote_docs = client.list_documents()   
     remote_titles = {doc['name'] for doc in remote_docs}
     
     sync_count = 0
-    for filename in os.listdir(specs_path):
-        if filename.endswith('.md'):
-            x_code = filename.replace('.md', '')
-            
-            # Skip if already in Drive
-            if any(x_code in title for title in remote_titles):
-                continue
+    if os.path.exists(specs_path):
+        for filename in os.listdir(specs_path):
+            if filename.endswith('.md'):
+                x_code = filename.replace('.md', '')
                 
-            # Read local Markdown content
-            with open(os.path.join(specs_path, filename), 'r', encoding='utf-8') as f:
-                md_content = f.read()
-            
-            # Create the Doc (The client handles the conversion/upload)
-            # We title it with the X-CODE for easy searching
-            doc_id = client.create_document(title=f"AEC Spec: {x_code}")
-            if doc_id:
-                # Update the blank doc with the content
-                client.update_content(doc_id, {'content': md_content})
-                sync_count += 1
+                if any(x_code in title for title in remote_titles):
+                    continue
+                    
+                with open(os.path.join(specs_path, filename), 'r', encoding='utf-8') as f:
+                    md_content = f.read()
+                
+                doc_id = client.create_document(title=f"AEC Spec: {x_code}")
+                if doc_id:
+                    client.update_content(doc_id, {'content': md_content})
+                    sync_count += 1
                 
     flash(f"🚀 Successfully synced {sync_count} new specifications to Google Drive!", "success")
-    return redirect(url_for('web.sync_status'))
+    return redirect(url_for('pearson.sync_status'))
 
 @pearson_bp.route('/folders')
 def folder_registry():
@@ -529,10 +426,6 @@ def folder_registry():
     client = GoogleDocsClient(config)
     
     folders = client.list_folders()
-    
-    # Optional: Highlight the default project folder from your .env
     default_id = config.default_folder_id
     
-    return render_template('folders.html', 
-                        folders=folders, 
-                        default_id=default_id)
+    return render_template('folders.html', folders=folders, default_id=default_id)

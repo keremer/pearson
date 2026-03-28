@@ -1,9 +1,13 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional, List, Dict, Any, cast
+from typing import Any, Dict, List, Optional, cast
+
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import String, Integer, Text, ForeignKey, DateTime, Numeric, Float, Index, UniqueConstraint
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, MappedAsDataclass, validates
+from sqlalchemy import (DateTime, Float, ForeignKey, Index, Integer, Numeric,
+                        String, Text, UniqueConstraint)
+from sqlalchemy.orm import (DeclarativeBase, Mapped, MappedAsDataclass,
+                            mapped_column, relationship, validates)
+
 
 # --- THE SINGLE INITIALIZATION POINT ---
 class Base(MappedAsDataclass, DeclarativeBase):
@@ -13,7 +17,7 @@ db = SQLAlchemy(model_class=Base)
 # ----------------------------------------
 
 # ================================================================
-# 👥 CORE & AEC PLATFORM (Arkhon)
+# 👥 CORE & AEC PLATFORM (crminaec)
 # ================================================================
 
 class Party(db.Model, MappedAsDataclass):
@@ -34,6 +38,9 @@ class Party(db.Model, MappedAsDataclass):
 
     orders: Mapped[List["Order"]] = relationship("Order", back_populates="party", default_factory=list)
 
+# ================================================================
+# 👥 ARKHON PLATFORM (Arkhon)
+# ================================================================    
 class Order(db.Model, MappedAsDataclass):
     __tablename__ = 'orders'
 
@@ -48,7 +55,51 @@ class Order(db.Model, MappedAsDataclass):
     date: Mapped[datetime] = mapped_column(DateTime, default_factory=datetime.utcnow)
 
     party: Mapped[Optional["Party"]] = relationship("Party", back_populates="orders", default=None)
+    items: Mapped[List["OrderItem"]] = relationship(
+        back_populates="order", 
+        default_factory=list, 
+        cascade="all, delete-orphan"
+    )
 
+class OrderItem(db.Model):
+    """
+    Arkhon Order Item Model (Kelebek Furniture Spec)
+    Stores parsed product configurations from HTML exports.
+    """
+    __tablename__ = 'order_items'
+
+    item_id: Mapped[int] = mapped_column(primary_key=True, init=False)
+    order_id: Mapped[int] = mapped_column(ForeignKey('orders.order_id'))
+
+    # Base Identification
+    pozno: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, default=None)
+    urk: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, default=None)
+    ura: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, default=None) # Product Name
+    
+    # Quantities & Units
+    adet: Mapped[Optional[float]] = mapped_column(Float, nullable=True, default=None)
+    brm: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, default=None)
+
+    # Dimensions (Stored as strings to safely capture Kelebek's raw formatting)
+    byt_x: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, default=None)
+    byt_y: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, default=None)
+    byt_z: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, default=None)
+
+    # Specifics & Colors
+    ozk: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, default=None)
+    oza: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, default=None)
+    rnk: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, default=None)
+    rna: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, default=None)
+    govdernk: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, default=None)
+    govderna: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, default=None)
+
+    # Heavy Data Payloads (XML and long config strings need Text, not String)
+    konfigurasyon: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default=None)
+    konfigurasyonXML: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default=None)
+    nitelikdetay: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default=None)
+
+    # Relationship back to the parent order
+    order: Mapped["Order"] = relationship(back_populates="items", init=False)
 
 # ================================================================
 # 🎓 ACADEMIC PLATFORM (Pearson Automation)
