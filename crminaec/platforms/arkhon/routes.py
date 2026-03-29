@@ -9,7 +9,7 @@ from datetime import datetime
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from werkzeug.utils import secure_filename
 
-from crminaec.core.models import Order, OrderItem, db
+from crminaec.core.models import Order, OrderItem, Quote, db
 from crminaec.platforms.arkhon.orderparser import KelebekOrderParser
 
 arkhon_bp = Blueprint('arkhon', __name__)
@@ -133,3 +133,62 @@ def import_kelebek_order():
         logger.error(f"Order Import Failed: {e}")
         flash(f'A system error occurred during import: {str(e)}', 'error')
         return redirect(request.url)
+
+from datetime import datetime
+
+
+@arkhon_bp.route('/order/<int:order_id>/ghost-summary')
+def ghost_summary(order_id):
+    """Generates the lean, unbranded totals page for negotiation."""
+    order = db.get_or_404(Order, order_id)
+    return render_template('arkhon/ghost_summary.html', order=order, current_date=datetime.now().strftime('%Y-%m-%d'))
+
+@arkhon_bp.route('/quote/p/<access_token>', methods=['GET'])
+def public_quote(access_token):
+    """The secure, public-facing portal for the client to view their quote."""
+    # Find the quote using the secure token
+    quote = db.session.query(Quote).filter_by(access_token=access_token).first_or_404()
+    order = quote.order
+    
+    # CRITICAL: Filter out the margin-hiding items!
+    visible_items = [item for item in order.items if item.is_visible_on_quote]
+    
+    return render_template(
+        'arkhon/public_quote.html', 
+        quote=quote, 
+        order=order, 
+        visible_items=visible_items
+    )
+
+@arkhon_bp.route('/quote/p/<access_token>/approve', methods=['POST'])
+def approve_quote(access_token):
+    """Processes the legal e-signature and captures the IP."""
+    quote = db.session.query(Quote).filter_by(access_token=access_token).first_or_404()
+    
+    if quote.status == 'approved':
+        flash('This quote is already approved.', 'info')
+        return redirect(url_for('arkhon.public_quote', access_token=access_token))
+
+    approval_text = request.form.get('approval_text', '').strip()
+    expected_text = "I have read and approve this quote and its terms." # You can translate this to Turkish!
+    
+    # 1. Verify the typed consent matches perfectly (case-insensitive)
+    if approval_text.lower() != expected_text.lower():
+        flash('Approval text does not match. Please type the exact phrase to legally approve.', 'danger')
+        return redirect(url_for('arkhon.public_quote', access_token=access_token))
+
+    # 2. Lock it down with legal metadata
+    try:
+        quote.status = 'approved'
+        quote.approval_text = approval_text
+        quote.approval_date = datetime.utcnow()
+        # request.remote_addr captures the device's IP address for the legal trail
+        quote.approval_ip = request.remote_addr or 'Unknown IP' 
+        
+        db.session.commit()
+        flash('Quote successfully approved! Your contract is being prepared.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('An error occurred while saving your approval.', 'danger')
+        
+    return redirect(url_for('arkhon.public_quote', access_token=access_token))

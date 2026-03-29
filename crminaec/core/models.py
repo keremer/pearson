@@ -40,7 +40,25 @@ class Party(db.Model, MappedAsDataclass):
 
 # ================================================================
 # 👥 ARKHON PLATFORM (Arkhon)
-# ================================================================    
+# ================================================================  
+class CatalogProduct(db.Model, MappedAsDataclass):
+    """
+    Standard products database (Appliances, Countertops, Sinks).
+    Used to quickly add non-Kelebek items to an order.
+    """
+    __tablename__ = 'catalog_products'
+
+    product_id: Mapped[int] = mapped_column(primary_key=True, init=False)
+    category: Mapped[str] = mapped_column(String(50), nullable=False) # e.g., 'Appliance', 'Countertop'
+    brand: Mapped[str] = mapped_column(String(100), nullable=False) # e.g., 'Franke', 'Belenco'
+    product_code: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    product_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    
+    # Base cost to help calculate margins later
+    default_price: Mapped[Optional[float]] = mapped_column(Numeric(12, 2), default=None)
+    
+    # For that visual attachment requirement you mentioned
+    image_url: Mapped[Optional[str]] = mapped_column(String(255), default=None)  
 class Order(db.Model, MappedAsDataclass):
     __tablename__ = 'orders'
 
@@ -69,7 +87,7 @@ class OrderItem(db.Model):
     __tablename__ = 'order_items'
 
     item_id: Mapped[int] = mapped_column(primary_key=True, init=False)
-    order_id: Mapped[int] = mapped_column(ForeignKey('orders.order_id'))
+    order_id: Mapped[int] = mapped_column(ForeignKey('orders.order_id'), init=False)
 
     # Base Identification
     pozno: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, default=None)
@@ -84,6 +102,15 @@ class OrderItem(db.Model):
     byt_x: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, default=None)
     byt_y: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, default=None)
     byt_z: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, default=None)
+    # Add these to OrderItem:
+    # Controls if the customer sees this item on the quote (for margin hiding)
+    is_visible_on_quote: Mapped[bool] = mapped_column(db.Boolean, default=True)
+    
+    # Categories: 'Furniture' (Kelebek), 'Appliance' (Franke/Smeg), 'Countertop'
+    category: Mapped[str] = mapped_column(String(50), default='Furniture') 
+    
+    # Optional image path for accessories/mechanisms
+    accessory_image_path: Mapped[Optional[str]] = mapped_column(String(255), default=None)
 
     # Specifics & Colors
     ozk: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, default=None)
@@ -101,6 +128,46 @@ class OrderItem(db.Model):
     # Relationship back to the parent order
     order: Mapped["Order"] = relationship(back_populates="items", init=False)
 
+import uuid  # Add this to your imports at the top if it isn't there!
+
+
+class Quote(db.Model, MappedAsDataclass):
+    """
+    Tracks Quote versions, ProSAP pricing, and legally binding customer approvals.
+    """
+    __tablename__ = 'quotes'
+
+    quote_id: Mapped[int] = mapped_column(primary_key=True, init=False)
+    order_id: Mapped[int] = mapped_column(ForeignKey('orders.order_id'), init=False)
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    quote_category: Mapped[str] = mapped_column(String(50), default='Furniture')
+    
+    # Secure Public Link Generation (For SMS and QR Codes)
+    access_token: Mapped[str] = mapped_column(String(64), default_factory=lambda: uuid.uuid4().hex, unique=True)
+    
+    # Pricing Details (From ProSAP)
+    list_price: Mapped[Optional[float]] = mapped_column(Numeric(12, 2), default=None)
+    discount_amount: Mapped[Optional[float]] = mapped_column(Numeric(12, 2), default=None)
+    tax_rate: Mapped[float] = mapped_column(Float, default=20.0)
+    total_amount: Mapped[Optional[float]] = mapped_column(Numeric(12, 2), default=None)
+    
+    # Terms & Conditions
+    validity_days: Mapped[int] = mapped_column(Integer, default=15)
+    payment_terms: Mapped[Optional[str]] = mapped_column(Text, default=None)
+    delivery_type: Mapped[Optional[str]] = mapped_column(String(100), default=None)
+    delivery_place: Mapped[Optional[str]] = mapped_column(String(255), default=None)
+    
+    # Notes
+    special_notes: Mapped[Optional[str]] = mapped_column(Text, default=None) # e.g., "Customer insisted on X despite advice"
+    
+    # Legal Approval System
+    status: Mapped[str] = mapped_column(String(20), default='draft') # draft, sent, approved, rejected
+    approval_text: Mapped[Optional[str]] = mapped_column(Text, default=None) # The exact text they type to approve
+    approval_date: Mapped[Optional[datetime]] = mapped_column(DateTime, default=None)
+    approval_ip: Mapped[Optional[str]] = mapped_column(String(50), default=None) # Logged for legal non-repudiation
+    
+    # Relationships
+    order: Mapped["Order"] = relationship(backref="quotes", init=False)
 # ================================================================
 # 🎓 ACADEMIC PLATFORM (Pearson Automation)
 # ================================================================
