@@ -3,8 +3,9 @@ from decimal import Decimal
 from typing import Any, Dict, List, Optional, cast
 
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import (DateTime, Float, ForeignKey, Index, Integer, Numeric,
-                        String, Text, UniqueConstraint)
+# Just add Boolean to this list!
+from sqlalchemy import (Boolean, DateTime, Float, ForeignKey, Index, Integer,
+                        Numeric, String, Text, UniqueConstraint)
 from sqlalchemy.orm import (DeclarativeBase, Mapped, MappedAsDataclass,
                             mapped_column, relationship, validates)
 
@@ -78,8 +79,13 @@ class Order(db.Model, MappedAsDataclass):
         default_factory=list, 
         cascade="all, delete-orphan"
     )
+    quotes: Mapped[List["Quote"]] = relationship(
+        back_populates="order", 
+        default_factory=list, 
+        cascade="all, delete-orphan"
+    )
 
-class OrderItem(db.Model):
+class OrderItem(db.Model, MappedAsDataclass):
     """
     Arkhon Order Item Model (Kelebek Furniture Spec)
     Stores parsed product configurations from HTML exports.
@@ -104,7 +110,7 @@ class OrderItem(db.Model):
     byt_z: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, default=None)
     # Add these to OrderItem:
     # Controls if the customer sees this item on the quote (for margin hiding)
-    is_visible_on_quote: Mapped[bool] = mapped_column(db.Boolean, default=True)
+    is_visible_on_quote: Mapped[bool] = mapped_column(Boolean, default=True)
     
     # Categories: 'Furniture' (Kelebek), 'Appliance' (Franke/Smeg), 'Countertop'
     category: Mapped[str] = mapped_column(String(50), default='Furniture') 
@@ -167,7 +173,7 @@ class Quote(db.Model, MappedAsDataclass):
     approval_ip: Mapped[Optional[str]] = mapped_column(String(50), default=None) # Logged for legal non-repudiation
     
     # Relationships
-    order: Mapped["Order"] = relationship(backref="quotes", init=False)
+    order: Mapped["Order"] = relationship(back_populates="quotes", init=False)
 # ================================================================
 # 🎓 ACADEMIC PLATFORM (Pearson Automation)
 # ================================================================

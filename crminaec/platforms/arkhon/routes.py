@@ -9,7 +9,7 @@ from datetime import datetime
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from werkzeug.utils import secure_filename
 
-from crminaec.core.models import Order, OrderItem, Quote, db
+from crminaec.core.models import Order, OrderItem, Quote, CatalogProduct, db
 from crminaec.platforms.arkhon.orderparser import KelebekOrderParser
 
 arkhon_bp = Blueprint('arkhon', __name__)
@@ -42,13 +42,11 @@ def index():
 @arkhon_bp.route('/order/<int:order_id>')
 def order_detail(order_id):
     """View details of a specific parsed order"""
-    order = db.session.query(Order).filter_by(order_id=order_id).first()
-    
-    if not order:
-        flash("Order not found.", "error")
-        return redirect(url_for('arkhon.index'))
+    order = db.get_or_404(Order, order_id)
+    # Fetch catalog items to populate the Add Appliance dropdown in the UI
+    catalog_items = db.session.query(CatalogProduct).all()
         
-    return render_template('arkhon/order_detail.html', order=order, items=order.items)
+    return render_template('arkhon/order_detail.html', order=order, items=order.items, catalog_items=catalog_items)
 
 
 @arkhon_bp.route('/order/<int:order_id>/delete', methods=['POST'])
@@ -94,34 +92,24 @@ def import_kelebek_order():
         return redirect(request.url)
         
     try:
-        # Read the file directly into memory
         html_content = file.read().decode('utf-8', errors='ignore')
-        
-        # Pass to our robust parser
         parsed_items = KelebekOrderParser.parse_html(html_content)
         
         if not parsed_items:
             flash('No valid products found in the uploaded HTML file. Is it a valid Kelebek export?', 'warning')
             return redirect(request.url)
             
-        # 🛠️ THE FIX: Generate a smart order number
-        # Example: If file is "Mutfak.html", order number becomes "Mutfak-20260328-1052"
         base_filename = os.path.splitext(secure_filename(file.filename))[0]
         timestamp = datetime.now().strftime("%Y%m%d-%H%M")
         generated_order_number = f"{base_filename}-{timestamp}"
         
-        # Create a new Order shell, satisfying the Dataclass requirement
         new_order = Order(order_number=generated_order_number)
         
-        # Attach the parsed items to the order
         for item_data in parsed_items:
-            # SAFETY FILTER: Only pass keys that actually exist on the OrderItem model.
             safe_data = {k: v for k, v in item_data.items() if hasattr(OrderItem, k)}
-            
             order_item = OrderItem(**safe_data)
             new_order.items.append(order_item)
             
-        # Commit the transaction
         db.session.add(new_order)
         db.session.commit()
         
@@ -134,8 +122,84 @@ def import_kelebek_order():
         flash(f'A system error occurred during import: {str(e)}', 'error')
         return redirect(request.url)
 
-from datetime import datetime
 
+# ==============================================================================
+# 🛠️ QUOTE BUILDING & CATALOG ROUTING
+# ==============================================================================
+
+@arkhon_bp.route('/order/<int:order_id>/add_catalog_item', methods=['POST'])
+def add_catalog_item(order_id):
+    """Adds a standard catalog product (Appliance/Countertop) to an order."""
+    order = db.get_or_404(Order, order_id)
+    product_id = request.form.get('catalog_product_id')
+    qty = float(request.form.get('qty', 1.0))
+    
+    if product_id:
+        product = db.session.query(CatalogProduct).get(product_id)
+        if product:
+            new_item = OrderItem(
+                urk=product.product_code,
+                ura=f"{product.brand} - {product.product_name}",
+                adet=qty,
+                brm="adet",
+                category=product.category,
+                is_visible_on_quote=True,
+                accessory_image_path=product.image_url
+            )
+            order.items.append(new_item)
+            db.session.commit()
+            flash(f'Added {product.product_name} to the order.', 'success')
+        else:
+            flash('Product not found in catalog.', 'danger')
+            
+    return redirect(url_for('arkhon.order_detail', order_id=order_id))
+
+
+@arkhon_bp.route('/order/<int:order_id>/quote/build', methods=['GET', 'POST'])
+def build_quote(order_id):
+    """Internal UI to set ProSAP pricing, hide margin items, and generate a Quote."""
+    order = db.get_or_404(Order, order_id)
+    
+    if request.method == 'POST':
+        try:
+            for item in order.items:
+                is_visible = request.form.get(f'visibility_{item.item_id}') == 'on'
+                category = request.form.get(f'category_{item.item_id}', 'Furniture')
+                
+                item.is_visible_on_quote = is_visible
+                item.category = category
+
+            list_price = float(request.form.get('list_price', 0))
+            discount = float(request.form.get('discount_amount', 0))
+            tax_rate = float(request.form.get('tax_rate', 20.0))
+            total_amount = float(request.form.get('total_amount', 0))
+
+            current_quotes = db.session.query(Quote).filter_by(order_id=order.order_id).count()
+            next_version = current_quotes + 1
+
+            new_quote = Quote(
+                version=next_version,
+                list_price=list_price,
+                discount_amount=discount,
+                tax_rate=tax_rate,
+                total_amount=total_amount,
+                validity_days=int(request.form.get('validity_days', 15)),
+                payment_terms=request.form.get('payment_terms', ''),
+                delivery_place=request.form.get('delivery_place', ''),
+                special_notes=request.form.get('special_notes', '')
+            )
+            
+            order.quotes.append(new_quote)
+            db.session.commit()
+            
+            flash(f'Quote Version {next_version} generated successfully!', 'success')
+            return redirect(url_for('arkhon.order_detail', order_id=order.order_id))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error generating quote: {str(e)}', 'danger')
+
+    return render_template('arkhon/quote_builder.html', order=order)
 
 @arkhon_bp.route('/order/<int:order_id>/ghost-summary')
 def ghost_summary(order_id):
@@ -143,14 +207,17 @@ def ghost_summary(order_id):
     order = db.get_or_404(Order, order_id)
     return render_template('arkhon/ghost_summary.html', order=order, current_date=datetime.now().strftime('%Y-%m-%d'))
 
+
+# ==============================================================================
+# 🤝 PUBLIC CLIENT PORTAL (No Auth Required, Token Based)
+# ==============================================================================
+
 @arkhon_bp.route('/quote/p/<access_token>', methods=['GET'])
 def public_quote(access_token):
     """The secure, public-facing portal for the client to view their quote."""
-    # Find the quote using the secure token
-    quote = db.session.query(Quote).filter_by(access_token=access_token).first_or_404()
+    quote = db.first_or_404(db.select(Quote).filter_by(access_token=access_token))
     order = quote.order
     
-    # CRITICAL: Filter out the margin-hiding items!
     visible_items = [item for item in order.items if item.is_visible_on_quote]
     
     return render_template(
@@ -163,26 +230,23 @@ def public_quote(access_token):
 @arkhon_bp.route('/quote/p/<access_token>/approve', methods=['POST'])
 def approve_quote(access_token):
     """Processes the legal e-signature and captures the IP."""
-    quote = db.session.query(Quote).filter_by(access_token=access_token).first_or_404()
-    
+    quote = db.first_or_404(db.select(Quote).filter_by(access_token=access_token))
+        
     if quote.status == 'approved':
         flash('This quote is already approved.', 'info')
         return redirect(url_for('arkhon.public_quote', access_token=access_token))
 
     approval_text = request.form.get('approval_text', '').strip()
-    expected_text = "I have read and approve this quote and its terms." # You can translate this to Turkish!
+    expected_text = "I have read and approve this quote and its terms." 
     
-    # 1. Verify the typed consent matches perfectly (case-insensitive)
     if approval_text.lower() != expected_text.lower():
         flash('Approval text does not match. Please type the exact phrase to legally approve.', 'danger')
         return redirect(url_for('arkhon.public_quote', access_token=access_token))
 
-    # 2. Lock it down with legal metadata
     try:
         quote.status = 'approved'
         quote.approval_text = approval_text
         quote.approval_date = datetime.utcnow()
-        # request.remote_addr captures the device's IP address for the legal trail
         quote.approval_ip = request.remote_addr or 'Unknown IP' 
         
         db.session.commit()
