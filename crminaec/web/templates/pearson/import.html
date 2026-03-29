@@ -15,7 +15,7 @@
                     course details, learning outcomes, tools, and weekly schedules.
                 </p>
                 
-                <form action="{{ url_for('web.import_syllabus') }}" method="POST" enctype="multipart/form-data" class="mt-4">
+                <form action="{{ url_for('pearson.import_syllabus') }}" method="POST" enctype="multipart/form-data" class="mt-4">
                     <div class="mb-4">
                         <label for="file" class="form-label fw-bold">Select Markdown File (.md)</label>
                         <input class="form-control form-control-lg" type="file" id="file" name="file" accept=".md" required>
@@ -25,7 +25,7 @@
                         <button type="submit" class="btn btn-primary btn-lg">
                             <i class="fas fa-upload me-2"></i>Parse and Inject Course
                         </button>
-                        <a href="{{ url_for('web.list_courses') }}" class="btn btn-outline-secondary">Cancel</a>
+                        <a href="{{ url_for('pearson.list_courses') }}" class="btn btn-outline-secondary" aria-label="Cancel">Cancel</a>
                     </div>
                 </form>
             </div>

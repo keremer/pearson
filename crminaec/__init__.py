@@ -1,47 +1,45 @@
 import os
+from pathlib import Path
 from typing import cast
 
-from flask import Blueprint, Flask, render_template
+from flask import Flask, render_template
 
 from crminaec.config import Config
-# IMPORTANT: Using the correct 'crminaec' package name
 from crminaec.core.models import db
 
-# Define Blueprints for different business units
-pearson_bp = Blueprint('pearson', __name__, template_folder='platforms/pearson/templates')
-arkhon_bp = Blueprint('arkhon', __name__, template_folder='platforms/arkhon/templates')
-emek_bp = Blueprint('emek', __name__, template_folder='platforms/emek/templates')
 
 class AppFactory:
     @staticmethod
     def create_app(config_class=Config):
-        import os
-        from pathlib import Path
-
         # Determine the absolute project root (e.g., C:\...\Portal)
         project_root = Path(__file__).parent.parent.absolute()
         
-        app = Flask(__name__)
+        # Point to the new centralized templates folder!
+        app = Flask(__name__, template_folder='web/templates')
         app.config.from_object(config_class)
 
-        # 1. Ensure folders exist BEFORE database initialization
+        # Ensure folders exist
         AppFactory._prepare_environment(app, project_root)
 
-        # 2. Absolute Pathing for SQLite fallback
+        # Absolute Pathing for SQLite fallback
         if not app.config.get('SQLALCHEMY_DATABASE_URI'):
-            # This creates an absolute path like sqlite:///C:/.../Portal/data/portal.db
             db_path = project_root / 'data' / 'portal.db'
             app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{db_path}"
 
-        # 3. Initialize the database extension
+        # Initialize the database extension
         db.init_app(app)
 
-        # 4. Register Business Blueprints
+        # ==============================================================
+        # 🔗 IMPORT AND REGISTER BLUEPRINTS
+        # Now they are imported fully loaded with their routes!
+        # ==============================================================
+        from crminaec.platforms.arkhon.routes import arkhon_bp
+        from crminaec.platforms.pearson.routes import pearson_bp
+        
         app.register_blueprint(pearson_bp, url_prefix='/pearson')
         app.register_blueprint(arkhon_bp, url_prefix='/arkhon')
-        app.register_blueprint(emek_bp, url_prefix='/emek')
 
-        # 5. Initialize API & Webhook Routes
+        # Initialize API & Webhook Routes
         from crminaec.api.courses import init_course_routes
         from crminaec.api.webhooks import init_webhook_routes
         

@@ -14,7 +14,6 @@ from werkzeug.utils import secure_filename
 # it was already defined in crminaec/__init__.py, but standard practice is 
 # to import it from the __init__ or define it here. Since you are registering it in
 # __init__.py, let's just make sure we export it from this file correctly.
-from crminaec import pearson_bp
 # Fix Imports for new architecture
 from crminaec.cli.course_injector import CourseInjector
 # Google Interop Imports
@@ -23,6 +22,8 @@ from crminaec.core.interop.google_docs.config import GoogleDocsConfig
 from crminaec.core.models import (AssessmentFormat, Course, LearningOutcome,
                                   Lesson, Tool, db)
 from crminaec.web.forms import CourseForm, ImportForm, LessonForm
+
+pearson_bp = Blueprint('pearson', __name__)
 
 # ==============================================================================
 # 🎓 CORE DASHBOARD & COURSE ROUTES
@@ -42,20 +43,20 @@ def index():
             'recent_courses': courses[-3:] if len(courses) > 3 else courses
         }
         
-        return render_template('index.html', stats=stats, courses=courses)
+        return render_template('pearson/index.html', stats=stats, courses=courses)
     except Exception as e:
         flash(f"Database Error: {e}", "error")
-        return render_template('index.html', stats={}, courses=[])
+        return render_template('pearson/index.html', stats={}, courses=[])
 
 @pearson_bp.route('/courses')
 def list_courses():
     """List all courses"""
     try:
         courses = db.session.query(Course).order_by(Course.created_date.desc()).all()
-        return render_template('courses.html', courses=courses)
+        return render_template('pearson/courses.html', courses=courses)
     except Exception as e:
         flash(f'Error loading courses: {str(e)}', 'error')
-        return render_template('courses.html', courses=[])
+        return render_template('pearson/courses.html', courses=[])
 
 @pearson_bp.route('/course/<int:course_id>')
 def course_detail(course_id):
@@ -69,7 +70,7 @@ def course_detail(course_id):
         # We can just pass the course object, as course.lessons is already sorted by the model
         lessons = course.lessons
         
-        return render_template('course_detail.html', course=course, lessons=lessons)
+        return render_template('pearson/course_detail.html', course=course, lessons=lessons)
     except Exception as e:
         flash(f'Error loading course: {str(e)}', 'error')
         return redirect(url_for('pearson.list_courses'))
@@ -83,7 +84,7 @@ def course_lessons(course_id):
             flash('Course not found', 'error')
             return redirect(url_for('pearson.list_courses'))
         
-        return render_template('lessons.html', course=course, lessons=course.lessons)
+        return render_template('pearson/lessons.html', course=course, lessons=course.lessons)
     except Exception as e:
         flash(f'Error loading lessons: {str(e)}', 'error')
         return redirect(url_for('pearson.list_courses'))
@@ -115,7 +116,7 @@ def create_course():
         return redirect(url_for('pearson.course_detail', course_id=course.course_id))
     
     if request.method == 'GET':
-        return render_template('course_edit.html', course=None, form=form)
+        return render_template('pearson/course_edit.html', course=None, form=form)
     
     # POST method (Fallback if not using WTForms)
     try:
@@ -140,7 +141,7 @@ def create_course():
     except Exception as e:
         db.session.rollback()
         flash(f'Error creating course: {str(e)}', 'error')
-        return render_template('course_edit.html', form=form, course=None)
+        return render_template('pearson/course_edit.html', form=form, course=None)
 
 @pearson_bp.route('/course/<int:course_id>/edit', methods=['GET', 'POST'])
 def edit_course(course_id):
@@ -152,7 +153,7 @@ def edit_course(course_id):
         return redirect(url_for('pearson.list_courses'))
     
     if request.method == 'GET':
-        return render_template('course_edit.html', course=course)
+        return render_template('pearson/course_edit.html', course=course)
     
     try:
         course.course_title = request.form['title']
@@ -173,7 +174,7 @@ def edit_course(course_id):
     except Exception as e:
         db.session.rollback()
         flash(f'Error updating course: {str(e)}', 'error')
-        return render_template('course_edit.html', course=course)
+        return render_template('pearson/course_edit.html', course=course)
 
 @pearson_bp.route('/course/<int:course_id>/delete', methods=['POST'])
 def delete_course(course_id):
@@ -207,7 +208,7 @@ def create_lesson(course_id):
         return redirect(url_for('pearson.list_courses'))
     
     if request.method == 'GET':
-        return render_template('lesson_edit.html', course=course, lesson=None)
+        return render_template('pearson/lesson_edit.html', course=course, lesson=None)
     
     try:
         order = int(request.form.get('order', 1))
@@ -239,7 +240,7 @@ def create_lesson(course_id):
     except Exception as e:
         db.session.rollback()
         flash(f'Error creating lesson: {str(e)}', 'error')
-        return render_template('lesson_edit.html', course=course, lesson=None)
+        return render_template('pearson/lesson_edit.html', course=course, lesson=None)
 
 @pearson_bp.route('/lesson/<int:lesson_id>/edit', methods=['GET', 'POST'])
 def edit_lesson(lesson_id):
@@ -253,7 +254,7 @@ def edit_lesson(lesson_id):
     course = db.session.query(Course).filter_by(course_id=lesson.course_id).first()
     
     if request.method == 'GET':
-        return render_template('lesson_edit.html', course=course, lesson=lesson)
+        return render_template('pearson/lesson_edit.html', course=course, lesson=lesson)
     
     try:
         try:
@@ -279,7 +280,7 @@ def edit_lesson(lesson_id):
     except Exception as e:
         db.session.rollback()
         flash(f'Error updating lesson: {str(e)}', 'error')
-        return render_template('lesson_edit.html', course=course, lesson=lesson)
+        return render_template('pearson/lesson_edit.html', course=course, lesson=lesson)
 
 @pearson_bp.route('/lesson/<int:lesson_id>/delete', methods=['POST'])
 def delete_lesson(lesson_id):
@@ -308,7 +309,7 @@ def delete_lesson(lesson_id):
 @pearson_bp.route('/course/import', methods=['GET', 'POST'])
 def import_syllabus():
     if request.method == 'GET':
-        return render_template('import.html')
+        return render_template('pearson/import.html')
     
     if 'file' not in request.files:
         flash('No file part', 'error')
@@ -385,7 +386,7 @@ def sync_status():
                 'filename': f
             })
     
-    return render_template('sync_log.html', sync_data=sync_data, auth_warning=auth_warning)
+    return render_template('pearson/sync_log.html', sync_data=sync_data, auth_warning=auth_warning)
 
 @pearson_bp.route('/sync-all-specs', methods=['POST'])
 def sync_all_specs():
@@ -428,4 +429,4 @@ def folder_registry():
     folders = client.list_folders()
     default_id = config.default_folder_id
     
-    return render_template('folders.html', folders=folders, default_id=default_id)
+    return render_template('pearson/folders.html', folders=folders, default_id=default_id)

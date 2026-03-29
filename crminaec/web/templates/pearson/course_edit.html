@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if course %}Edit {{ course.course_title }}{% else %}Create New Course{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h4 class="card-title mb-0">
+                    <i class="fas {% if course %}fa-edit{% else %}fa-plus{% endif %}"></i>
+                    {% if course %}Edit Course{% else %}Create New Course{% endif %}
+                </h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label for="title" class="form-label fw-bold">Course Title *</label>
+                            <input type="text" class="form-control" id="title" name="title" value="{{ course.course_title if course else '' }}" required placeholder="e.g., Intro to Design">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="course_code" class="form-label fw-bold">Course Code *</label>
+                            <input type="text" class="form-control" id="course_code" name="course_code" value="{{ course.course_code if course else '' }}" required placeholder="e.g., DES101">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="instructor" class="form-label">Instructor</label>
+                            <input type="text" class="form-control" id="instructor" name="instructor" value="{{ course.instructor if course else '' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="contact_email" class="form-label">Contact Email</label>
+                            <input type="email" class="form-control" id="contact_email" name="contact_email" value="{{ course.contact_email if course else '' }}">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="level" class="form-label">Level</label>
+                            <select class="form-select" id="level" name="level">
+                                <option value="">Select Level</option>
+                                <option value="Beginner" {% if course and course.level == 'Beginner' %}selected{% endif %}>Beginner</option>
+                                <option value="Intermediate" {% if course and course.level == 'Intermediate' %}selected{% endif %}>Intermediate</option>
+                                <option value="Advanced" {% if course and course.level == 'Advanced' %}selected{% endif %}>Advanced</option>
+                                <option value="HND Art & Design" {% if course and course.level == 'HND Art & Design' %}selected{% endif %}>HND Art & Design</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="language" class="form-label">Language</label>
+                            <input type="text" class="form-control" id="language" name="language" value="{{ course.language if course else 'English' }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="delivery_mode" class="form-label">Delivery Mode</label>
+                            <select class="form-select" id="delivery_mode" name="delivery_mode">
+                                <option value="">Select Mode</option>
+                                <option value="Online" {% if course and course.delivery_mode == 'Online' %}selected{% endif %}>Online</option>
+                                <option value="In-person" {% if course and course.delivery_mode == 'In-person' %}selected{% endif %}>In-person</option>
+                                <option value="Hybrid" {% if course and course.delivery_mode == 'Hybrid' %}selected{% endif %}>Hybrid</option>
+                                <option value="Blended" {% if course and course.delivery_mode == 'Blended' %}selected{% endif %}>Blended</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="aim" class="form-label">Course Aim</label>
+                        <textarea class="form-control" id="aim" name="aim" rows="2">{{ course.aim if course else '' }}</textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3">{{ course.description if course else '' }}</textarea>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="objectives" class="form-label">Learning Objectives</label>
+                        <textarea class="form-control" id="objectives" name="objectives" rows="3">{{ course.objectives if course else '' }}</textarea>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg"><i class="fas fa-save me-2"></i> Save Course</button>
+                        <a href="{{ url_for('pearson.list_courses') }}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

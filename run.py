@@ -32,7 +32,8 @@ def web(host: str, port: int, debug: bool):
     """Start the Unified Web Interface"""
     from crminaec import create_app
     app = create_app()
-    
+
+    print(app.url_map)
     click.echo(f"🌐 Starting crminaec Web Interface...")
     click.echo(f"   URL: http://{host}:{port}")
     click.echo(f"   Debug: {debug}")
@@ -147,10 +148,9 @@ def inspect(model_name: str, count: int):
 @click.argument('file', type=click.Path(exists=True))
 def inject(file: str):
     """Inject a comprehensive course from markdown/file"""
-    from crminaec import get_database_url
     from crminaec.cli.course_injector import CourseInjector
     
-    injector = CourseInjector(get_database_url())
+    injector = CourseInjector()
     success = injector.inject_comprehensive_course(file)
     
     if success:
