@@ -122,6 +122,21 @@ body {
     animation: spin 1s linear infinite;
 }
 
+.tree-container {
+    max-height: 800px;
+    overflow-y: auto;
+    background: #f8f9fa;
+    border-right: 1px solid #dee2e6;
+}
+    
+/* The shadow list for our inline search */
+.autocomplete-dropdown {
+    display: none; 
+    z-index: 1000;
+    max-height: 300px;
+    overflow-y: auto; /* Adds a scrollbar if the search finds too many items */
+}
+
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
@@ -152,4 +167,72 @@ body {
         border: 1px solid #000 !important;
         box-shadow: none !important;
     }
+}
+
+/* =========================================
+   EMEK BoM Editor & ERP Enhancements
+   ========================================= */
+
+/* 1. Layout & Scroll Containers */
+.catalog-scroll-area {
+    max-height: 400px;
+    overflow-y: auto;
+    font-size: 0.9rem;
+}
+
+.tree-min-height {
+    min-height: 200px;
+}
+
+/* 2. Form & Input Utilities */
+.qty-input-small {
+    width: 70px;
+}
+
+.dropdown-z-index {
+    z-index: 1000;
+}
+
+/* 3. Typography & Custom Utilities */
+.cursor-pointer {
+    cursor: pointer !important;
+}
+
+.line-height-1 {
+    line-height: 1;
+}
+
+/* 4. Initial Component States (Hidden by Default) */
+#catalog-loading-trigger,
+#btn_edit_item,
+#btn_where_used {
+    display: none;
+}
+
+/* 5. Autocomplete Dropdown (Consolidated) */
+#auto_dropdown {
+    display: none; 
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 1000;
+}
+
+/* 6. Modern Slim Scrollbars for overflowing divs */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f8f9fa;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
 }

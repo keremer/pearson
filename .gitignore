@@ -7,10 +7,14 @@ htmlcov/
 # Data folder (except structure)
 data/
 !data/.gitkeep
+legacy_data/
+!legacy_data/.gitkeep
 
 # Database
 *.db
 *.sqlite3
+*.xlsx
+*.csv
 
 # Logs
 *.log

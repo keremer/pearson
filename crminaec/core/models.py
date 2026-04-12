@@ -1,9 +1,9 @@
+import uuid
 from datetime import datetime
 from decimal import Decimal
 from typing import Any, Dict, List, Optional, cast
 
 from flask_sqlalchemy import SQLAlchemy
-# Just add Boolean to this list!
 from sqlalchemy import (Boolean, DateTime, Float, ForeignKey, Index, Integer,
                         Numeric, String, Text, UniqueConstraint)
 from sqlalchemy.orm import (DeclarativeBase, Mapped, MappedAsDataclass,
@@ -37,29 +37,91 @@ class Party(db.Model, MappedAsDataclass):
     city: Mapped[Optional[str]] = mapped_column(String(50), default=None)
     district: Mapped[Optional[str]] = mapped_column(String(50), default=None)
 
+    # RELATIONS: 1 Party -> Many Orders
     orders: Mapped[List["Order"]] = relationship("Order", back_populates="party", default_factory=list)
 
 # ================================================================
+# 💰 THE ERP PRICING ENGINE (New)
+# ================================================================
+
+class PriceRecord(db.Model, MappedAsDataclass):
+    """
+    Standalone Pricing Entity.
+    Can be a simple Kelebek import or a highly surgical EMEK cost breakdown.
+    """
+    __tablename__ = 'price_records'
+
+    price_id: Mapped[int] = mapped_column(primary_key=True, init=False)
+    
+    # What is being priced? (Links conceptually to CatalogProduct or Kelebek item code)
+    entity_code: Mapped[str] = mapped_column(String(100), index=True) # e.g., "POZ-101" or Kelebek "URK"
+    
+    # Context (Whose price is it?)
+    supplier: Mapped[str] = mapped_column(String(100), default="Kelebek") # Supplier A, B, or 'Internal'
+    price_type: Mapped[str] = mapped_column(String(50), default="cost") # 'cost', 'sell', 'procurement'
+    
+    # Temporal Validity (When is it valid?)
+    valid_from: Mapped[datetime] = mapped_column(DateTime, default_factory=datetime.utcnow)
+    valid_to: Mapped[Optional[datetime]] = mapped_column(DateTime, default=None)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    
+    # Scale (For what quantity?)
+    min_quantity: Mapped[float] = mapped_column(Float, default=1.0)
+    
+    # --- SURGICAL COST BREAKDOWN ---
+    base_material_cost: Mapped[float] = mapped_column(Numeric(12, 2), default=0.0) # Malzeme Tutarı
+    base_labor_cost: Mapped[float] = mapped_column(Numeric(12, 2), default=0.0) # İşçilik Tutarı
+    logistics_cost: Mapped[float] = mapped_column(Numeric(12, 2), default=0.0)
+    
+    general_expenses_pct: Mapped[float] = mapped_column(Float, default=0.0) # 5.0 = 5%
+    profit_margin_pct: Mapped[float] = mapped_column(Float, default=0.0)    # 15.0 = 15%
+    tax_rate_pct: Mapped[float] = mapped_column(Float, default=20.0)        # 20.0 = 20%
+    
+    currency: Mapped[str] = mapped_column(String(10), default="TRY")
+
+    # The Final Computed Number (Cached for fast quoting/reporting)
+    final_unit_price: Mapped[Optional[float]] = mapped_column(Numeric(12, 2), default=None)
+
+    # RELATIONS: 1 PriceRecord -> Many OrderItems
+    order_items: Mapped[List["OrderItem"]] = relationship("OrderItem", back_populates="price_record", init=False, default_factory=list)
+
+
+# ================================================================
 # 👥 ARKHON PLATFORM (Arkhon)
-# ================================================================  
+# ================================================================
+
+class ProjectTypology(db.Model, MappedAsDataclass):
+    """Handles B2B Multi-Unit Projects (e.g., T1 = 16 Units, T2 = 9 Units)"""
+    __tablename__ = 'project_typologies'
+
+    typology_id: Mapped[int] = mapped_column(primary_key=True, init=False)
+    order_id: Mapped[int] = mapped_column(ForeignKey('orders.order_id', ondelete="CASCADE"), init=False)
+    
+    name: Mapped[str] = mapped_column(String(50)) # e.g., "T1" or "Villa"
+    description: Mapped[Optional[str]] = mapped_column(String(200), default=None)
+    quantity: Mapped[int] = mapped_column(Integer, default=1)
+    
+    # RELATIONS: 1 Typology -> Many OrderItems | Many Typologies -> 1 Order
+    items: Mapped[List["OrderItem"]] = relationship("OrderItem", back_populates="typology", default_factory=list, cascade="all, delete-orphan")
+    order: Mapped["Order"] = relationship("Order", back_populates="typologies", init=False)
+
+
 class CatalogProduct(db.Model, MappedAsDataclass):
     """
     Standard products database (Appliances, Countertops, Sinks).
-    Used to quickly add non-Kelebek items to an order.
     """
     __tablename__ = 'catalog_products'
 
     product_id: Mapped[int] = mapped_column(primary_key=True, init=False)
-    category: Mapped[str] = mapped_column(String(50), nullable=False) # e.g., 'Appliance', 'Countertop'
-    brand: Mapped[str] = mapped_column(String(100), nullable=False) # e.g., 'Franke', 'Belenco'
+    category: Mapped[str] = mapped_column(String(50), nullable=False) 
+    brand: Mapped[str] = mapped_column(String(100), nullable=False) 
     product_code: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
     product_name: Mapped[str] = mapped_column(String(255), nullable=False)
     
-    # Base cost to help calculate margins later
     default_price: Mapped[Optional[float]] = mapped_column(Numeric(12, 2), default=None)
-    
-    # For that visual attachment requirement you mentioned
     image_url: Mapped[Optional[str]] = mapped_column(String(255), default=None)  
+
+
 class Order(db.Model, MappedAsDataclass):
     __tablename__ = 'orders'
 
@@ -73,49 +135,43 @@ class Order(db.Model, MappedAsDataclass):
     payment_plan: Mapped[Optional[str]] = mapped_column(Text, default=None)
     date: Mapped[datetime] = mapped_column(DateTime, default_factory=datetime.utcnow)
 
+    # RELATIONS: Core Order Hub
     party: Mapped[Optional["Party"]] = relationship("Party", back_populates="orders", default=None)
-    items: Mapped[List["OrderItem"]] = relationship(
-        back_populates="order", 
-        default_factory=list, 
-        cascade="all, delete-orphan"
-    )
-    quotes: Mapped[List["Quote"]] = relationship(
-        back_populates="order", 
-        default_factory=list, 
-        cascade="all, delete-orphan"
-    )
+    typologies: Mapped[List["ProjectTypology"]] = relationship("ProjectTypology", back_populates="order", default_factory=list, cascade="all, delete-orphan")
+    items: Mapped[List["OrderItem"]] = relationship("OrderItem", back_populates="order", default_factory=list, cascade="all, delete-orphan")
+    quotes: Mapped[List["Quote"]] = relationship("Quote", back_populates="order", default_factory=list, cascade="all, delete-orphan")
+    preferences: Mapped[Optional["ProjectPreference"]] = relationship("ProjectPreference", back_populates="order", default=None, init=False, cascade="all, delete-orphan")
+
 
 class OrderItem(db.Model, MappedAsDataclass):
     """
-    Arkhon Order Item Model (Kelebek Furniture Spec)
-    Stores parsed product configurations from HTML exports.
+    Arkhon Order Item Model (Kelebek Furniture Spec & EMEK Construction Items)
     """
     __tablename__ = 'order_items'
 
     item_id: Mapped[int] = mapped_column(primary_key=True, init=False)
     order_id: Mapped[int] = mapped_column(ForeignKey('orders.order_id'), init=False)
+    typology_id: Mapped[Optional[int]] = mapped_column(ForeignKey('project_typologies.typology_id', ondelete="SET NULL"), default=None)
+    
+    # THE ERP PRICING LINK (Replaces raw 'fiyat')
+    price_record_id: Mapped[Optional[int]] = mapped_column(ForeignKey('price_records.price_id', ondelete="SET NULL"), default=None)
 
     # Base Identification
     pozno: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, default=None)
-    urk: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, default=None)
-    ura: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, default=None) # Product Name
+    urk: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, default=None) 
+    ura: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, default=None) 
     
     # Quantities & Units
     adet: Mapped[Optional[float]] = mapped_column(Float, nullable=True, default=None)
     brm: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, default=None)
 
-    # Dimensions (Stored as strings to safely capture Kelebek's raw formatting)
+    # Dimensions
     byt_x: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, default=None)
     byt_y: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, default=None)
     byt_z: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, default=None)
-    # Add these to OrderItem:
-    # Controls if the customer sees this item on the quote (for margin hiding)
+    
     is_visible_on_quote: Mapped[bool] = mapped_column(Boolean, default=True)
-    
-    # Categories: 'Furniture' (Kelebek), 'Appliance' (Franke/Smeg), 'Countertop'
     category: Mapped[str] = mapped_column(String(50), default='Furniture') 
-    
-    # Optional image path for accessories/mechanisms
     accessory_image_path: Mapped[Optional[str]] = mapped_column(String(255), default=None)
 
     # Specifics & Colors
@@ -126,21 +182,18 @@ class OrderItem(db.Model, MappedAsDataclass):
     govdernk: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, default=None)
     govderna: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, default=None)
 
-    # Heavy Data Payloads (XML and long config strings need Text, not String)
     konfigurasyon: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default=None)
     konfigurasyonXML: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default=None)
     nitelikdetay: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default=None)
 
-    # Relationship back to the parent order
-    order: Mapped["Order"] = relationship(back_populates="items", init=False)
-
-import uuid  # Add this to your imports at the top if it isn't there!
+    # RELATIONS:
+    order: Mapped["Order"] = relationship("Order", back_populates="items", init=False)
+    typology: Mapped[Optional["ProjectTypology"]] = relationship("ProjectTypology", back_populates="items", init=False, default=None)
+    price_record: Mapped[Optional["PriceRecord"]] = relationship("PriceRecord", back_populates="order_items", init=False, default=None)
 
 
 class Quote(db.Model, MappedAsDataclass):
-    """
-    Tracks Quote versions, ProSAP pricing, and legally binding customer approvals.
-    """
+    """Tracks Quote versions, ProSAP pricing, and legally binding customer approvals."""
     __tablename__ = 'quotes'
 
     quote_id: Mapped[int] = mapped_column(primary_key=True, init=False)
@@ -148,32 +201,77 @@ class Quote(db.Model, MappedAsDataclass):
     version: Mapped[int] = mapped_column(Integer, default=1)
     quote_category: Mapped[str] = mapped_column(String(50), default='Furniture')
     
-    # Secure Public Link Generation (For SMS and QR Codes)
     access_token: Mapped[str] = mapped_column(String(64), default_factory=lambda: uuid.uuid4().hex, unique=True)
     
-    # Pricing Details (From ProSAP)
     list_price: Mapped[Optional[float]] = mapped_column(Numeric(12, 2), default=None)
     discount_amount: Mapped[Optional[float]] = mapped_column(Numeric(12, 2), default=None)
     tax_rate: Mapped[float] = mapped_column(Float, default=20.0)
     total_amount: Mapped[Optional[float]] = mapped_column(Numeric(12, 2), default=None)
     
-    # Terms & Conditions
     validity_days: Mapped[int] = mapped_column(Integer, default=15)
     payment_terms: Mapped[Optional[str]] = mapped_column(Text, default=None)
     delivery_type: Mapped[Optional[str]] = mapped_column(String(100), default=None)
     delivery_place: Mapped[Optional[str]] = mapped_column(String(255), default=None)
     
-    # Notes
-    special_notes: Mapped[Optional[str]] = mapped_column(Text, default=None) # e.g., "Customer insisted on X despite advice"
+    special_notes: Mapped[Optional[str]] = mapped_column(Text, default=None) 
     
-    # Legal Approval System
     status: Mapped[str] = mapped_column(String(20), default='draft') # draft, sent, approved, rejected
-    approval_text: Mapped[Optional[str]] = mapped_column(Text, default=None) # The exact text they type to approve
+    approval_text: Mapped[Optional[str]] = mapped_column(Text, default=None) 
     approval_date: Mapped[Optional[datetime]] = mapped_column(DateTime, default=None)
-    approval_ip: Mapped[Optional[str]] = mapped_column(String(50), default=None) # Logged for legal non-repudiation
+    approval_ip: Mapped[Optional[str]] = mapped_column(String(50), default=None) 
     
-    # Relationships
-    order: Mapped["Order"] = relationship(back_populates="quotes", init=False)
+    # RELATIONS:
+    order: Mapped["Order"] = relationship("Order", back_populates="quotes", init=False)
+    installments: Mapped[List["PaymentInstallment"]] = relationship(
+        "PaymentInstallment",
+        back_populates="quote", 
+        default_factory=list, 
+        init=False, 
+        cascade="all, delete-orphan"
+    )
+
+
+class ProjectPreference(db.Model, MappedAsDataclass):
+    """Müşteri ve Sipariş Takip Formu (Preferences Chart)."""
+    __tablename__ = 'project_preferences'
+
+    pref_id: Mapped[int] = mapped_column(primary_key=True, init=False)
+    order_id: Mapped[int] = mapped_column(ForeignKey('orders.order_id', ondelete="CASCADE"), init=False)
+
+    model_name: Mapped[Optional[str]] = mapped_column(String(100), default=None) 
+    front_color: Mapped[Optional[str]] = mapped_column(String(100), default=None) 
+    body_color: Mapped[Optional[str]] = mapped_column(String(100), default=None) 
+    plinth_detail: Mapped[Optional[str]] = mapped_column(String(100), default=None) 
+    handle_code: Mapped[Optional[str]] = mapped_column(String(50), default=None) 
+    glass_color: Mapped[Optional[str]] = mapped_column(String(50), default=None) 
+
+    led_strip: Mapped[bool] = mapped_column(Boolean, default=False)
+    spotlight: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    cutlery_tray: Mapped[Optional[str]] = mapped_column(String(255), default=None) 
+    trash_bin: Mapped[Optional[str]] = mapped_column(String(255), default=None) 
+    mechanisms: Mapped[Optional[str]] = mapped_column(Text, default=None) 
+    
+    # RELATIONS:
+    order: Mapped["Order"] = relationship("Order", back_populates="preferences", init=False)
+
+
+class PaymentInstallment(db.Model, MappedAsDataclass):
+    """Ödeme Planı (Payment Schedule for Contracts)."""
+    __tablename__ = 'payment_installments'
+
+    installment_id: Mapped[int] = mapped_column(primary_key=True, init=False)
+    quote_id: Mapped[int] = mapped_column(ForeignKey('quotes.quote_id', ondelete="CASCADE"), init=False)
+
+    date: Mapped[Optional[datetime]] = mapped_column(DateTime, default=None)
+    method: Mapped[str] = mapped_column(String(50), default=None) 
+    amount: Mapped[float] = mapped_column(Numeric(12, 2), default=0.0)
+    status: Mapped[str] = mapped_column(String(20), default='Bekliyor') 
+
+    # RELATIONS:
+    quote: Mapped["Quote"] = relationship("Quote", back_populates="installments", init=False)
+
+
 # ================================================================
 # 🎓 ACADEMIC PLATFORM (Pearson Automation)
 # ================================================================
@@ -189,15 +287,14 @@ lesson_learning_outcome = db.Table(
     UniqueConstraint('lesson_id', 'learning_outcome_id', name='uq_lesson_lo')
 )
 
+
 class Course(db.Model, MappedAsDataclass):
     __tablename__ = 'courses'
 
-    # Required
     course_id: Mapped[int] = mapped_column(primary_key=True, init=False)
     course_title: Mapped[str] = mapped_column(String(200), nullable=False)
     course_code: Mapped[str] = mapped_column(String(50), nullable=False, unique=True, index=True)
     
-    # Optional / Defaults
     instructor: Mapped[Optional[str]] = mapped_column(String(100), default=None, index=True)
     contact_email: Mapped[Optional[str]] = mapped_column(String(100), default=None)
     level: Mapped[Optional[str]] = mapped_column(String(50), default=None)
@@ -209,13 +306,12 @@ class Course(db.Model, MappedAsDataclass):
     created_date: Mapped[datetime] = mapped_column(DateTime, default_factory=datetime.utcnow)
     updated_date: Mapped[datetime] = mapped_column(DateTime, default_factory=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # Relationships
+    # RELATIONS: Core Course Hub
     lessons: Mapped[List["Lesson"]] = relationship('Lesson', back_populates='course', cascade='all, delete-orphan', order_by='Lesson.order', default_factory=list)
     learning_outcomes: Mapped[List["LearningOutcome"]] = relationship('LearningOutcome', back_populates='course', cascade='all, delete-orphan', order_by='LearningOutcome.id', default_factory=list)
     assessment_formats: Mapped[List["AssessmentFormat"]] = relationship('AssessmentFormat', back_populates='course', cascade='all, delete-orphan', order_by='AssessmentFormat.id', default_factory=list)
     tools: Mapped[List["Tool"]] = relationship('Tool', back_populates='course', cascade='all, delete-orphan', order_by='Tool.id', default_factory=list)
 
-    # Composite Index mapping for SQLAlchemy 2.0
     __table_args__ = (
         Index('ix_course_level_language', 'level', 'language'),
     )
@@ -246,25 +342,21 @@ class Course(db.Model, MappedAsDataclass):
             'updated_date': self.updated_date.isoformat() if self.updated_date else None,
             'lesson_count': len(self.lessons)
         }
-
         if include_relationships:
             result['lessons'] = [lesson.to_dict() for lesson in self.lessons]
             result['learning_outcomes'] = [lo.to_dict() for lo in self.learning_outcomes]
             result['assessment_formats'] = [af.to_dict() for af in self.assessment_formats]
             result['tools'] = [tool.to_dict() for tool in self.tools]
-
         return result
 
 
 class Lesson(db.Model, MappedAsDataclass):
     __tablename__ = 'lessons'
 
-    # Required
     lesson_id: Mapped[int] = mapped_column(primary_key=True, init=False)
     course_id: Mapped[int] = mapped_column(ForeignKey('courses.course_id', ondelete="CASCADE"), nullable=False, index=True)
     lesson_title: Mapped[str] = mapped_column(String(200), nullable=False)
     
-    # Optional / Defaults
     content: Mapped[Optional[str]] = mapped_column(Text, default=None)
     duration: Mapped[int] = mapped_column(Integer, default=60)
     order: Mapped[int] = mapped_column(Integer, default=1)
@@ -273,7 +365,7 @@ class Lesson(db.Model, MappedAsDataclass):
     materials_needed: Mapped[Optional[str]] = mapped_column(Text, default=None)
     created_date: Mapped[datetime] = mapped_column(DateTime, default_factory=datetime.utcnow)
 
-    # Relationships
+    # RELATIONS: Many Lessons -> 1 Course | Many Lessons <-> Many Learning Outcomes
     course: Mapped[Optional["Course"]] = relationship('Course', back_populates='lessons', default=None)
     learning_outcomes: Mapped[List["LearningOutcome"]] = relationship('LearningOutcome', secondary=lesson_learning_outcome, back_populates='lessons', default_factory=list)
 
@@ -309,12 +401,10 @@ class Lesson(db.Model, MappedAsDataclass):
             'materials_needed': self.materials_needed,
             'created_date': self.created_date.isoformat() if self.created_date else None
         }
-
         if include_relationships:
             result['learning_outcomes'] = [
                 {'id': lo.id, 'outcome_text': lo.outcome_text} for lo in self.learning_outcomes
             ]
-
         return result
 
 
@@ -327,6 +417,7 @@ class LearningOutcome(db.Model, MappedAsDataclass):
     
     created_date: Mapped[datetime] = mapped_column(DateTime, default_factory=datetime.utcnow)
 
+    # RELATIONS: Many Learning Outcomes -> 1 Course | Many Outcomes <-> Many Lessons
     course: Mapped[Optional["Course"]] = relationship('Course', back_populates='learning_outcomes', default=None)
     lessons: Mapped[List["Lesson"]] = relationship('Lesson', secondary=lesson_learning_outcome, back_populates='learning_outcomes', default_factory=list)
 
@@ -355,6 +446,7 @@ class AssessmentFormat(db.Model, MappedAsDataclass):
     description: Mapped[Optional[str]] = mapped_column(Text, default=None)
     created_date: Mapped[datetime] = mapped_column(DateTime, default_factory=datetime.utcnow)
 
+    # RELATIONS: Many AssessmentFormats -> 1 Course
     course: Mapped[Optional["Course"]] = relationship('Course', back_populates='assessment_formats', default=None)
 
     def __repr__(self) -> str:
@@ -388,6 +480,7 @@ class Tool(db.Model, MappedAsDataclass):
     license_info: Mapped[Optional[str]] = mapped_column(String(100), default=None)
     created_date: Mapped[datetime] = mapped_column(DateTime, default_factory=datetime.utcnow)
 
+    # RELATIONS: Many Tools -> 1 Course
     course: Mapped[Optional["Course"]] = relationship('Course', back_populates='tools', default=None)
 
     def __repr__(self) -> str:

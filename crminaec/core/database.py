@@ -1,6 +1,7 @@
 from typing import Optional
 
 from crminaec.core.models import Course, Order, Party, db
+from crminaec.platforms.emek import models as emek_models
 
 
 class DatabaseSetup:

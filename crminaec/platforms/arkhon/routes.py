@@ -2,14 +2,18 @@
 Flask Routes for Arkhon Platform (AEC & Kelebek Orders)
 Fully Integrated with crminaec Data-First Architecture
 """
+import csv
+import io
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from werkzeug.utils import secure_filename
 
-from crminaec.core.models import Order, OrderItem, Quote, CatalogProduct, db
+from crminaec.core.models import (CatalogProduct, Order, OrderItem,
+                                  PaymentInstallment, PriceRecord,
+                                  ProjectPreference, Quote, db)
 from crminaec.platforms.arkhon.orderparser import KelebekOrderParser
 
 arkhon_bp = Blueprint('arkhon', __name__)
@@ -121,7 +125,70 @@ def import_kelebek_order():
         logger.error(f"Order Import Failed: {e}")
         flash(f'A system error occurred during import: {str(e)}', 'error')
         return redirect(request.url)
+# ==============================================================================
+# 📥 PROSAP CSV IMPORT ROUTE
+# ==============================================================================
+@arkhon_bp.route('/order/<int:order_id>/import_prosap_csv', methods=['POST'])
+def import_prosap_csv(order_id):
+    """Reads a ProSAP CSV and injects prices into the Order's PriceRecords."""
+    order = db.get_or_404(Order, order_id)
+    
+    if 'prosap_file' not in request.files:
+        flash('Lütfen bir CSV dosyası seçin.', 'warning')
+        return redirect(url_for('arkhon.order_detail', order_id=order.order_id))
+        
+    file = request.files['prosap_file']
+    if file.filename == '':
+        flash('Dosya seçilmedi.', 'warning')
+        return redirect(url_for('arkhon.order_detail', order_id=order.order_id))
 
+    try:
+        # 1. Read the CSV File (Decoding it to string)
+        stream = io.StringIO(file.stream.read().decode("UTF8"), newline=None)
+        
+        # NOTE: Adjust delimiter to ';' if ProSAP uses semicolons for Turkish Excel formatting!
+        csv_input = csv.DictReader(stream, delimiter=',') 
+        
+        # 2. Convert CSV rows into a fast lookup dictionary: { 'URK_CODE': 12500.00 }
+        # You will need to change 'Ünite Kodu' and 'Fiyat' to match the exact column headers in the ProSAP CSV
+        prosap_prices = {}
+        for row in csv_input:
+            unit_code = row.get('Ünite Kodu', '').strip()
+            raw_price = row.get('Fiyat', '0').replace('.', '').replace(',', '.') # Handle Turkish number format
+            
+            if unit_code:
+                prosap_prices[unit_code] = float(raw_price)
+
+        # 3. Match and Update the Database
+        updated_count = 0
+        for item in order.items:
+            # If the item has a code AND it exists in our CSV lookup
+            if item.urk and item.urk in prosap_prices:
+                new_price_val = prosap_prices[item.urk]
+                
+                # Create a new historical PriceRecord
+                new_price_record = PriceRecord(
+                    entity_code=item.urk or "BİLİNMEYEN", # THE FIX: Guarantees a string for Pylance
+                    supplier="Kelebek (ProSAP)",
+                    price_type="cost",
+                    base_material_cost=new_price_val,
+                    final_unit_price=new_price_val 
+                )
+                db.session.add(new_price_record)
+                
+                # Link the item to this new price record
+                item.price_record = new_price_record
+                updated_count += 1
+
+        db.session.commit()
+        flash(f'{updated_count} kalemin fiyatı ProSAP CSV dosyasından başarıyla güncellendi!', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"ProSAP CSV Import Failed: {e}")
+        flash(f'CSV yüklenirken bir hata oluştu: {str(e)}', 'danger')
+
+    return redirect(url_for('arkhon.order_detail', order_id=order.order_id))
 
 # ==============================================================================
 # 🛠️ QUOTE BUILDING & CATALOG ROUTING
@@ -162,10 +229,10 @@ def build_quote(order_id):
     
     if request.method == 'POST':
         try:
+            # ... (Keep your existing visibility and category loop here) ...
             for item in order.items:
                 is_visible = request.form.get(f'visibility_{item.item_id}') == 'on'
                 category = request.form.get(f'category_{item.item_id}', 'Furniture')
-                
                 item.is_visible_on_quote = is_visible
                 item.category = category
 
@@ -189,19 +256,41 @@ def build_quote(order_id):
                 special_notes=request.form.get('special_notes', '')
             )
             
+            # ==========================================
+            # 🛑 NEW: PROCESS DYNAMIC PAYMENT INSTALLMENTS
+            # ==========================================
+            dates = request.form.getlist('installment_date[]')
+            methods = request.form.getlist('installment_method[]')
+            amounts = request.form.getlist('installment_amount[]')
+            
+            # Zip them together and create the database records
+            for date_str, method, amount_str in zip(dates, methods, amounts):
+                if method and amount_str: # Only add if method and amount exist
+                    amount_val = float(amount_str)
+                    # Convert date string to datetime if provided, else leave None
+                    parsed_date = datetime.strptime(date_str, '%Y-%m-%d') if date_str else None
+                    
+                    installment = PaymentInstallment(
+                        date=parsed_date,
+                        method=method,
+                        amount=amount_val,
+                        status="Bekliyor" # Default status
+                    )
+                    new_quote.installments.append(installment)
+            
             order.quotes.append(new_quote)
             db.session.commit()
             
-            flash(f'Quote Version {next_version} generated successfully!', 'success')
+            flash(f'Teklif Versiyon {next_version} başarıyla oluşturuldu!', 'success')
             return redirect(url_for('arkhon.order_detail', order_id=order.order_id))
             
         except Exception as e:
             db.session.rollback()
-            flash(f'Error generating quote: {str(e)}', 'danger')
+            flash(f'Teklif oluşturulurken hata: {str(e)}', 'danger')
 
     return render_template('arkhon/quote_builder.html', order=order)
 
-@arkhon_bp.route('/order/<int:order_id>/ghost-summary')
+@arkhon_bp.route('/order/<int:order_id>/ghost_summary')
 def ghost_summary(order_id):
     """Generates the lean, unbranded totals page for negotiation."""
     order = db.get_or_404(Order, order_id)
@@ -237,7 +326,7 @@ def approve_quote(access_token):
         return redirect(url_for('arkhon.public_quote', access_token=access_token))
 
     approval_text = request.form.get('approval_text', '').strip()
-    expected_text = "I have read and approve this quote and its terms." 
+    expected_text = "Okudum anladım onaylıyorum" 
     
     if approval_text.lower() != expected_text.lower():
         flash('Approval text does not match. Please type the exact phrase to legally approve.', 'danger')
@@ -256,3 +345,191 @@ def approve_quote(access_token):
         flash('An error occurred while saving your approval.', 'danger')
         
     return redirect(url_for('arkhon.public_quote', access_token=access_token))
+
+@arkhon_bp.route('/order/<int:order_id>/preferences', methods=['GET', 'POST'])
+def order_preferences(order_id):
+    """Turkish UI for Müşteri ve Sipariş Takip Formu with Auto-Extraction."""
+    order = db.get_or_404(Order, order_id)
+
+    # 1. AUTO-EXTRACTION ENGINE (Runs only if preferences don't exist yet)
+    if not order.preferences:
+        prefs = ProjectPreference()
+        mechanisms_list = []
+        
+        for item in order.items:
+            name_lower = (item.ura or "").lower()
+            
+            # Extract Global Colors (Grabs from the first item that has them)
+            if not prefs.body_color and item.govdernk and item.govdernk != "-":
+                prefs.body_color = item.govdernk
+            if not prefs.front_color and item.rnk and item.rnk != "-":
+                prefs.front_color = item.rnk
+                
+            # Extract Handle (Kulp)
+            if "kulp" in name_lower:
+                prefs.handle_code = item.ura
+                
+            # Extract Accessories
+            if "kaşıklık" in name_lower or "kasiklik" in name_lower:
+                prefs.cutlery_tray = item.ura
+            if "çöp" in name_lower or "cop" in name_lower:
+                prefs.trash_bin = item.ura
+                
+            # Extract Mechanisms (Kiler, Kör Köşe)
+            if "kiler" in name_lower or "kör köşe" in name_lower or "mekanizma" in name_lower:
+                mechanisms_list.append(item.ura)
+                
+            # Extract Glass
+            if "cam" in name_lower:
+                prefs.glass_color = item.ura
+
+        if mechanisms_list:
+            prefs.mechanisms = ", ".join(mechanisms_list)
+            
+        order.preferences = prefs
+        db.session.commit()
+        flash('Tercihler Kelebek sipariş verilerinden otomatik olarak ayıklandı!', 'success')
+
+    # 2. HANDLE FORM SUBMISSION (Updating the values manually)
+    if request.method == 'POST':
+        try:
+            order.preferences.model_name = request.form.get('model_name')
+            order.preferences.front_color = request.form.get('front_color')
+            order.preferences.body_color = request.form.get('body_color')
+            order.preferences.plinth_detail = request.form.get('plinth_detail')
+            order.preferences.handle_code = request.form.get('handle_code')
+            order.preferences.glass_color = request.form.get('glass_color')
+            
+            # Checkboxes
+            order.preferences.led_strip = request.form.get('led_strip') == 'on'
+            order.preferences.spotlight = request.form.get('spotlight') == 'on'
+            
+            order.preferences.cutlery_tray = request.form.get('cutlery_tray')
+            order.preferences.trash_bin = request.form.get('trash_bin')
+            order.preferences.mechanisms = request.form.get('mechanisms')
+
+            db.session.commit()
+            flash('Sipariş tercihleri başarıyla güncellendi.', 'success')
+            return redirect(url_for('arkhon.order_detail', order_id=order.order_id))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Hata: {str(e)}', 'danger')
+
+    return render_template('arkhon/preferences_form.html', order=order)
+
+logger = logging.getLogger(__name__)
+
+# --- Helper Function for Turkish Currency Formatting ---
+def format_try(amount):
+    """Formats a float to Turkish Lira string: 1.234.567,89"""
+    if amount is None:
+        amount = 0.0
+    formatted = f"{amount:,.2f}"
+    return formatted.replace(',', 'X').replace('.', ',').replace('X', '.')
+
+@arkhon_bp.route('/quote/<int:quote_id>/export/gdoc', methods=['POST'])
+def export_quote_gdoc(quote_id):
+    """Gathers B2B project quote data (using the ERP PriceRecord) and sends it to Google Docs."""
+    quote = db.get_or_404(Quote, quote_id)
+    order = quote.order
+    
+    try:
+        # 1. Prepare Customer & Project Meta Data
+        customer_fullname = (f"{order.party.first_name or ''} {order.party.last_name or ''}".strip() or "Müşteri") if order.party else "Müşteri"
+        project_name = getattr(order, 'project_name', 'Konut Projesi')
+        validity_date_str = (datetime.now() + timedelta(days=quote.validity_days)).strftime('%d.%m.%Y')
+        
+        total_kitchen_count = 0
+        typology_list_bulleted = ""
+        project_summary_table = []
+        typology_itemized_pages = []
+        grand_total = 0.0
+        
+        # 2. B2B Typology Logic with ERP Pricing
+        if hasattr(order, 'typologies') and order.typologies:
+            for typo in order.typologies:
+                total_kitchen_count += typo.quantity
+                typology_list_bulleted += f"• {typo.name} MUTFAK ({typo.description}) - {typo.quantity} ADET\n"
+                
+                visible_items = [item for item in typo.items if item.is_visible_on_quote]
+                
+                # NEW LOGIC: Safely extract price from the linked PriceRecord
+                unit_cost = 0.0
+                for item in visible_items:
+                    if item.price_record and item.price_record.final_unit_price is not None:
+                        unit_cost += float(item.price_record.final_unit_price)
+
+                row_total = unit_cost * typo.quantity
+                grand_total += row_total
+                
+                project_summary_table.append({
+                    "MUTFAK TİPİ": f"{typo.name} ({typo.description})",
+                    "ADET FİYATI": format_try(unit_cost),
+                    "TOPLAM FİYAT": format_try(row_total)
+                })
+                
+                typology_itemized_pages.append({
+                    "typology_name": typo.name,
+                    "items": [{"name": i.ura, "code": i.urk, "qty": i.adet, "unit": i.brm} for i in visible_items]
+                })
+                
+            project_summary_table.append({
+                "MUTFAK TİPİ": "TOPLAM",
+                "ADET FİYATI": "",
+                "TOPLAM FİYAT": format_try(grand_total)
+            })
+            
+        else:
+            # Fallback for standard B2C (Single Kitchen)
+            total_kitchen_count = 1
+            visible_items = [item for item in order.items if item.is_visible_on_quote]
+            
+            # Extract price from the linked PriceRecord
+            unit_cost = 0.0
+            for item in visible_items:
+                if item.price_record and item.price_record.final_unit_price is not None:
+                    unit_cost += float(item.price_record.final_unit_price)
+            
+            project_summary_table.append({
+                "MUTFAK TİPİ": "Standart Mutfak",
+                "ADET FİYATI": format_try(unit_cost),
+                "TOPLAM FİYAT": format_try(unit_cost)
+            })
+            typology_itemized_pages.append({
+                "typology_name": "Standart Mutfak",
+                "items": [{"name": i.ura, "code": i.urk, "qty": i.adet, "unit": i.brm} for i in visible_items]
+            })
+
+        # 3. Build Google Docs Payload
+        payload = {
+            "quote_number": f"{order.order_number}-V{quote.version}",
+            "date": datetime.now().strftime('%d.%m.%Y'),
+            "customer_name": customer_fullname,
+            "project_name": project_name,
+            "total_kitchen_count": str(total_kitchen_count),
+            "typology_list_bulleted": typology_list_bulleted.strip(),
+            "project_summary_table": project_summary_table,
+            "typology_itemized_pages": typology_itemized_pages,
+            "payment_terms": quote.payment_terms or "Ödeme planı ektedir.",
+            "validity_date": validity_date_str
+        }
+        
+        # ... (your existing payload dictionary) ...
+        
+        # Call the Google Docs Service
+        # You will need to get the Template ID and Folder ID from your Google Drive URLs
+        TEMPLATE_ID = "1X1VEL2p54n2BIrcWslEmbiyV24KmL4XVy0JWBVAJfnQ" 
+        FOLDER_ID = "1WH9vQuJVEvKEFYK4vi-np3KSDhp2o8jT"
+        
+        from crminaec.platforms.arkhon.gdocs_service import generate_quote_doc
+        
+        gdoc_url = generate_quote_doc(payload, TEMPLATE_ID, FOLDER_ID)
+        
+        flash(f'Teklif başarıyla oluşturuldu! <a href="{gdoc_url}" target="_blank" class="alert-link">Buraya tıklayarak belgeyi açabilirsiniz.</a>', 'success')
+        return redirect(url_for('arkhon.order_detail', order_id=order.order_id))
+        
+    except Exception as e:
+        logger.error(f"Google Docs Export Failed: {e}")
+        flash(f'Google Docs oluşturulurken bir hata oluştu: {str(e)}', 'danger')
+        return redirect(url_for('arkhon.order_detail', order_id=order.order_id))

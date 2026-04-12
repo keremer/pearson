@@ -12,23 +12,70 @@
         </div>
         <div>
             <button type="button" class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#addCatalogModal">
-                <i class="fas fa-plus me-2" aria-hidden="true"></i> Add Appliance / Countertop
+                <i class="fas fa-plus me-2" aria-hidden="true"></i> Cihaz / Tezgah Ekle
+            </button>
+
+            <button type="button" class="btn btn-warning shadow-sm" data-bs-toggle="modal" data-bs-target="#importProsapModal">
+                <i class="fas fa-file-csv me-2" aria-hidden="true"></i> Fiyat Aktar (CSV)
             </button>
 
             <a href="{{ url_for('arkhon.build_quote', order_id=order.order_id) }}" class="btn btn-success shadow-sm">
-                <i class="fas fa-file-invoice-dollar me-2" aria-hidden="true"></i> Build Quote
+                <i class="fas fa-file-invoice-dollar me-2" aria-hidden="true"></i> Teklif Oluştur
             </a>
 
+            <a href="{{ url_for('arkhon.order_preferences', order_id=order.order_id) }}" class="btn btn-info text-white shadow-sm">
+                <i class="fas fa-clipboard-list me-2"></i> Tercihleri Yönet
+            </a>
+            
             <a href="{{ url_for('arkhon.index') }}" class="btn btn-outline-secondary me-2">
                 <i class="fas fa-arrow-left"></i> Dashboard
             </a>
             <form action="{{ url_for('arkhon.delete_order', order_id=order.order_id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this entire order?');">
                 <button type="submit" class="btn btn-danger">
-                    <i class="fas fa-trash-alt"></i> Delete Order
+                    <i class="fas fa-trash-alt"></i> Siparişi Sil
                 </button>
             </form>
         </div>
     </div>
+
+    {% if order.quotes %}
+    <div class="card shadow-sm border-0 mt-4 mb-4">
+        <div class="card-header bg-success text-white fw-bold d-flex justify-content-between align-items-center">
+            <span><i class="fas fa-file-invoice-dollar me-2"></i> Oluşturulan Teklifler</span>
+        </div>
+        <div class="card-body p-0">
+            <ul class="list-group list-group-flush">
+                {% for quote in order.quotes %}
+                <li class="list-group-item d-flex justify-content-between align-items-center p-3">
+                    <div>
+                        <span class="badge bg-secondary me-2">v{{ quote.version }}</span>
+                        <strong>{{ quote.quote_category }} Teklifi</strong>
+                        <span class="text-muted small ms-2">(Toplam: {{ "%.2f"|format(quote.total_amount) }} ₺)</span>
+                        
+                        {% if quote.status == 'approved' %}
+                            <span class="badge bg-success ms-2"><i class="fas fa-check-circle me-1"></i> Onaylandı</span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark ms-2">Bekliyor</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <form method="POST" action="{{ url_for('arkhon.export_quote_gdoc', quote_id=quote.quote_id) }}" class="m-0">
+                            <button type="submit" class="btn btn-sm btn-outline-primary" title="Google Docs Olarak Dışa Aktar">
+                                <i class="fab fa-google-drive me-1"></i> Docs'a Aktar
+                            </button>
+                        </form>
+
+                        <a href="{{ url_for('arkhon.public_quote', access_token=quote.access_token) }}" target="_blank" class="btn btn-sm btn-outline-success" title="Müşteri Portalını Aç">
+                            <i class="fas fa-external-link-alt me-1"></i> Portalı Aç
+                        </a>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
 
     <div class="card shadow-sm border-0">
         <div class="card-body p-0">
@@ -43,6 +90,7 @@
                             <th scope="col">Dimensions (W x H x D)</th>
                             <th scope="col">Body Color</th>
                             <th scope="col">Cover Color</th>
+                            <th scope="col" class="text-end pe-4">Fiyat (₺)</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -77,10 +125,18 @@
                                     <span class="text-muted">-</span>
                                 {% endif %}
                             </td>
+                            
+                            <td class="text-end pe-4">
+                                {% if item.price_record and item.price_record.final_unit_price %}
+                                    <span class="fw-bold text-success">{{ "{:,.2f}".format(item.price_record.final_unit_price).replace(',', 'X').replace('.', ',').replace('X', '.') }} ₺</span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark">Bekliyor</span>
+                                {% endif %}
+                            </td>
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="7" class="text-center py-5 text-muted">
+                            <td colspan="8" class="text-center py-5 text-muted">
                                 <i class="fas fa-box-open fa-3x mb-3 text-light"></i><br>
                                 No items were parsed for this order.
                             </td>
@@ -92,6 +148,7 @@
         </div>
     </div>
 </div>
+
 <div class="modal fade" id="addCatalogModal" tabindex="-1" aria-labelledby="addCatalogModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content border-0 shadow">
@@ -125,4 +182,31 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="importProsapModal" tabindex="-1" aria-labelledby="importProsapModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title fw-bold" id="importProsapModalLabel"><i class="fas fa-file-csv me-2" aria-hidden="true"></i> ProSAP Fiyatlarını Yükle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('arkhon.import_prosap_csv', order_id=order.order_id) }}" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="prosap_file" class="form-label fw-bold">ProSAP CSV Dosyası</label>
+                        <input class="form-control" type="file" id="prosap_file" name="prosap_file" accept=".csv" required>
+                        <div class="form-text mt-2 text-muted">
+                            <i class="fas fa-info-circle me-1"></i> ProSAP'tan dışa aktardığınız güncel fiyat listesini seçin. Sistem <strong>Ünite Kodu</strong> ile eşleştirme yapacaktır.
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-warning fw-bold"><i class="fas fa-upload me-2" aria-hidden="true"></i> Fiyatları Eşleştir ve Güncelle</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 {% endblock %}

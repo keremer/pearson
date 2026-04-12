@@ -34,10 +34,12 @@ class AppFactory:
         # Now they are imported fully loaded with their routes!
         # ==============================================================
         from crminaec.platforms.arkhon.routes import arkhon_bp
+        from crminaec.platforms.emek.routes import emek_bp
         from crminaec.platforms.pearson.routes import pearson_bp
         
         app.register_blueprint(pearson_bp, url_prefix='/pearson')
         app.register_blueprint(arkhon_bp, url_prefix='/arkhon')
+        app.register_blueprint(emek_bp, url_prefix='/emek')
 
         # Initialize API & Webhook Routes
         from crminaec.api.courses import init_course_routes

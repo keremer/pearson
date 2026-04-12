@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Sipariş Tercihleri - {{ order.order_number }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+        <h2><i class="fas fa-clipboard-list text-primary me-2"></i> Müşteri ve Sipariş Takip Formu</h2>
+        <a href="{{ url_for('arkhon.order_detail', order_id=order.order_id) }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i> Siparişe Dön
+        </a>
+    </div>
+</div>
+
+<form method="POST" action="{{ url_for('arkhon.order_preferences', order_id=order.order_id) }}">
+    <div class="row g-4">
+        
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-dark text-white fw-bold">
+                    <i class="fas fa-palette me-2"></i> Genel Tasarım ve Renkler
+                </div>
+                <div class="card-body bg-light">
+                    <div class="mb-3">
+                        <label for="model_name" class="form-label fw-bold small text-muted">Kapak Modeli (Örn: Galba)</label>
+                        <input type="text" class="form-control" id="model_name" name="model_name" value="{{ order.preferences.model_name or '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="front_color" class="form-label fw-bold small text-muted">Kapak Rengi</label>
+                        <input type="text" class="form-control" id="front_color" name="front_color" value="{{ order.preferences.front_color or '' }}">
+                        <div class="form-text text-success small"><i class="fas fa-magic"></i> Sistemden otomatik çekildi</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="body_color" class="form-label fw-bold small text-muted">Gövde Rengi</label>
+                        <input type="text" class="form-control" id="body_color" name="body_color" value="{{ order.preferences.body_color or '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="plinth_detail" class="form-label fw-bold small text-muted">Baza Yüksekliği ve Rengi</label>
+                        <input type="text" class="form-control" id="plinth_detail" name="plinth_detail" value="{{ order.preferences.plinth_detail or '' }}" placeholder="Örn: 12cm Kapak Renginde">
+                    </div>
+                    <div class="mb-3">
+                        <label for="handle_code" class="form-label fw-bold small text-muted">Kulp Kodu / Modeli</label>
+                        <input type="text" class="form-control" id="handle_code" name="handle_code" value="{{ order.preferences.handle_code or '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="glass_color" class="form-label fw-bold small text-muted">Cam Rengi ve Tipi</label>
+                        <input type="text" class="form-control" id="glass_color" name="glass_color" value="{{ order.preferences.glass_color or '' }}">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-secondary text-white fw-bold">
+                    <i class="fas fa-cogs me-2"></i> Aksesuar ve Mekanizmalar
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="cutlery_tray" class="form-label fw-bold small text-muted">Kaşıklık Detayı</label>
+                        <input type="text" class="form-control" id="cutlery_tray" name="cutlery_tray" value="{{ order.preferences.cutlery_tray or '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="trash_bin" class="form-label fw-bold small text-muted">Çöp Kovası Detayı</label>
+                        <input type="text" class="form-control" id="trash_bin" name="trash_bin" value="{{ order.preferences.trash_bin or '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="mechanisms" class="form-label fw-bold small text-muted">Kiler ve Kör Köşe Mekanizmaları</label>
+                        <textarea class="form-control" id="mechanisms" name="mechanisms" rows="3">{{ order.preferences.mechanisms or '' }}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-info text-dark fw-bold">
+                    <i class="fas fa-lightbulb me-2"></i> Aydınlatma Seçenekleri
+                </div>
+                <div class="card-body">
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input fs-5" type="checkbox" id="led_strip" name="led_strip" {% if order.preferences.led_strip %}checked{% endif %}>
+                        <label class="form-check-label fw-bold mt-1 ms-2" for="led_strip">Tezgah Altı Şerit LED Aydınlatma</label>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input fs-5" type="checkbox" id="spotlight" name="spotlight" {% if order.preferences.spotlight %}checked{% endif %}>
+                        <label class="form-check-label fw-bold mt-1 ms-2" for="spotlight">Dolap İçi / Tezgah Arası Spot</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-12 mt-4">
+            <button type="submit" class="btn btn-success btn-lg w-100 shadow">
+                <i class="fas fa-save me-2"></i> Formu Kaydet ve Siparişe İşle
+            </button>
+        </div>
+        
+    </div>
+</form>
+{% endblock %}

@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block title %}Build Quote - {{ order.order_number }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+        <h2><i class="fas fa-file-invoice-dollar text-success me-2"></i> Quote Builder</h2>
+        <h4 class="text-muted">{{ order.order_number }}</h4>
+    </div>
+</div>
+
+<form method="POST" action="{{ url_for('arkhon.build_quote', order_id=order.order_id) }}">
+    <div class="row g-4">
+        
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-dark text-white fw-bold">
+                    <i class="fas fa-calculator me-2"></i> ProSAP Pricing
+                </div>
+                <div class="card-body bg-light">
+                    <div class="mb-3">
+                        <label for="list_price" class="form-label text-muted small fw-bold">List Price (₺)</label>
+                        <input type="number" step="0.01" class="form-control" id="list_price" name="list_price" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="discount_amount" class="form-label text-muted small fw-bold">Discount Amount (₺)</label>
+                        <input type="number" step="0.01" class="form-control text-danger" id="discount_amount" name="discount_amount" value="0">
+                    </div>
+                    <div class="mb-3">
+                        <label for="tax_rate" class="form-label text-muted small fw-bold">Tax Rate (%)</label>
+                        <input type="number" step="0.1" class="form-control" id="tax_rate" name="tax_rate" value="20.0" required>
+                    </div>
+                    <hr>
+                    <div class="mb-3">
+                        <label for="total_amount" class="form-label fw-bold text-success">Total Customer Pays (₺)</label>
+                        <input type="number" step="0.01" class="form-control form-control-lg border-success text-success fw-bold" id="total_amount" name="total_amount" readonly>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-secondary text-white fw-bold">
+                    <i class="fas fa-handshake me-2"></i> Terms & Conditions
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="validity_days" class="form-label small fw-bold">Validity (Days)</label>
+                        <input type="number" class="form-control" id="validity_days" name="validity_days" value="15">
+                    </div>
+                    <div class="mb-3">
+                        <label for="delivery_place" class="form-label small fw-bold">Delivery Place</label>
+                        <input type="text" class="form-control" id="delivery_place" name="delivery_place" placeholder="e.g., Customer Address">
+                    </div>
+                    <div class="mb-3">
+                        <label for="payment_terms" class="form-label small fw-bold">Payment Terms</label>
+                        <textarea class="form-control" id="payment_terms" name="payment_terms" rows="2" placeholder="e.g., 50% upfront, 50% upon delivery"></textarea>
+                    </div>
+                    <div class="card shadow-sm border-0 mt-4">
+                <div class="card-header bg-primary text-white fw-bold d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-money-check-alt me-2"></i> Ödeme Planı</span>
+                    <button type="button" class="btn btn-sm btn-light text-primary fw-bold" id="addInstallmentBtn">
+                        <i class="fas fa-plus"></i> Ekle
+                    </button>
+                </div>
+                <div class="card-body bg-light p-2">
+                    
+                    <datalist id="paymentMethods">
+                        <option value="Kredi Kartı 3+5 Taksit">
+                        <option value="Nakit Havale">
+                        <option value="Peşin (Nakit)">
+                        <option value="Kredi Kartı Tek Çekim">
+                    </datalist>
+
+                    <div id="installmentsContainer">
+                        <div class="row g-1 align-items-end mb-2 installment-row">
+                            <div class="col-4">
+                                <label class="form-label small text-muted mb-0">Tarih</label>
+                                <input type="date" class="form-control form-control-sm" name="installment_date[]" aria-label="Ödeme Tarihi" required>
+                            </div>
+                            <div class="col-4">
+                                <label class="form-label small text-muted mb-0">Yöntem</label>
+                                <input type="text" class="form-control form-control-sm" name="installment_method[]" list="paymentMethods" aria-label="Ödeme Yöntemi" required placeholder="Örn: Havale" required>
+                            </div>
+                            <div class="col-3">
+                                <label class="form-label small text-muted mb-0">Tutar (₺)</label>
+                                <input type="number" step="0.01" class="form-control form-control-sm installment-amount" name="installment_amount[]" aria-label="Taksit Tutarı" required>
+                            </div>
+                            <div class="col-1 text-end">
+                                <button type="button" class="btn btn-sm btn-outline-danger remove-row" disabled aria-label="Bu taksiti sil"><i class="fas fa-times"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-2">
+                    <div class="d-flex justify-content-between align-items-center px-2">
+                        <span class="small fw-bold text-muted">Kalan Bakiye:</span>
+                        <span class="fw-bold text-danger" id="balanceRemaining">0.00 ₺</span>
+                    </div>
+                </div>
+            </div>
+                    <div class="mb-3">
+                        <label for="special_notes" class="form-label small fw-bold">Internal/Special Notes</label>
+                        <textarea class="form-control" id="special_notes" name="special_notes" rows="2" placeholder="e.g., Customer insisted on matte finish despite scratching risk."></textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <button type="submit" class="btn btn-success btn-lg w-100 mt-4 shadow">
+                <i class="fas fa-magic me-2"></i> Generate Secure Quote
+            </button>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white border-bottom-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0 fw-bold text-secondary">
+                        <i class="fas fa-eye-slash me-2"></i> Client Visibility & Categories
+                    </h5>
+                    <span class="badge bg-warning text-dark">Uncheck to hide for margin</span>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th scope="col" class="text-center">Visible</th>
+                                    <th scope="col">Category</th>
+                                    <th scope="col">Code (URK)</th>
+                                    <th scope="col">Product Name</th>
+                                    <th scope="col">Qty</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in order.items %}
+                                <tr>
+                                    <td class="text-center">
+                                        <div class="form-check form-switch d-flex justify-content-center">
+                                            <label class="visually-hidden" for="visibility_{{ item.item_id }}">Toggle visibility for {{ item.ura }}</label>
+                                            <input class="form-check-input fs-4" type="checkbox" 
+                                                   id="visibility_{{ item.item_id }}"
+                                                   name="visibility_{{ item.item_id }}" 
+                                                   {% if item.is_visible_on_quote %}checked{% endif %}>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <label class="visually-hidden" for="category_{{ item.item_id }}">Select category for {{ item.ura }}</label>
+                                        <select class="form-select form-select-sm" id="category_{{ item.item_id }}" name="category_{{ item.item_id }}">
+                                            <option value="Furniture" {% if item.category == 'Furniture' %}selected{% endif %}>Kelebek Furniture</option>
+                                            <option value="Appliance" {% if item.category == 'Appliance' %}selected{% endif %}>Appliance / Sink</option>
+                                            <option value="Countertop" {% if item.category == 'Countertop' %}selected{% endif %}>Countertop</option>
+                                            <option value="Accessory" {% if item.category == 'Accessory' %}selected{% endif %}>Accessory</option>
+                                        </select>
+                                    </td>
+                                    <td class="text-muted small"><code>{{ item.urk }}</code></td>
+                                    <td class="fw-bold">{{ item.ura }}</td>
+                                    <td>{{ item.adet }} {{ item.brm }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+</form>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const listPriceInput = document.getElementById('list_price');
+        const discountInput = document.getElementById('discount_amount');
+        const taxRateInput = document.getElementById('tax_rate');
+        const totalInput = document.getElementById('total_amount');
+
+        function calculateTotal() {
+            const listPrice = parseFloat(listPriceInput.value) || 0;
+            const discount = parseFloat(discountInput.value) || 0;
+            const taxRate = parseFloat(taxRateInput.value) || 0;
+            
+            const subtotal = listPrice - discount;
+            const taxAmount = subtotal * (taxRate / 100);
+            const total = subtotal + taxAmount;
+            
+            totalInput.value = total.toFixed(2);
+        }
+
+        listPriceInput.addEventListener('input', calculateTotal);
+        discountInput.addEventListener('input', calculateTotal);
+        taxRateInput.addEventListener('input', calculateTotal);
+    });
+</script>
+{% endblock %}

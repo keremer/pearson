@@ -9,6 +9,9 @@ from typing import List, Optional
 
 import click
 
+from crminaec import create_app
+from import_legacy import run_import
+
 # Add project root to path for consistent imports
 PROJECT_ROOT = Path(__file__).parent.absolute()
 if str(PROJECT_ROOT) not in sys.path:
@@ -87,7 +90,10 @@ def setup(reset: bool, sample_data: bool):
     click.echo("✅ Setup completed successfully!")
 
 @cli.command()
-@click.argument('model_name', type=click.Choice(['course', 'lesson', 'learningoutcome', 'tool', 'assessment', 'party', 'order']))
+@click.argument('model_name', type=click.Choice([
+    'course', 'lesson', 'learningoutcome', 'tool', 'assessment', 
+    'party', 'order', 'item', 'composition'  # <-- Added EMEK models here
+]))
 @click.option('--count', type=int, default=5, help='Number of items to show')
 def inspect(model_name: str, count: int):
     """Inspect database models and their structure"""
@@ -97,12 +103,16 @@ def inspect(model_name: str, count: int):
     from crminaec.core.models import (AssessmentFormat, Course,
                                       LearningOutcome, Lesson, Order, Party,
                                       Tool, db)
+    # Ensure EMEK models are imported
+    from crminaec.platforms.emek import models as emek_models
     
     app = create_app()
     
     model_map = {
         'course': Course, 'lesson': Lesson, 'learningoutcome': LearningOutcome,
-        'tool': Tool, 'assessment': AssessmentFormat, 'party': Party, 'order': Order
+        'tool': Tool, 'assessment': AssessmentFormat, 'party': Party, 'order': Order,
+        'item': emek_models.Item,                       # <-- Mapped 'item'
+        'composition': emek_models.ItemComposition      # <-- Mapped 'composition'
     }
     
     # --- PYLANCE GUARD CLAUSE ---
@@ -286,6 +296,26 @@ def tree():
     click.echo(_build_tree(PROJECT_ROOT), nl=False)
     click.echo("```")
 
+# =====================================================================
+# 🎓 CONTENT INJECTION & BOM
+# =====================================================================
+
+@cli.command()
+@click.argument('data_dir', default='legacy_data', type=click.Path(exists=True))
+def import_legacy(data_dir):
+    """Imports MS Access CSV dumps into the EMEK BoM engine."""
+    app = create_app()
+    run_import(app, data_dir)
+
+from clean_legacy import run_cleanup
+
+
+@cli.command()
+def clean_legacy():
+    """Fixes semantic issues, deduplicates names, and extracts DNA."""
+    app = create_app()
+    run_cleanup(app)
+       
 # Attach the external report command group
 try:
     from crminaec.cli.report_commands import report
