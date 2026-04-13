@@ -1,46 +1,53 @@
 {% extends "base.html" %}
 
-{% block title %} EMEK BOM Editor{% endblock %}
+{% block title %} EMEK BOM Editor {% endblock %}
 
 {% block content %}
 <div class="container-fluid mt-4">
     <div class="row">
         <div class="col-md-4 tree-container py-3">
+            <h5 class="fw-bold mb-3"><i class="fas fa-search me-2"></i> Hızlı Arama</h5>
             
-            <h5 class="fw-bold mb-3"><i class="fas fa-book me-2"></i> Ürün Kataloğu</h5>
-            <div class="card shadow-sm mb-4">
-                <div class="card-header p-2 bg-white border-bottom">
-                    <input type="text" id="catalog_search" class="form-control form-control-sm border-primary" placeholder="Kod veya Tanım ara...">
+            <div class="position-relative mb-4">
+                <div class="input-group shadow-sm">
+                    <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
+                    <input type="text" id="global_search" class="form-control border-start-0" placeholder="Kod veya Tanım yazın (en az 2 harf)..." autocomplete="off">
                 </div>
-                <div id="catalog-scroll-container" class="card-body p-0 catalog-scroll-area">
-                    <ul id="catalog-list" class="list-group list-group-flush">
-                        </ul>
-                    <div id="catalog-loading-trigger" class="text-center py-2 text-muted">
-                        <i class="fas fa-spinner fa-spin"></i> Yükleniyor...
-                    </div>
-                </div>
+                <ul id="search_dropdown" class="list-group position-absolute w-100 shadow-lg mt-1" style="display:none; z-index: 1050; max-height: 350px; overflow-y: auto;">
+                    </ul>
+            </div> <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0"><i class="fas fa-sitemap me-2"></i> Proje Ağacı</h5>
+                <button class="btn btn-sm btn-primary shadow-sm" onclick="openCreateModal(null)">
+                    <i class="fas fa-folder-plus"></i> Kök Ekle
+                </button>
             </div>
-            
-            <h5 class="fw-bold mb-3"><i class="fas fa-sitemap me-2"></i> Proje Ağacı</h5>
-            <div id="bom_tree" class="border rounded p-2 bg-light tree-min-height"></div> 
+            <div id="bom_tree" class="border rounded p-2 bg-white shadow-sm" style="min-height: 500px; max-height: 700px; overflow: auto;"></div> 
         </div>
 
         <div class="col-md-8 py-3">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="fw-bold" id="selected_item_title">Lütfen ağaçtan bir öğe seçin</h5>
-                <div>
-                    <button id="btn_edit_item" class="btn btn-sm btn-outline-warning" onclick="openEditModal()" aria-label="Düzenle">
-                            <i class="fas fa-edit"></i> Düzenle
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h5 class="fw-bold" id="selected_item_title"><i class="fas fa-info-circle text-muted me-2"></i> Lütfen ağaçtan bir öğe seçin</h5>
+                <div id="action-buttons-group">
+                    <button id="btn_add_child" class="btn btn-sm btn-outline-success shadow-sm" style="display:none;" onclick="openCreateModal(this.dataset.itemId)">
+                        <i class="fas fa-plus"></i> Alt Öğe Ekle
                     </button>
-                    <button id="btn_where_used" class="btn btn-sm btn-outline-info ms-2" onclick="showWhereUsed()" aria-label="Kullanıldığı Yerler">
-                        <i class="fas fa-search-location"></i> Kullanıldığı Yerler
+                    <button id="btn_edit_item" class="btn btn-sm btn-outline-warning ms-2 shadow-sm" style="display:none;" onclick="openEditModal()">
+                        <i class="fas fa-edit"></i> Düzenle
+                    </button>
+                    <button id="btn_attachments" class="btn btn-sm btn-outline-secondary ms-2 shadow-sm" style="display:none;" onclick="openAttachmentsModal()">
+                        <i class="fas fa-paperclip"></i> Ekler
+                    </button>
+                    <button id="btn_where_used" class="btn btn-sm btn-outline-info ms-2 shadow-sm" style="display:none;" onclick="showWhereUsed()">
+                        <i class="fas fa-search-location"></i> Kullanım
                     </button>
                 </div>
             </div>
 
+            <div id="item_specs_container" class="mb-3 d-flex flex-wrap gap-2"></div>
+
             <div class="card shadow-sm border-0">
                 <div class="card-body p-0">
-                    <table class="table table-hover mb-0">
+                    <table class="table table-hover align-middle mb-0">
                         <thead class="table-dark">
                             <tr>
                                 <th>Poz/Kod</th>
@@ -51,44 +58,49 @@
                                 <th>İşlem</th>
                             </tr>
                         </thead>
-                        
                         <tbody id="component_table_body">
                             <tr>
-                                <td colspan="6" class="text-center py-4 text-muted">Öğe seçilmedi.</td>
+                                <td colspan="6" class="text-center py-5 text-muted">
+                                    <i class="fas fa-mouse-pointer fs-4 mb-2 d-block"></i> Öğe seçilmedi.
+                                </td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
             
-            <div class="mt-3 text-end">
-                <h4 class="text-success fw-bold">Toplam: <span id="item_grand_total">0.00</span> ₺</h4>
+            <div class="mt-4 p-3 bg-light rounded text-end border shadow-sm">
+                <h4 class="text-success fw-bold mb-0">Toplam: <span id="item_grand_total">0.00</span> ₺</h4>
             </div>
         </div>
-
     </div>
 </div>
 
-<div class="modal fade" id="whereUsedModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header bg-dark text-white">
-        <h5 class="modal-title"><i class="fas fa-network-wired me-2"></i> Kullanıldığı Projeler / Ebeveynler</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+<div class="modal fade" id="createItemModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title"><i class="fas fa-plus-circle me-2"></i> Yeni Öğe / Klasör Oluştur</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
-      <div class="modal-body p-0">
-        <table class="table table-hover mb-0">
-            <thead class="table-light">
-                <tr>
-                    <th>Üst Poz/Kod</th>
-                    <th>Tanım</th>
-                    <th>Kullanım Miktarı</th>
-                    <th>İşlem</th>
-                </tr>
-            </thead>
-            <tbody id="where_used_table_body">
-                </tbody>
-        </table>
+      <div class="modal-body">
+        <input type="hidden" id="create_item_parent_id">
+        <div class="mb-3">
+            <label class="form-label fw-bold">Poz/Kod <span class="text-danger">*</span></label>
+            <input type="text" id="create_item_code" class="form-control" placeholder="Örn: PRJ-2026-01">
+        </div>
+        <div class="mb-3">
+            <label class="form-label fw-bold">Tanım <span class="text-danger">*</span></label>
+            <input type="text" id="create_item_name" class="form-control" placeholder="Örn: Yeni Proje">
+        </div>
+        <div class="form-check form-switch mt-4 p-3 bg-light rounded border">
+            <input class="form-check-input ms-0 me-2" type="checkbox" id="create_item_is_category" checked>
+            <label class="form-check-label fw-bold ms-2" for="create_item_is_category">Bu bir Klasör mü? (Mavi İkon)</label>
+        </div>
+      </div>
+      <div class="modal-footer bg-light">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+        <button type="button" class="btn btn-success px-4" onclick="saveNewItem()">Oluştur</button>
       </div>
     </div>
   </div>
@@ -96,10 +108,10 @@
 
 <div class="modal fade" id="editItemModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
-    <div class="modal-content">
+    <div class="modal-content border-0 shadow-lg">
       <div class="modal-header bg-warning">
-        <h5 class="modal-title text-dark"><i class="fas fa-edit me-2"></i> Öğe Düzenle</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <h5 class="modal-title fw-bold"><i class="fas fa-edit me-2"></i> Öğe Düzenle</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
         <input type="hidden" id="edit_item_id">
@@ -112,19 +124,63 @@
             <input type="text" id="edit_item_name" class="form-control">
         </div>
         <div class="mb-3">
-            <label class="form-label fw-bold">Birim Maliyet (Taban Fiyat)</label>
+            <label class="form-label fw-bold">Birim Maliyet</label>
             <input type="number" id="edit_item_cost" class="form-control" step="0.01">
-            <small class="text-muted">Sadece saf malzemeler için girin. Montajlar otomatik hesaplanır.</small>
         </div>
-        <div class="form-check form-switch mt-4">
-            <input class="form-check-input" type="checkbox" id="edit_item_is_category">
-            <label class="form-check-label fw-bold" for="edit_item_is_category">Bu bir "Kategori/Klasör" mü?</label>
-            <div class="form-text">Evet seçilirse, bu öğenin maliyeti 0.00 olarak kabul edilir ve BOM toplamına yansımaz.</div>
+        <div class="form-check form-switch mt-4 p-3 bg-light rounded border">
+            <input class="form-check-input ms-0 me-2" type="checkbox" id="edit_item_is_category">
+            <label class="form-check-label fw-bold ms-2" for="edit_item_is_category">Bu bir Klasör mü?</label>
         </div>
       </div>
-      <div class="modal-footer">
+      <div class="modal-footer bg-light">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
-        <button type="button" class="btn btn-warning" onclick="saveItemEdit()">Kaydet</button>
+        <button type="button" class="btn btn-warning px-4 fw-bold" onclick="saveItemEdit()">Kaydet</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="whereUsedModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-info text-white">
+        <h5 class="modal-title fw-bold"><i class="fas fa-network-wired me-2"></i> Kullanıldığı Yerler</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Üst Poz/Kod</th>
+                    <th>Tanım</th>
+                    <th>Miktar</th>
+                    <th>İşlem</th>
+                </tr>
+            </thead>
+            <tbody id="where_used_table_body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="attachmentsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-secondary text-white">
+        <h5 class="modal-title"><i class="fas fa-paperclip me-2"></i> Öğe Ekleri</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-4 p-3 bg-light border rounded">
+            <label class="form-label fw-bold">Yeni Dosya Yükle</label>
+            <div class="input-group">
+                <input type="file" class="form-control" id="attachment_file_input">
+                <button class="btn btn-secondary px-4" type="button" onclick="uploadAttachment()">Yükle</button>
+            </div>
+        </div>
+        <h6 class="fw-bold border-bottom pb-2">Mevcut Ekler</h6>
+        <div id="attachments_list" class="list-group list-group-flush"></div>
       </div>
     </div>
   </div>
@@ -135,372 +191,406 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/jstree.min.js"></script>
 
 <script>
-    // Global state for the catalog
-    let catalogPage = 1;
-    let catalogHasNext = true;
-    let catalogIsLoading = false;
-    let catalogSearchQuery = '';
-
     document.addEventListener('DOMContentLoaded', function() {
-        // 1. Initial Load
-        loadCatalogPage();
+        // 1. Initialize the Master Tree ONCE
+        initMasterTree();
 
-        // 2. Setup the Search Bar Listener
+        // 2. Setup the Sleek Search Dropdown
         let searchTimeout = null;
-        document.getElementById('catalog_search').addEventListener('input', function(e) {
+        const searchInput = document.getElementById('global_search');
+        const searchDropdown = document.getElementById('search_dropdown');
+
+        searchInput.addEventListener('input', function(e) {
             clearTimeout(searchTimeout);
+            const query = e.target.value.trim();
+
+            if (query.length < 2) {
+                searchDropdown.style.display = 'none';
+                return;
+            }
+
+            // INSTANT FEEDBACK: Prevent the UI from feeling frozen while the DB works
+            searchDropdown.innerHTML = '<li class="list-group-item text-center text-muted"><i class="fas fa-spinner fa-spin me-2"></i>Aranıyor...</li>';
+            searchDropdown.style.display = 'block';
+
+            // DEBOUNCE: Wait 400ms after the user stops typing before hitting the DB
             searchTimeout = setTimeout(() => {
-                catalogSearchQuery = e.target.value;
-                catalogPage = 1;         
-                catalogHasNext = true;   
-                document.getElementById('catalog-list').innerHTML = ''; 
-                loadCatalogPage();       
-            }, 300); 
+                fetch(`/emek/api/search_items?q=${encodeURIComponent(query)}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        searchDropdown.innerHTML = '';
+                        if (data.length === 0) {
+                            searchDropdown.innerHTML = '<li class="list-group-item text-muted">Sonuç bulunamadı.</li>';
+                        } else {
+                            data.forEach(item => {
+                                const li = document.createElement('li');
+                                li.className = "list-group-item list-group-item-action d-flex justify-content-between align-items-center";
+                                li.style.cursor = "pointer";
+                                
+                                li.innerHTML = `
+                                    <div onclick="locateItemInTree(${item.item_id});" class="flex-grow-1">
+                                        <strong class="text-primary">${item.code}</strong><br>
+                                        <small class="text-muted">${item.name}</small>
+                                    </div>
+                                    <button class="btn btn-sm btn-success ms-3" title="Seçili Ağaç Düğümüne Ekle" onclick="addFromSearch(${item.item_id}); event.stopPropagation();">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                `;
+                                searchDropdown.appendChild(li);
+                            });
+                        }
+                    })
+                    .catch(err => {
+                        console.error("Search API Error:", err);
+                        searchDropdown.innerHTML = '<li class="list-group-item text-danger">Arama sırasında bir hata oluştu.</li>';
+                    });
+            }, 400); 
         });
 
-        // 3. Setup Infinite Scroll (Intersection Observer)
-        const trigger = document.getElementById('catalog-loading-trigger');
-        const observer = new IntersectionObserver((entries) => {
-            if (entries[0].isIntersecting) {
-                if (!catalogIsLoading && catalogHasNext) {
-                    catalogPage++;
-                    loadCatalogPage();
-                }
+        // Hide dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!searchInput.contains(e.target) && !searchDropdown.contains(e.target)) {
+                searchDropdown.style.display = 'none';
             }
-        }, { 
-            root: document.getElementById('catalog-scroll-container'), 
-            rootMargin: '50px',
-            threshold: 0.01 
         });
-        
-        observer.observe(trigger);
     });
 
-    // ---------------------------------------------------------
-    // Left Pane: Catalog Loader
-    // ---------------------------------------------------------
-    function loadCatalogPage() {
-        if (catalogIsLoading || !catalogHasNext) return;
-        
-        catalogIsLoading = true;
-        const trigger = document.getElementById('catalog-loading-trigger');
-        trigger.style.display = 'block'; 
+    // --- MASTER TREE LOGIC ---
+    function initMasterTree() {
+        $('#bom_tree').jstree({ 
+            'core': { 
+                'data': {
+                    'url': '/emek/api/get_tree_data',
+                    'dataType': 'json',
+                    'data': function (node) {
+                        return { 'id': node.id };
+                    }
+                },
+                'check_callback': true, // Essential for Drag and Drop
+                'themes': { 'name': 'default', 'responsive': true, 'stripes': true }
+            },
+            'plugins': ["wholerow", "dnd", "search"]
+        })
+        .on('select_node.jstree', function (e, data) {
+            if(data && data.node && data.node.data) {
+                const dbId = data.node.data.real_item_id;
+                loadItemDetails(dbId);
+            }
+        })
+        .on("move_node.jstree", function (e, data) {
+            const childDbId = data.node.data.real_item_id;
+            const oldParentDbId = data.old_parent === '#' ? null : $('#bom_tree').jstree(true).get_node(data.old_parent).data.real_item_id;
+            const newParentDbId = data.parent === '#' ? null : $('#bom_tree').jstree(true).get_node(data.parent).data.real_item_id;
 
-        const url = `/emek/api/catalog?page=${catalogPage}&per_page=50&search=${encodeURIComponent(catalogSearchQuery)}`;
+            if (!oldParentDbId || !newParentDbId) {
+                alert("Uyarı: Kök dizine taşıma desteklenmemektedir.");
+                $('#bom_tree').jstree(true).refresh();
+                return;
+            }
 
-        fetch(url)
-            .then(response => response.json())
-            .then(data => {
-                const catalogList = document.getElementById('catalog-list');
-                catalogHasNext = data.has_next;
-                
-                if (data.items.length === 0 && catalogPage === 1) {
-                    catalogList.innerHTML = '<li class="list-group-item text-muted text-center">Sonuç bulunamadı.</li>';
+            fetch('/emek/api/move_node', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    child_id: childDbId,
+                    old_parent_id: oldParentDbId,
+                    new_parent_id: newParentDbId
+                })
+            }).then(res => res.json()).then(resp => {
+                if (resp.error) {
+                    alert("Taşıma Hatası: " + resp.error);
+                    $('#bom_tree').jstree(true).refresh(); 
+                } else {
+                    console.log("Düğüm başarıyla taşındı.");
                 }
-
-                data.items.forEach(item => {
-                    const li = document.createElement('li');
-                    
-                    // Notice the new cursor-pointer class instead of the inline style!
-                    li.className = "list-group-item list-group-item-action d-flex align-items-center py-2 cursor-pointer";
-                    li.onclick = function() { loadItemTree(item.id); };
-                    
-                    // Match the visual icons from the tree
-                    let icon = '⚙️';
-                    if (item.is_category) icon = '📁';
-                    else if (item.is_compound) icon = '📦';
-                    
-                    // Create the inline quantity input (Notice the new qty-input-small class)
-                    const qtyInputHtml = item.is_category ? '' : 
-                        `<input type="number" id="cat_qty_${item.id}" class="form-control form-control-sm qty-input-small" value="1" min="0.1" step="0.1" onclick="event.stopPropagation();" aria-label="Miktar">`;
-
-                    // Inject the layout (Notice the new line-height-1 class)
-                    li.innerHTML = `
-                        <div class="d-flex align-items-center flex-grow-1 text-truncate">
-                            <span class="fs-6 me-2 line-height-1">${icon}</span>
-                            <div class="text-truncate">
-                                <b class="me-1">${item.code}</b>
-                                <span class="text-muted">- ${item.name}</span>
-                            </div>
-                        </div>
-                        ${qtyInputHtml}
-                        <button class="btn btn-sm btn-outline-success ms-2 flex-shrink-0" title="Seçili Öğeye Alt Bileşen Olarak Ekle" onclick="event.stopPropagation(); addCatalogItemToBom(${item.id}, ${item.is_category})">
-                            <i class="fas fa-arrow-right"></i>
-                        </button>
-                    `;
-                    
-                    catalogList.appendChild(li);
-                });
-
-                catalogIsLoading = false;
-                // If there's no more data, remove the inline block style to let the CSS display: none take over again
-                trigger.style.display = catalogHasNext ? 'block' : 'none'; 
-            })
-            .catch(err => {
-                console.error("Katalog yüklenirken hata oluştu:", err);
-                catalogIsLoading = false;
-                trigger.style.display = 'none';
+            }).catch(err => {
+                console.error("Move Error:", err);
+                $('#bom_tree').jstree(true).refresh();
             });
+        });
     }
 
-    // ---------------------------------------------------------
-    // Center Pane: Tree Loader
-    // ---------------------------------------------------------
-    function loadItemTree(itemId) {
-        fetch(`/emek/api/get_tree_data?item_id=${itemId}`)
-            .then(response => response.json())
-            .then(treeData => {
+    // --- TABLE TO TREE DRAG & DROP LOGIC ---
+    function handleTableDragStart(e, childId, oldParentId) {
+        e.dataTransfer.setData("application/json", JSON.stringify({
+            child_id: childId,
+            old_parent_id: oldParentId
+        }));
+        e.dataTransfer.effectAllowed = "move";
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const treeContainer = document.getElementById('bom_tree');
+
+        // Allow the tree area to accept dropped items
+        treeContainer.addEventListener('dragover', function(e) {
+            e.preventDefault(); 
+            e.dataTransfer.dropEffect = "move";
+        });
+
+        // Catch the drop, figure out which folder it landed on, and fire the API
+        treeContainer.addEventListener('drop', function(e) {
+            e.preventDefault();
+            try {
+                const dataStr = e.dataTransfer.getData("application/json");
+                if (!dataStr) return; // If it's not our table row, ignore it
+                const data = JSON.parse(dataStr);
                 
-                if ($('#bom_tree').jstree(true)) {
-                    $('#bom_tree').jstree('destroy');
-                }
+                // Use jQuery to find exactly which jsTree folder the mouse was hovering over
+                const targetAnchor = $(e.target).closest('.jstree-anchor');
+                if (!targetAnchor.length) return; // Dropped on empty white space
 
-                $('#bom_tree')
-                    .off('ready.jstree')
-                    .on('ready.jstree', function() {
-                        const firstNode = $('#bom_tree').jstree(true).get_node('#').children[0];
-                        if(firstNode) {
-                            $('#bom_tree').jstree('select_node', firstNode);
-                        }
-                    })
-                    .off('select_node.jstree')
-                    .on('select_node.jstree', function (e, data) {
-                        const nodeId = data.node.id; 
-                        
-                        fetch(`/emek/api/get_item_details/${nodeId}`)
-                            .then(res => {
-                                if (!res.ok) throw new Error("Sunucu hatası: " + res.status);
-                                return res.json();
-                            })
-                            .then(details => {
-                                const grandTotal = parseFloat(details.total_cost) || 0.0;
-                                
-                                document.getElementById('selected_item_title').innerHTML = 
-                                    `<i class="fas fa-box-open text-primary me-2"></i> ${details.name}`;
-                                document.getElementById('item_grand_total').innerText = grandTotal.toFixed(2);
-                               
-                                const btnWhereUsed = document.getElementById('btn_where_used');
-                                const btnEditItem = document.getElementById('btn_edit_item');
-                                
-                                btnWhereUsed.style.display = 'inline-block';
-                                btnEditItem.style.display = 'inline-block';
-                                
-                                btnWhereUsed.dataset.itemId = details.item_id;
-                                btnEditItem.dataset.itemId = details.item_id;
+                const tree = $.jstree.reference(targetAnchor);
+                const targetNode = tree.get_node(targetAnchor);
+                
+                if (!targetNode || !targetNode.data) return;
+                const newParentDbId = targetNode.data.real_item_id;
 
-                                const tbody = document.getElementById('component_table_body');
-                                tbody.innerHTML = '';
-                                
-                                if (!details.components || details.components.length === 0) {
-                                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">Bu öğenin alt bileşeni yok. (Saf Malzeme)</td></tr>';
-                                } else {
-                                    details.components.forEach(comp => {
-                                        const unitCost = parseFloat(comp.unit_cost) || 0.0;
-                                        const qty = parseFloat(comp.qty) || 0.0;
-                                        const lineTotal = (qty * unitCost).toFixed(2);
-                                        
-                                        tbody.innerHTML += `
-                                            <tr>
-                                                <td class="fw-bold">${comp.code}</td>
-                                                <td>${comp.name}</td>
-                                                <td>${qty}</td>
-                                                <td>${unitCost.toFixed(2)} ₺</td>
-                                                <td class="fw-bold text-success">${lineTotal} ₺</td>
-                                                <td>
-                                                    <button class="btn btn-sm btn-outline-danger" title="Kaldır" onclick="removeComponent(${details.item_id}, ${comp.child_id})">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        `;
-                                    });
-                                }
-                            })
-                            .catch(err => {
-                                console.error("Detaylar yüklenemedi:", err);
-                                alert("Bileşen detayları yüklenirken bir hata oluştu. (Konsolu kontrol edin)");
-                            });
-                    })
-                    .jstree({
-                        'core': {
-                            'data': treeData,
-                            'themes': { 'name': 'default', 'responsive': true, 'stripes': true }
+                // Prevent moving it to the exact same parent
+                if (data.old_parent_id == newParentDbId) return; 
+
+                if (confirm("Bu öğeyi seçili klasöre/montaja taşımak istediğinize emin misiniz?")) {
+                    fetch('/emek/api/move_node', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            child_id: data.child_id,
+                            old_parent_id: data.old_parent_id,
+                            new_parent_id: newParentDbId
+                        })
+                    }).then(res => res.json()).then(resp => {
+                        if (resp.error) {
+                            alert("Taşıma Hatası: " + resp.error);
+                        } else {
+                            $('#bom_tree').jstree(true).refresh();
+                            setTimeout(() => locateItemInTree(newParentDbId), 800); 
                         }
                     });
-            })
-            .catch(err => console.error("Ağaç yüklenirken hata oluştu:", err));
+                }
+            } catch (err) {
+                console.error("Drop error processing:", err);
+            }
+        });
+    });
+
+    // --- LOCATE SEARCH RESULT IN TREE ---
+    function locateItemInTree(realId) {
+        document.getElementById('search_dropdown').style.display = 'none';
+        const tree = $('#bom_tree').jstree(true);
+        const nodes = tree.get_json('#', { flat: true });
+        const target = nodes.find(n => n.data && n.data.real_item_id === realId);
+        
+        if (target) {
+            tree.deselect_all();
+            tree.select_node(target.id);
+            setTimeout(() => {
+                const el = document.getElementById(target.id);
+                if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+            }, 200);
+        } else {
+            loadItemDetails(realId); // Fallback if node isn't rendered
+        }
     }
 
-    // ---------------------------------------------------------
-    // Component Addition Logic (From the new Arrow buttons)
-    // ---------------------------------------------------------
-    function addCatalogItemToBom(childDbId, isCategory) {
-        let selectedNodes = $('#bom_tree').jstree("get_selected", true);
-        if (selectedNodes.length === 0) {
-            alert("Lütfen önce ortadaki ağaçtan bir ana öğe (parent) seçin.");
-            return;
-        }
+    // --- LOAD ITEM DETAILS PANE ---
+    function loadItemDetails(dbId) {
+        fetch(`/emek/api/get_item_details/${dbId}`)
+            .then(res => res.json())
+            .then(details => {
+                let titleIcon = details.is_category ? 'fa-folder-open text-info' : 'fa-box text-warning';
+                document.getElementById('selected_item_title').innerHTML = `<i class="fas ${titleIcon} me-2"></i> ${details.name} <small class="text-muted ms-2">[${details.code}]</small>`;
+                document.getElementById('item_grand_total').innerText = (details.total_cost || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-        let parentNodeId = selectedNodes[0].id;
-        let parentDbId = parseInt(parentNodeId.split('_').pop());
+                // Show action buttons
+                const btns = ['btn_add_child', 'btn_edit_item', 'btn_attachments', 'btn_where_used'];
+                btns.forEach(id => {
+                    const btn = document.getElementById(id);
+                    if (btn) {
+                        btn.style.display = 'inline-block';
+                        btn.dataset.itemId = details.item_id;
+                    }
+                });
 
-        let qty = 1.0; 
-        
-        if (!isCategory) {
-            let qtyInput = document.getElementById(`cat_qty_${childDbId}`);
-            if (qtyInput) {
-                qty = parseFloat(qtyInput.value);
+                // Specs DNA
+                const specsContainer = document.getElementById('item_specs_container');
+                specsContainer.innerHTML = '';
+                if (details.technical_specs) {
+                    Object.entries(details.technical_specs).forEach(([key, val]) => {
+                        if (val && val !== 'Genel' && val !== 'Diğer') {
+                            specsContainer.innerHTML += `<span class="badge bg-secondary text-white border border-secondary shadow-sm px-3 py-2"><span class="text-light fw-normal me-1">${key}:</span> ${val}</span>`;
+                        }
+                    });
+                }
+
+                // BoM Table
+                const tbody = document.getElementById('component_table_body');
+                tbody.innerHTML = '';
+                if (!details.components || details.components.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">Alt bileşen bulunamadı. Sağ üstten ekleyebilirsiniz.</td></tr>';
+                } else {
+                    details.components.forEach(comp => {
+                        let rowTotal = comp.qty * comp.unit_cost;
+                        tbody.innerHTML += `
+                            <tr draggable="true" 
+                                ondragstart="handleTableDragStart(event, ${comp.child_id}, ${details.item_id})"
+                                ondblclick="locateItemInTree(${comp.child_id})"
+                                style="cursor: pointer;"
+                                title="Ağaçta bulmak için çift tıklayın. Başka bir klasöre taşımak için ağaca sürükleyin.">
+                                <td class="fw-bold">${comp.code}</td>
+                                <td>${comp.name}</td>
+                                <td><span class="badge bg-light text-dark border px-2 py-1">${comp.qty}</span></td>
+                                <td>${comp.unit_cost.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺</td>
+                                <td class="fw-bold text-success">${rowTotal.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-danger" title="Bağlantıyı Kopar" onclick="removeComponent(${details.item_id}, ${comp.child_id}); event.stopPropagation();">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>`;
+                    });
+                }
+            })
+            .catch(err => console.error("Details API Error:", err));
+    }
+
+    // --- CREATE NEW ITEM LOGIC ---
+    function openCreateModal(parentId) {
+        document.getElementById('create_item_parent_id').value = parentId || '';
+        document.getElementById('create_item_code').value = '';
+        document.getElementById('create_item_name').value = '';
+        document.getElementById('create_item_is_category').checked = true;
+        new bootstrap.Modal(document.getElementById('createItemModal')).show();
+    }
+
+    function saveNewItem() {
+        const payload = {
+            parent_id: document.getElementById('create_item_parent_id').value,
+            code: document.getElementById('create_item_code').value,
+            name: document.getElementById('create_item_name').value,
+            is_category: document.getElementById('create_item_is_category').checked
+        };
+
+        if (!payload.code || !payload.name) return alert("Lütfen Poz/Kod ve Tanım alanlarını doldurun.");
+
+        fetch('/emek/api/create_item', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        }).then(res => res.json()).then(data => {
+            if (data.error) {
+                alert(data.error);
+            } else {
+                $('#bom_tree').jstree(true).refresh();
+                bootstrap.Modal.getInstance(document.getElementById('createItemModal')).hide();
+                if (payload.parent_id) setTimeout(() => locateItemInTree(payload.parent_id), 800);
             }
-        }
+        }).catch(err => console.error("Create API Error:", err));
+    }
 
-        if (isNaN(qty) || qty <= 0) {
-            alert("Lütfen geçerli bir miktar girin.");
-            return;
-        }
+    // --- BUTTON ACTIONS ---
+    function addFromSearch(childDbId) {
+        let selectedNodes = $('#bom_tree').jstree("get_selected", true);
+        if (selectedNodes.length === 0) return alert("Lütfen önce ağaçtan bir hedef öğe/klasör seçin.");
+        
+        let parentDbId = selectedNodes[0].data.real_item_id;
+        let qty = prompt("Miktar girin:", "1");
+        if (qty === null || isNaN(parseFloat(qty))) return;
 
         fetch('/emek/api/add_component', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                parent_id: parentDbId,
-                child_id: childDbId,
-                qty: qty
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) {
-                alert("Hata: " + data.error); 
-            } else {
-                $('#bom_tree').jstree(true).refresh();
-                setTimeout(() => {
-                    $('#bom_tree').jstree("deselect_all");
-                    $('#bom_tree').jstree("select_node", parentNodeId);
-                }, 300); 
+            body: JSON.stringify({ parent_id: parentDbId, child_id: childDbId, qty: parseFloat(qty) })
+        }).then(res => res.json()).then(data => {
+            if (data.error) alert(data.error);
+            else {
+                $('#bom_tree').jstree(true).refresh(); 
+                setTimeout(() => locateItemInTree(parentDbId), 800); 
             }
-        });
+        }).catch(err => console.error("Add Component API Error:", err));
     }
 
-    // ---------------------------------------------------------
-    // Component Removal Logic (The Trash Can)
-    // ---------------------------------------------------------
     function removeComponent(parentId, childId) {
-        if (!confirm("Bu bileşeni kaldırmak istediğinize emin misiniz?")) return;
-
+        if (!confirm("Bu bileşeni listeden çıkarmak istediğinize emin misiniz?")) return;
         fetch('/emek/api/remove_component', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ parent_id: parentId, child_id: childId })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                $('#bom_tree').jstree(true).refresh(); 
-                setTimeout(() => {
-                    const nodeStr = $('#bom_tree').jstree("get_selected")[0];
-                    $('#bom_tree').jstree("deselect_all");
-                    $('#bom_tree').jstree("select_node", nodeStr);
-                }, 300);
-            } else {
-                alert(data.error);
-            }
-        });
+        }).then(() => {
+            $('#bom_tree').jstree(true).refresh();
+            loadItemDetails(parentId);
+        }).catch(err => console.error("Remove API Error:", err));
     }
 
-    // ---------------------------------------------------------
-    // Edit Item Logic
-    // ---------------------------------------------------------
     function openEditModal() {
         const itemId = document.getElementById('btn_edit_item').dataset.itemId;
-        if (!itemId) return;
-
-        fetch(`/emek/api/get_item_details/${itemId}`)
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById('edit_item_id').value = data.item_id;
-                document.getElementById('edit_item_code').value = data.code;
-                document.getElementById('edit_item_name').value = data.name;
-                document.getElementById('edit_item_cost').value = data.total_cost || 0; 
-                document.getElementById('edit_item_is_category').checked = data.is_category;
-                
-                const myModal = new bootstrap.Modal(document.getElementById('editItemModal'));
-                myModal.show();
-            })
-            .catch(err => {
-                console.error("Düzenleme verisi alınamadı:", err);
-                alert("Öğe bilgileri alınırken hata oluştu.");
-            });
+        fetch(`/emek/api/get_item_details/${itemId}`).then(res => res.json()).then(data => {
+            document.getElementById('edit_item_id').value = data.item_id;
+            document.getElementById('edit_item_code').value = data.code;
+            document.getElementById('edit_item_name').value = data.name;
+            document.getElementById('edit_item_cost').value = data.total_cost || 0;
+            document.getElementById('edit_item_is_category').checked = data.is_category;
+            new bootstrap.Modal(document.getElementById('editItemModal')).show();
+        }).catch(err => console.error("Fetch Edit Details API Error:", err));
     }
 
     function saveItemEdit() {
-        const itemId = document.getElementById('btn_edit_item').dataset.itemId;
-        const code = document.getElementById('edit_item_code').value;
-        const name = document.getElementById('edit_item_name').value;
-        const cost = document.getElementById('edit_item_cost').value;
-        const isCat = document.getElementById('edit_item_is_category').checked;
-
-        fetch(`/emek/api/update_item/${itemId}`, {
+        const id = document.getElementById('edit_item_id').value;
+        const payload = {
+            code: document.getElementById('edit_item_code').value,
+            name: document.getElementById('edit_item_name').value,
+            base_cost: document.getElementById('edit_item_cost').value,
+            is_category: document.getElementById('edit_item_is_category').checked
+        };
+        fetch(`/emek/api/update_item/${id}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                code: code,
-                name: name,
-                base_cost: cost,
-                is_category: isCat
-            })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                bootstrap.Modal.getInstance(document.getElementById('editItemModal')).hide();
-                
-                // Clear and reload list
-                document.getElementById('catalog-list').innerHTML = ''; 
-                loadCatalogPage(); 
-                $('#bom_tree').jstree(true).refresh();
-                
-                document.getElementById('selected_item_title').innerHTML = `<i class="fas fa-box-open text-primary me-2"></i> [${code}] ${name}`;
-            } else {
-                alert("Güncelleme hatası.");
-            }
-        });
+            body: JSON.stringify(payload)
+        }).then(() => {
+            $('#bom_tree').jstree(true).refresh();
+            bootstrap.Modal.getInstance(document.getElementById('editItemModal')).hide();
+            setTimeout(() => locateItemInTree(id), 800);
+        }).catch(err => console.error("Save Edit API Error:", err));
     }
 
-    // ---------------------------------------------------------
-    // Where Used (Reverse Lookup) Logic
-    // ---------------------------------------------------------
+    function openAttachmentsModal() {
+        const itemId = document.getElementById('btn_attachments').dataset.itemId;
+        fetch(`/emek/api/get_attachments/${itemId}`).then(res => res.json()).then(data => {
+            const list = document.getElementById('attachments_list');
+            list.innerHTML = data.length ? '' : '<div class="text-center py-4 text-muted"><i class="fas fa-file-excel fs-3 mb-2 d-block"></i> Henüz dosya yüklenmemiş.</div>';
+            data.forEach(f => {
+                let iconClass = f.type === 'image' ? 'fa-image text-success' : 'fa-file-pdf text-danger';
+                list.innerHTML += `<a href="${f.path}" target="_blank" class="list-group-item list-group-item-action fw-bold">
+                    <i class="fas ${iconClass} me-2"></i>${f.semantic_filename}</a>`;
+            });
+            new bootstrap.Modal(document.getElementById('attachmentsModal')).show();
+        }).catch(err => console.error("Attachments Fetch API Error:", err));
+    }
+
+    function uploadAttachment() {
+        const itemId = document.getElementById('btn_attachments').dataset.itemId;
+        const fileInput = document.getElementById('attachment_file_input');
+        if (fileInput.files.length === 0) return alert("Lütfen yüklenecek dosyayı seçin.");
+        
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        fetch(`/emek/api/upload_attachment/${itemId}`, { method: 'POST', body: formData }).then(() => openAttachmentsModal()).catch(err => console.error("Upload API Error:", err));
+    }
+
     function showWhereUsed() {
         const itemId = document.getElementById('btn_where_used').dataset.itemId;
-        if (!itemId) return;
-
-        fetch(`/emek/api/where_used/${itemId}`)
-            .then(res => res.json())
-            .then(data => {
-                const tbody = document.getElementById('where_used_table_body');
-                tbody.innerHTML = ''; 
-
-                if (data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">Bu öğe hiçbir bileşende kullanılmıyor. (En üst seviye)</td></tr>';
-                } else {
-                    data.forEach(parent => {
-                        tbody.innerHTML += `
-                            <tr>
-                                <td class="fw-bold text-primary">${parent.code}</td>
-                                <td>${parent.name}</td>
-                                <td><span class="badge bg-secondary">${parent.qty_used} Adet</span></td>
-                                <td>
-                                    <button class="btn btn-sm btn-light border" onclick="loadItemTree(${parent.id}); bootstrap.Modal.getInstance(document.getElementById('whereUsedModal')).hide();">
-                                        <i class="fas fa-external-link-alt"></i> Git
-                                    </button>
-                                </td>
-                            </tr>
-                        `;
-                    });
-                }
-                
-                const myModal = new bootstrap.Modal(document.getElementById('whereUsedModal'));
-                myModal.show();
+        fetch(`/emek/api/where_used/${itemId}`).then(res => res.json()).then(data => {
+            const tbody = document.getElementById('where_used_table_body');
+            tbody.innerHTML = data.length ? '' : '<tr><td colspan="4" class="text-center py-4 text-muted">Bu öğe hiçbir üst grupta kullanılmamış.</td></tr>';
+            data.forEach(p => {
+                tbody.innerHTML += `<tr>
+                    <td class="fw-bold">${p.code}</td>
+                    <td>${p.name}</td>
+                    <td><span class="badge bg-secondary">${p.qty_used}</span></td>
+                    <td><button class="btn btn-sm btn-info text-white fw-bold" onclick="locateItemInTree(${p.id}); bootstrap.Modal.getInstance(document.getElementById('whereUsedModal')).hide();">Git</button></td>
+                </tr>`;
             });
+            new bootstrap.Modal(document.getElementById('whereUsedModal')).show();
+        }).catch(err => console.error("Where Used API Error:", err));
     }
 </script>
 {% endblock %}

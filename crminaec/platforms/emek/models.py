@@ -1,5 +1,8 @@
 from __future__ import annotations
-
+import os
+import unicodedata
+import re
+import uuid
 import enum
 from typing import Any, Dict, List, Optional
 
@@ -64,6 +67,13 @@ class Item(db.Model, MappedAsDataclass):
         "ItemComposition", 
         foreign_keys="ItemComposition.parent_id",
         back_populates="parent_item",
+        cascade="all, delete-orphan",
+        default_factory=list
+    )
+    # --- NEW: PDM ATTACHMENTS ---
+    attachments: Mapped[List["ItemAttachment"]] = relationship(
+        "ItemAttachment",
+        back_populates="item",
         cascade="all, delete-orphan",
         default_factory=list
     )
@@ -149,3 +159,21 @@ class ItemComposition(db.Model, MappedAsDataclass):
     child_item: Mapped[Item] = relationship("Item", foreign_keys=[child_id])
 
     quantity: Mapped[float] = mapped_column(Float, default=1.0)
+
+# ==============================================================================
+# 3. Define ItemAttachment (The PDM Vault)
+# ==============================================================================
+class ItemAttachment(db.Model, MappedAsDataclass):
+    """Stores files/images linked to an Item with semantic renaming."""
+    __tablename__ = 'emek_item_attachments'
+
+    attachment_id: Mapped[int] = mapped_column(primary_key=True, init=False)
+    item_id: Mapped[int] = mapped_column(ForeignKey('emek_items.item_id', ondelete="CASCADE"), init=False)
+    
+    original_filename: Mapped[str] = mapped_column(String(255))
+    semantic_filename: Mapped[str] = mapped_column(String(255))
+    file_path: Mapped[str] = mapped_column(String(500))
+    file_type: Mapped[str] = mapped_column(String(50), default="document") # 'image', 'pdf', 'cad', etc.
+
+    # Relationship back to Item
+    item: Mapped["Item"] = relationship("Item", back_populates="attachments", init=False)

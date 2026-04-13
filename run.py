@@ -301,6 +301,31 @@ def tree():
 # =====================================================================
 
 @cli.command()
+def migrate():
+    """🚀 Runs the new Master Pipeline for Legacy Data Migration"""
+    from crminaec import create_app, db
+    from migration import run_master_import
+    
+    app = create_app()
+    
+    click.echo("=========================================")
+    click.echo("🚀 INITIALIZING LEGACY DATA MIGRATION...")
+    click.echo("=========================================")
+    
+    # We MUST push the app context so SQLAlchemy knows which database to talk to
+    with app.app_context():
+        # (Optional) Wipe the slate clean before importing if you want a fresh start
+        # db.drop_all()
+        # db.create_all()
+        
+        # Run the magic
+        run_master_import()
+        
+    click.echo("=========================================")
+    click.echo("✅ MIGRATION COMPLETE. Exiting safely.")
+    click.echo("=========================================")
+
+@cli.command()
 @click.argument('data_dir', default='legacy_data', type=click.Path(exists=True))
 def import_legacy(data_dir):
     """Imports MS Access CSV dumps into the EMEK BoM engine."""
