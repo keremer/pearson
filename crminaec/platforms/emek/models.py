@@ -1,9 +1,10 @@
 from __future__ import annotations
-import os
-import unicodedata
-import re
-import uuid
+
 import enum
+import os
+import re
+import unicodedata
+import uuid
 from typing import Any, Dict, List, Optional
 
 from sqlalchemy import JSON, Boolean
@@ -31,19 +32,23 @@ class Item(db.Model, MappedAsDataclass):
     __tablename__ = 'emek_items'
 
     item_id: Mapped[int] = mapped_column(primary_key=True, init=False)
-    code: Mapped[str] = mapped_column(String(100), unique=True, index=True)
+
+    # 1. Identifiers & Naming
+    code: Mapped[str] = mapped_column(String(100), unique=True)
     name: Mapped[str] = mapped_column(String(255))
-    brand: Mapped[str] = mapped_column(String(100), default="Generic")
+    is_category: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    # 2. NEW: Formal ERP Taxonomy
+    brand: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, default="Generic")
+    product_group: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, default=None) # maps to 'ug'    
+    product_type: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, default=None)  # maps to 'utk'
+    uom: Mapped[str] = mapped_column(String(20), default="adet") # Unit of measure (brm)
+
     # THE SWITCH: True = Just a classification folder. False = A real physical/priced item.
     is_category: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
-    
-    # --- NEW: Categorization ---
-    product_group: Mapped[str | None] = mapped_column(String(50), nullable=True, default=None) # maps to 'ug'
-    product_type: Mapped[str | None] = mapped_column(String(50), nullable=True, default=None)  # maps to 'utk'
     is_configurable: Mapped[bool] = mapped_column(Boolean, default=False)
     
     # --- NEW: Physical Properties ---
-    uom: Mapped[str] = mapped_column(String(20), default="adet") # Unit of Measure (brm)
     dim_x: Mapped[float] = mapped_column(Float, default=0.0) # Width
     dim_y: Mapped[float] = mapped_column(Float, default=0.0) # Height
     dim_z: Mapped[float] = mapped_column(Float, default=0.0) # Depth
@@ -51,15 +56,16 @@ class Item(db.Model, MappedAsDataclass):
     # 'raw_material', 'assembly', 'service', 'project'
     item_type: Mapped[str] = mapped_column(String(50), default="raw_material") 
     
-    # If it's a raw material, this is the cost. If it's an assembly, this should be 0.
+    # 4. Costing & Specs
     base_cost: Mapped[float] = mapped_column(Float, default=0.0)
+    # JSON field for unlimited flexible attributes (e.g., {"Power": "2000W", "Color": "Inox"})
+    technical_specs: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True, default=dict) 
+    price_source: Mapped[PriceSource] = mapped_column(SQLEnum(PriceSource), default=PriceSource.MANUAL)
+    reliability_score: Mapped[int] = mapped_column(Integer, default=100)
 
     # --- PRESENTATION & HYBRID DATA (The "Franke" Strategy) ---
     image_path: Mapped[Optional[str]] = mapped_column(String(255), default=None)
     manufacturer_url: Mapped[Optional[str]] = mapped_column(String(255), default=None)
-    
-    # JSON field for unlimited flexible attributes (e.g., {"Power": "2000W", "Color": "Inox"})
-    technical_specs: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, default=None)
 
     # --- RECURSIVE ARCHITECTURE ---
     # We use strings ("ItemComposition") here because it is defined further down
@@ -144,21 +150,23 @@ class Item(db.Model, MappedAsDataclass):
 
 
 # ==============================================================================
-# 2. Define ItemComposition SECOND. 
-# Because Item is already defined, Mapped[Item] works natively!
+# 2. The Updated ITEM COMPOSITION (BOM Link) Model
 # ==============================================================================
 class ItemComposition(db.Model, MappedAsDataclass):
-    """The associative table linking a Parent Item to its Child Components with quantities."""
+    """The Association Object for the Bill of Materials (BOM) hierarchy."""
     __tablename__ = 'emek_item_compositions'
 
     parent_id: Mapped[int] = mapped_column(ForeignKey('emek_items.item_id', ondelete="CASCADE"), primary_key=True, init=False)
     child_id: Mapped[int] = mapped_column(ForeignKey('emek_items.item_id', ondelete="CASCADE"), primary_key=True, init=False)
     
-    # NO QUOTES needed for Item anymore! Pylance sees it right above.
     parent_item: Mapped[Item] = relationship("Item", foreign_keys=[parent_id], back_populates="children_links")
     child_item: Mapped[Item] = relationship("Item", foreign_keys=[child_id])
 
     quantity: Mapped[float] = mapped_column(Float, default=1.0)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0) 
+    
+    # 👇 NEW: Parametric Relationship Data (e.g. {"opt1": "L"}) 👇
+    optional_attributes: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True, default=dict)
 
 # ==============================================================================
 # 3. Define ItemAttachment (The PDM Vault)

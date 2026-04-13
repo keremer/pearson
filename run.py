@@ -3,11 +3,15 @@
 crminaec Management Portal - Unified Entry Point
 Uses Click for CLI management with Lazy Initialization for performance
 """
+import json
+import os
 import sys
 from pathlib import Path
 from typing import List, Optional
 
 import click
+import pandas as pd
+from sqlalchemy.exc import IntegrityError
 
 from crminaec import create_app
 from import_legacy import run_import
@@ -297,50 +301,191 @@ def tree():
     click.echo("```")
 
 # =====================================================================
-# 🎓 CONTENT INJECTION & BOM
+# 🏗️ PROJECT STRUCTURE & DATA INJECTION
 # =====================================================================
 
-@cli.command()
-def migrate():
-    """🚀 Runs the new Master Pipeline for Legacy Data Migration"""
+@cli.command('importdata')
+@click.argument('data_dir', default='.', type=click.Path(exists=True))
+@click.option('--merge-duplicates', is_flag=True, help="If set, skips importing duplicates and links compositions to the existing DB item. Default is to import and rename (e.g. 'Kapak.12345').")
+def importdata(data_dir, merge_duplicates):
+    """
+    Injects the EMEK master project hierarchy, then bulk imports items.csv 
+    and compositions.csv. Includes dynamic deduplication switching.
+    """
     from crminaec import create_app, db
-    from migration import run_master_import
-    
+    from crminaec.platforms.emek.models import (Item, ItemComposition,
+                                                PriceSource)
+
     app = create_app()
     
-    click.echo("=========================================")
-    click.echo("🚀 INITIALIZING LEGACY DATA MIGRATION...")
-    click.echo("=========================================")
-    
-    # We MUST push the app context so SQLAlchemy knows which database to talk to
     with app.app_context():
-        # (Optional) Wipe the slate clean before importing if you want a fresh start
-        # db.drop_all()
-        # db.create_all()
+        # ---------------------------------------------------------
+        # PART 1: INJECT ROOT FOLDERS
+        # ---------------------------------------------------------
+        click.echo("🌱 Checking and injecting structural hierarchy...")
+
+        def create_node(code: str, name: str, parent: Optional[Item] = None) -> Item:
+            folder = db.session.query(Item).filter_by(code=code).first()
+            if not folder:
+                folder = Item(code=code, name=name, is_category=True, base_cost=0.0)
+                db.session.add(folder)
+                db.session.flush()
+            
+            if parent:
+                link = db.session.query(ItemComposition).filter_by(
+                    parent_id=parent.item_id, child_id=folder.item_id
+                ).first()
+                if not link:
+                    db.session.add(ItemComposition(parent_item=parent, child_item=folder, quantity=1.0))
+                    db.session.flush()
+                    
+            return folder
+
+        emek_root = create_node("EMEK", "EMEK Architecture")
+        prj_dir = create_node("PRJ", "Projects & Installations", emek_root)
+        edu_dir = create_node("EDU", "Academic & Curriculum", emek_root)
+        rnd_dir = create_node("RND", "Research & Development", emek_root)
+        lib_dir = create_node("LIB", "Libraries & Archives", emek_root)
+
+        create_node("CRM", "crminaec Framework", rnd_dir)
+        create_node("EDU-BAU", "Bauhaus Pedagogical Studies", rnd_dir)
+        create_node("EDU-HND5", "Pearson HND5 Art & Design", edu_dir)
+        create_node("EDU-CAS", "Course Automation System", edu_dir)
+        create_node("EDU-LIB", "ArchNotes Repository", lib_dir)
+        create_node("PRJ-INST01", "Mirror Star Prism Installation", prj_dir)
+
+        db.session.commit()
+        click.echo("✅ Organizational structure verified.")
+
+        # ---------------------------------------------------------
+        # PART 2: BULK IMPORT CSV DATA
+        # ---------------------------------------------------------
+        items_path = os.path.join(data_dir, 'items.csv')
+        comps_path = os.path.join(data_dir, 'compositions.csv')
+
+        if not os.path.exists(items_path) or not os.path.exists(comps_path):
+            click.echo("⚠️ Warning: items.csv or compositions.csv not found. Skipping CSV import.")
+            return
+
+        click.echo("📦 Reading CSV files...")
+        df_items = pd.read_csv(items_path).fillna('')
+        df_comps = pd.read_csv(comps_path).fillna('')
+
+        def parse_json(val_str):
+            if not val_str: return {}
+            try:
+                val_str = str(val_str).replace('""', '"')
+                return json.loads(val_str)
+            except json.JSONDecodeError:
+                return {}
+
+        # --- DEDUPLICATION CACHE & MAPPING ---
+        # Cache existing items to speed up lookups (Code -> ID, Name -> ID)
+        existing_items = db.session.query(Item.item_id, Item.code, Item.name).all()
+        code_to_id = {item.code: item.item_id for item in existing_items}
+        name_to_id = {item.name: item.item_id for item in existing_items}
         
-        # Run the magic
-        run_master_import()
+        # Translation dictionary: Maps CSV ID -> Target Database ID
+        id_translation_map = {} 
+
+        # IMPORT ITEMS
+        mode_str = "MERGING" if merge_duplicates else "RENAMING"
+        click.echo(f"📥 Scanning {len(df_items)} items... (Mode: {mode_str} Duplicates)")
         
-    click.echo("=========================================")
-    click.echo("✅ MIGRATION COMPLETE. Exiting safely.")
-    click.echo("=========================================")
+        for _, row in df_items.iterrows():
+            csv_id = int(row['item_id'])
+            raw_code = str(row['code'])
+            raw_name = str(row['name'])
+            
+            # 1. Skip if the exact ID already exists (e.g. re-running the script)
+            if db.session.get(Item, csv_id):
+                id_translation_map[csv_id] = csv_id
+                continue
 
-@cli.command()
-@click.argument('data_dir', default='legacy_data', type=click.Path(exists=True))
-def import_legacy(data_dir):
-    """Imports MS Access CSV dumps into the EMEK BoM engine."""
-    app = create_app()
-    run_import(app, data_dir)
+            # 2. Check for Duplicates
+            is_duplicate = raw_code in code_to_id or raw_name in name_to_id
 
-from clean_legacy import run_cleanup
+            if is_duplicate:
+                if merge_duplicates:
+                    # MERGE MODE: Map the CSV ID to the already existing DB ID
+                    matched_id = code_to_id.get(raw_code) or name_to_id.get(raw_name)
+                    id_translation_map[csv_id] = matched_id
+                    continue  # Skip creating a new item
+                else:
+                    # RENAME MODE: Append the ID to make it unique
+                    if raw_code in code_to_id:
+                        raw_code = f"{raw_code}.{csv_id}"
+                    if raw_name in name_to_id:
+                        raw_name = f"{raw_name}.{csv_id}"
 
+            # 3. Create the Item
+            p_source_str = str(row.get('price_source', 'MANUAL')).upper()
+            p_source = getattr(PriceSource, p_source_str, PriceSource.MANUAL)
 
-@cli.command()
-def clean_legacy():
-    """Fixes semantic issues, deduplicates names, and extracts DNA."""
-    app = create_app()
-    run_cleanup(app)
-       
+            new_item = Item(
+                code=raw_code,
+                name=raw_name,
+                brand=str(row.get('brand', 'Generic')) or 'Generic',
+                is_category=str(row['is_category']).lower() == 'true',
+                product_group=str(row.get('product_group', '')) or None,
+                product_type=str(row.get('product_type', '')) or None,
+                uom=str(row.get('uom', 'adet')) or 'adet',
+                dim_x=float(row.get('dim_x', 0.0) or 0.0),
+                dim_y=float(row.get('dim_y', 0.0) or 0.0),
+                dim_z=float(row.get('dim_z', 0.0) or 0.0),
+                base_cost=float(row.get('base_cost', 0.0) or 0.0),
+                technical_specs=parse_json(row.get('technical_specs')),
+                price_source=p_source,
+                reliability_score=int(row.get('reliability_score', 100) or 100)
+            )
+            
+            new_item.item_id = csv_id 
+            db.session.add(new_item)
+            
+            # Update cache for the remainder of the loop
+            code_to_id[raw_code] = csv_id
+            name_to_id[raw_name] = csv_id
+            id_translation_map[csv_id] = csv_id
+
+        db.session.commit()
+        click.echo("✅ Items successfully saved to database.")
+
+        # IMPORT COMPOSITIONS
+        click.echo(f"🔗 Scanning {len(df_comps)} BoM relationships...")
+        
+        for _, row in df_comps.iterrows():
+            # 👇 CRITICAL: Re-route IDs through the Translation Map
+            p_id = id_translation_map.get(int(row['parent_id']))
+            c_id = id_translation_map.get(int(row['child_id']))
+
+            # Failsafe if an item was excluded entirely
+            if not p_id or not c_id:
+                continue
+
+            qty = float(row.get('quantity', 1.0) or 1.0)
+            s_order = int(row.get('sort_order', 0) or 0)
+            opt_attrs = parse_json(row.get('optional_attributes'))
+
+            existing_link = db.session.query(ItemComposition).filter_by(parent_id=p_id, child_id=c_id).first()
+            if existing_link:
+                continue
+
+            parent_obj = db.session.get(Item, p_id)
+            child_obj = db.session.get(Item, c_id)
+
+            if parent_obj and child_obj:
+                new_link = ItemComposition(
+                    parent_item=parent_obj,
+                    child_item=child_obj,
+                    quantity=qty,
+                    sort_order=s_order,
+                    optional_attributes=opt_attrs
+                )
+                db.session.add(new_link)
+
+        db.session.commit()
+        click.echo("✅ Compositions successfully mapped.")
+        click.echo("🎉 Database injection & import complete! Open your BOM Editor.")
 # Attach the external report command group
 try:
     from crminaec.cli.report_commands import report
