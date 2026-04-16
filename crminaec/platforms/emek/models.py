@@ -7,25 +7,56 @@ import unicodedata
 import uuid
 from typing import Any, Dict, List, Optional
 
-from sqlalchemy import JSON, Boolean
-from sqlalchemy import Enum
-from sqlalchemy import Enum as SQLEnum
-from sqlalchemy import Float, ForeignKey, Integer, String
+from sqlalchemy import JSON, Boolean, Enum, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import (Mapped, MappedAsDataclass, mapped_column,
                             relationship)
 
 from crminaec.core.models import db  # Import your existing SQLAlchemy instance
 
 
-# 1. Define the trust levels
+# ==============================================================================
+# 0. ENUMS
+# ==============================================================================
 class PriceSource(enum.Enum):
     MANUAL = "Manual Entry"         # 100% Reliable
     PROSAP_SYNC = "ProSAP Direct"   # 95% Reliable
     INFERRED = "System Inferred"    # 50-80% Reliable
     LEGACY = "MS Access Import"     # 20% Reliable
+
+class NodeType(enum.Enum):
+    CATEGORY = "Category"
+    PRODUCT = "Product"
+    ACTIVITY = "Activity" # Uniclass Ac, WBS Tasks
+    SPACE = "Space"       # COBie Zones/Rooms
+
+class StandardType(enum.Enum):
+    UNICLASS_2015 = "Uniclass 2015"
+    MASTERFORMAT_2020 = "MasterFormat 2020"
+    TR_DIGITAL_REG = "TR Digital Regulation"
+    COBIE_V3 = "COBie v3"
+
+
 # ==============================================================================
-# 1. Define Item FIRST so Pylance knows exactly what it is.
-# Note the addition of `MappedAsDataclass`
+# 1. ITEM CROSS REFERENCE (The Semantic Layer)
+# ==============================================================================
+class ItemCrossReference(db.Model, MappedAsDataclass):
+    __tablename__ = 'emek_item_cross_references'
+    
+    id: Mapped[int] = mapped_column(primary_key=True, init=False)
+    
+    # 🚨 FIXED: Now correctly points to emek_items.item_id
+    item_id: Mapped[int] = mapped_column(ForeignKey('emek_items.item_id', ondelete='CASCADE'), index=True, init=False)
+    
+    standard_type: Mapped[StandardType] = mapped_column(Enum(StandardType), nullable=False)
+    standard_code: Mapped[str] = mapped_column(String(100), nullable=False) # e.g., "Pr_25_71_63"
+    standard_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, default=None) # e.g., "Kitchen units"
+    
+    # Links back to the universal node
+    item: Mapped["Item"] = relationship("Item", back_populates="cross_references", init=False)
+
+
+# ==============================================================================
+# 2. ITEM (The Universal Node)
 # ==============================================================================
 class Item(db.Model, MappedAsDataclass):
     """The universal recursive object: Can be a raw screw, a cabinet, or a whole kitchen."""
@@ -36,19 +67,22 @@ class Item(db.Model, MappedAsDataclass):
     # 1. Identifiers & Naming
     code: Mapped[str] = mapped_column(String(100), unique=True)
     name: Mapped[str] = mapped_column(String(255))
-    is_category: Mapped[bool] = mapped_column(Boolean, default=False)
+    
+    # 🚨 FIXED: Unified syntax for Enum
+    node_type: Mapped[NodeType] = mapped_column(Enum(NodeType), default=NodeType.CATEGORY)
 
-    # 2. NEW: Formal ERP Taxonomy
+    # 2. Formal ERP Taxonomy
     brand: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, default="Generic")
     product_group: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, default=None) # maps to 'ug'    
     product_type: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, default=None)  # maps to 'utk'
     uom: Mapped[str] = mapped_column(String(20), default="adet") # Unit of measure (brm)
 
     # THE SWITCH: True = Just a classification folder. False = A real physical/priced item.
+    # 🚨 FIXED: Removed the duplicate definition of is_category
     is_category: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
     is_configurable: Mapped[bool] = mapped_column(Boolean, default=False)
     
-    # --- NEW: Physical Properties ---
+    # 3. Physical Properties
     dim_x: Mapped[float] = mapped_column(Float, default=0.0) # Width
     dim_y: Mapped[float] = mapped_column(Float, default=0.0) # Height
     dim_z: Mapped[float] = mapped_column(Float, default=0.0) # Depth
@@ -56,19 +90,29 @@ class Item(db.Model, MappedAsDataclass):
     # 'raw_material', 'assembly', 'service', 'project'
     item_type: Mapped[str] = mapped_column(String(50), default="raw_material") 
     
-    # 4. Costing & Specs
+    # 4. Costing & Specs (🚨 FIXED: Removed the duplicate definitions below)
     base_cost: Mapped[float] = mapped_column(Float, default=0.0)
+    price_source: Mapped[PriceSource] = mapped_column(Enum(PriceSource), default=PriceSource.MANUAL)
+    reliability_score: Mapped[int] = mapped_column(Integer, default=100)
+    
     # JSON field for unlimited flexible attributes (e.g., {"Power": "2000W", "Color": "Inox"})
     technical_specs: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True, default=dict) 
-    price_source: Mapped[PriceSource] = mapped_column(SQLEnum(PriceSource), default=PriceSource.MANUAL)
-    reliability_score: Mapped[int] = mapped_column(Integer, default=100)
 
-    # --- PRESENTATION & HYBRID DATA (The "Franke" Strategy) ---
-    image_path: Mapped[Optional[str]] = mapped_column(String(255), default=None)
-    manufacturer_url: Mapped[Optional[str]] = mapped_column(String(255), default=None)
+    # 5. PRESENTATION & HYBRID DATA (The "Franke" Strategy)
+    image_path: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, default=None)
+    manufacturer_url: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, default=None)
 
-    # --- RECURSIVE ARCHITECTURE ---
-    # We use strings ("ItemComposition") here because it is defined further down
+    # --- RELATIONSHIPS ---
+    
+    # 1. Semantic Standards Cross-References
+    cross_references: Mapped[List["ItemCrossReference"]] = relationship(
+        "ItemCrossReference",
+        back_populates="item",
+        cascade="all, delete-orphan",
+        default_factory=list
+    )
+
+    # 2. Children links (Recursive Architecture)
     children_links: Mapped[List["ItemComposition"]] = relationship(
         "ItemComposition", 
         foreign_keys="ItemComposition.parent_id",
@@ -76,17 +120,14 @@ class Item(db.Model, MappedAsDataclass):
         cascade="all, delete-orphan",
         default_factory=list
     )
-    # --- NEW: PDM ATTACHMENTS ---
+    
+    # 3. PDM ATTACHMENTS
     attachments: Mapped[List["ItemAttachment"]] = relationship(
         "ItemAttachment",
         back_populates="item",
         cascade="all, delete-orphan",
         default_factory=list
     )
-    # The New Intelligence Columns
-    price_source: Mapped[PriceSource] = mapped_column(SQLEnum(PriceSource), default=PriceSource.LEGACY)
-    reliability_score: Mapped[int] = mapped_column(Integer, default=20)
-    base_cost: Mapped[float] = mapped_column(Float, default=0.0)
 
     @property
     def total_cost(self) -> float:
@@ -132,15 +173,13 @@ class Item(db.Model, MappedAsDataclass):
         if not self.can_add_child(child_item):
             raise ValueError(f"Döngü hatası: {self.name}, {child_item.name} öğesini içeremez.")
         
-        # NEW LOGIC: Check if this child is already linked!
+        # Check if this child is already linked!
         for link in self.children_links:
             if link.child_id == child_item.item_id:
-                # Just add the quantities together and stop
                 link.quantity += float(qty)
                 return
 
-        # If we got here, it's a brand new link
-        # CHANGE 'parent' to 'parent_item' and 'child' to 'child_item'
+        # If brand new link
         new_link = ItemComposition(
             parent_item=self, 
             child_item=child_item, 
@@ -150,7 +189,7 @@ class Item(db.Model, MappedAsDataclass):
 
 
 # ==============================================================================
-# 2. The Updated ITEM COMPOSITION (BOM Link) Model
+# 3. ITEM COMPOSITION (BOM Link) Model
 # ==============================================================================
 class ItemComposition(db.Model, MappedAsDataclass):
     """The Association Object for the Bill of Materials (BOM) hierarchy."""
@@ -165,11 +204,12 @@ class ItemComposition(db.Model, MappedAsDataclass):
     quantity: Mapped[float] = mapped_column(Float, default=1.0)
     sort_order: Mapped[int] = mapped_column(Integer, default=0) 
     
-    # 👇 NEW: Parametric Relationship Data (e.g. {"opt1": "L"}) 👇
+    # Parametric Relationship Data (e.g. {"opt1": "L"})
     optional_attributes: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True, default=dict)
 
+
 # ==============================================================================
-# 3. Define ItemAttachment (The PDM Vault)
+# 4. Define ItemAttachment (The PDM Vault)
 # ==============================================================================
 class ItemAttachment(db.Model, MappedAsDataclass):
     """Stores files/images linked to an Item with semantic renaming."""

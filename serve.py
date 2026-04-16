@@ -6,6 +6,14 @@ from dotenv import load_dotenv
 from waitress import serve
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
 
+# ==============================================================================
+# 0. ENCODING FIX: Prevent Windows cp1254 emoji crashes
+# ==============================================================================
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')  # type: ignore
+if hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(encoding='utf-8')  # type: ignore
+    
 # 1. SETUP PATHS & ENVIRONMENT FIRST
 # Get the directory where serve.py lives (Project Root)
 basedir = Path(__file__).parent.absolute()
