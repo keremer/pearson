@@ -18,7 +18,7 @@ emek_bp = Blueprint('emek', __name__, url_prefix='/emek')
 
 @emek_bp.route('/bom-editor')
 def bom_editor():
-    """Renders the HTML interface we built earlier."""
+    """Renders the HTML interface for BoQ management. The frontend will handle all interactions via AJAX."""
     return render_template('emek/bom_editor.html')
 
 #-----------------------------------------------------------------------------

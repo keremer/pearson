@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-dark text-white text-center">
+                    <h4>Sisteme Kayıt Ol</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('auth.register') }}">
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="first_name" class="form-label">Adınız</label>
+                                <input type="text" class="form-control" id="first_name" name="first_name" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="last_name" class="form-label">Soyadınız</label>
+                                <input type="text" class="form-control" id="last_name" name="last_name" required>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="email" class="form-label">E-posta Adresi</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="password" class="form-label">Şifre</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+
+                        <div class="mb-4 p-3 border rounded bg-light">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="kvkk_consent" name="kvkk_consent" required>
+                                <label class="form-check-label text-muted small" for="kvkk_consent">
+                                    6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) kapsamında, kişisel verilerimin <strong>EMEK Architecture</strong> tarafından müşteri ilişkileri yönetimi, teklif hazırlama ve sözleşme süreçlerinin yürütülmesi amacıyla işlenmesine, saklanmasına ve gerektiğinde yasal mercilere aktarılmasına ilişkin <a href="/kvkk-aydinlatma-metni" target="_blank">Aydınlatma Metni</a>'ni okudum, anladım ve onaylıyorum.
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">Kayıt Ol</button>
+                        </div>
+                        
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

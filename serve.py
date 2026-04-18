@@ -27,7 +27,11 @@ load_dotenv(basedir / '.env')
 # Now that paths and env vars are loaded, it is safe to import and create the app
 from crminaec import create_app
 
-app = create_app()
+# Read the environment variable (Defaults to production if running locally)
+env = os.environ.get('FLASK_ENV', 'production')
+
+# Pass the environment to the factory!
+app = create_app(config_name=env)
 
 # 3. IIS MIDDLEWARE SETUP
 # Handle sub-directory hosting in IIS (e.g., if hosted at domain.com/crminaec)

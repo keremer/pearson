@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="login-container">
+    <h2 class="Head">Portal Girişi</h2>
+    <hr noshade size="1">
+    
+    <div class="form-group">
+        <a href="{{ url_for('main.google_login') }}" class="google-btn">
+            <div class="google-icon-wrapper">
+                <img class="google-icon" aria-label="Google Logo" src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_\"G\"_logo.svg"/>
+            </div>
+            <p class="btn-text"><b>Sign in with Google</b></p>
+        </a>
+    </div>
+
+    <div class="separator">veya</div>
+
+    <form method="POST">
+        <div class="form-group">
+            <label for="username">Kullanıcı Adı:</label>
+            <input type="text" id="username" name="username" class="NormalTextBox full-width" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="password">Şifre:</label>
+            <input type="password" id="password" name="password" class="NormalTextBox full-width" required>
+        </div>
+        
+        <button type="submit" class="CommandButton">Giriş Yap</button>
+    </form>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <p class="error-message">{{ messages[0] }}</p>
+      {% endif %}
+    {% endwith %}
+</div>
+{% endblock %}

@@ -1,0 +1,3 @@
+# .geminiexclude
+.env
+data/portal.db

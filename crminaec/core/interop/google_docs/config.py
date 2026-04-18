@@ -1,12 +1,11 @@
-"""
-Google Docs Configuration with user-specific tokens and 2026 Digital Compliance Scopes.
-"""
+import logging
 import os
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+logger = logging.getLogger(__name__)
 
 class GoogleDocFormat(str, Enum):
     """Supported Google Doc formats."""
@@ -22,17 +21,16 @@ class GoogleDocsConfig:
     # 👤 Identity & Auth
     user_id: str = "default"
     
-    # 🔑 2026 Scopes: Unified for Documents, Drive, and Identity
-    # 📂 Paths: Initial defaults (resolved in __post_init__)
-    client_secrets_path: str = field(default_factory=lambda: os.getenv("GOOGLE_CLIENT_SECRETS",""))
-    token_path: str = "tokens/google_token.json"
+    # 🔑 Paths (Must be injected by the application manager)
+    client_secrets_path: str = ""
+    token_path: str = ""
     
     scopes: List[str] = field(default_factory=lambda: [
         'openid',
         'https://www.googleapis.com/auth/userinfo.profile',
         'https://www.googleapis.com/auth/userinfo.email',
         'https://www.googleapis.com/auth/documents',
-        'https://www.googleapis.com/auth/drive.file'
+        'https://www.googleapis.com/auth/drive'
     ])
 
     # 🏗️ AEC Project Settings (Folder IDs)
@@ -53,38 +51,35 @@ class GoogleDocsConfig:
 
     def __post_init__(self):
         """Validate configuration and set user-specific token path."""
-        # 🏗️ Define Project Root (C:\inGitHub\pythonapps\crminaec)
-        # We go up 4 levels from crminaec/interop/google_docs/config.py
-        root = Path(__file__).parent.parent.parent.parent
-        
-        # 1. Resolve Client Secrets (Outside Project Folder)
-        # If the path in .env starts with 'C:', we use it as is.
-        # Otherwise, we assume it's relative to root.
-        if not os.path.isabs(self.client_secrets_path):
-            self.client_secrets_path = str(root / self.client_secrets_path)
-        
-        # 2. Setup Tokens Directory (Local to Project Root)
-        # Path: C:\inGitHub\pythonapps\crminaec\tokens\
-        token_dir = root / "tokens"
-        token_dir.mkdir(parents=True, exist_ok=True) 
-        
-        # 3. Force User-Specific Token Filename
-        # Result: C:\inGitHub\pythonapps\crminaec\tokens\token_default.json
-        self.token_path = str(token_dir / f"token_{self.user_id}.json")
-        
-        # 4. Sync Folder ID Attributes
+        # 1. Sync Folder ID Attributes
         if self.target_folder_id and not self.default_folder_id:
             self.default_folder_id = self.target_folder_id
         elif self.default_folder_id and not self.target_folder_id:
             self.target_folder_id = self.default_folder_id
-        
-        # 5. Final Validation Check
+            
+        # 2. Validate Client Secrets Path
+        if not self.client_secrets_path:
+            logger.error("❌ CRITICAL: client_secrets_path was not provided to GoogleDocsConfig!")
+            return
+            
         secrets_file = Path(self.client_secrets_path)
+        if not secrets_file.is_absolute():
+            # If a relative path is passed, resolve it against the current working directory safely
+            self.client_secrets_path = str(Path.cwd() / self.client_secrets_path)
+            secrets_file = Path(self.client_secrets_path)
+
         if not secrets_file.exists():
-            print(f"❌ CRITICAL: Client secrets NOT FOUND at: {self.client_secrets_path}")
-            print(f"💡 Check your .env: GOOGLE_CLIENT_SECRETS should be the full C:\\ path.")
+            logger.error(f"❌ CRITICAL: Client secrets NOT FOUND at: {self.client_secrets_path}")
         else:
-            print(f"✅ Google Client Secrets located at: {self.client_secrets_path}")
+            logger.info(f"✅ Google Client Secrets located at: {self.client_secrets_path}")
+
+        # 3. Setup Tokens Directory Safely
+        # We place it in the current working directory (project root) by default
+        token_dir = Path.cwd() / "tokens"
+        token_dir.mkdir(parents=True, exist_ok=True) 
+        
+        # 4. Force User-Specific Token Filename
+        self.token_path = str(token_dir / f"token_{self.user_id}.json")
 
     @property
     def folder_id(self) -> Optional[str]:

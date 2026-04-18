@@ -109,9 +109,9 @@ class GoogleDocsClient(BaseInteropClient):
                     print(f"🌐 Opening browser for Google Authorization: {auth_url}")
                     webbrowser.open(auth_url)
             
-                    # This line will still wait for the redirect callback
+                    # 🚨 THE FIX: Force IPv4 lock and a static port to bypass the Windows localhost/IPv6 ghost
                     # CRITICAL: prompt='select_account' forces the UI to let you pick the right email
-                    creds = flow.run_local_server(port=0, prompt='select_account')
+                    creds = flow.run_local_server(host='127.0.0.1', port=5000, prompt='select_account')
 
                 with open(self.config.token_path, 'w') as token:
                     token.write(creds.to_json())
@@ -431,6 +431,52 @@ class GoogleDocsClient(BaseInteropClient):
             logger.error(f"❌ Error creating document '{title}': {e}")
             return None
     
+    def generate_from_template(self, template_id: str, title: str, replacements: List[Dict[str, str]], folder_id: Optional[str] = None) -> Optional[str]:
+        """
+        Copies a master Google Doc template and runs a batch Search & Replace.
+        """
+        try:
+            self._ensure_docs_service()
+            self._ensure_drive_service()
+            
+            logger.info(f"📄 Cloning Template: '{template_id}' -> '{title}'")
+            
+            # 1. Copy the Master Template
+            file_metadata: Dict[str, Any] = {'name': title}
+            
+            # Use provided folder, or fallback to config defaults
+            target_folder = folder_id or self.config.target_folder_id or self.config.default_folder_id
+            if target_folder:
+                file_metadata['parents'] = [target_folder]
+                
+            copied_file = self.drive_service.files().copy( # type: ignore
+                fileId=template_id, body=file_metadata).execute()
+            
+            new_doc_id = copied_file.get('id')
+            
+            # 2. Build the Search & Replace Requests
+            requests = []
+            for rep_dict in replacements:
+                for tag, value in rep_dict.items():
+                    requests.append({
+                        'replaceAllText': {
+                            'containsText': {'text': tag, 'matchCase': True},
+                            'replaceText': str(value)
+                        }
+                    })
+            
+            # 3. Execute the batch update against the new document
+            if requests:
+                self.docs_service.documents().batchUpdate( # type: ignore
+                    documentId=new_doc_id, body={'requests': requests}).execute()
+            
+            logger.info(f"✅ Generated new Quote Doc: {new_doc_id}")
+            return new_doc_id
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to generate from template: {e}")
+            return None
+
     def list_documents(self, query: Optional[str] = None) -> List[Dict[str, Any]]:
         """
         List Google Docs documents.

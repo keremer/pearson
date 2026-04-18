@@ -28,11 +28,23 @@ class InteropManager:
         """Initialize all enabled platform clients and parsers."""
         try:
             # RUNTIME IMPORTS: This breaks the circular dependency chain
+            # 🚨 THE FIX: Import our own dynamic configuration directly
+            from crminaec.config import get_config
+
             from .google_docs.client import GoogleDocsClient
             from .google_docs.config import GoogleDocsConfig
             from .google_docs.parser import GoogleDocsParser
+
+            # This automatically checks FLASK_ENV and loads the correct class
+            # (DevelopmentConfig locally, ProductionConfig on IIS)
+            active_config = get_config()
             
-            config = GoogleDocsConfig()
+            # Pull the secrets path directly from the class
+            secrets_path = getattr(active_config, 'GOOGLE_CLIENT_SECRETS', "")
+                
+            # Pass the path directly into the configuration
+            config = GoogleDocsConfig(client_secrets_path=secrets_path)
+            
             self.clients[Platform.GOOGLE_DOCS] = GoogleDocsClient(config)
             self.parsers[Platform.GOOGLE_DOCS] = GoogleDocsParser()
             

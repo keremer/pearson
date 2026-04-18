@@ -1,19 +1,16 @@
-"""
-Configuration management for crminaec.
-"""
-__version__ = '1.0.0'
-__author__ = 'Dr. Kerem ERCOŞKUN'
-__email__ = 'ercoskunkerem@gmail.com'
-
 import os
 from pathlib import Path
 from typing import ClassVar, Optional
 
 from dotenv import load_dotenv
 
+from crminaec.__about__ import __author__, __email__, __version__
+
 # Load environment variables from .env file
 load_dotenv()
 
+# Determine Base Directory (Goes up one level from crminaec folder to the project root)
+BASE_DIR = Path(__file__).parent.parent.absolute()
 
 class Config:
     """Base configuration."""
@@ -30,11 +27,18 @@ class Config:
     UPLOAD_FOLDER: Path = Path(__file__).parent / 'web' / 'static' / 'uploads'
     ALLOWED_EXTENSIONS: set[str] = {'md'}
 
-    # Application
-    PROJECT_ROOT: ClassVar[Path] = Path(__file__).absolute()
+    # Application (Fixed: Added .parent so it points to the directory, not the file)
+    PROJECT_ROOT: ClassVar[Path] = Path(__file__).parent.absolute()
     DATA_DIR: ClassVar[Path] = PROJECT_ROOT / 'data'
     CONFIG_DIR: ClassVar[Path] = PROJECT_ROOT / 'config'
     TESTS_DIR: ClassVar[Path] = PROJECT_ROOT / 'tests'
+    
+    # ==========================================
+    # 🔑 SHARED OAUTH CREDENTIALS (PORTAL LOGIN)
+    # ==========================================
+    # These are shared across all environments and must be a "Web Application" credential
+    GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
+    GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET')
 
     @classmethod
     def init_app(cls, app):
@@ -43,15 +47,18 @@ class Config:
 
 
 class DevelopmentConfig(Config):
-    """Development configuration."""
+    """Development configuration (Local Laptop)."""
     DEBUG: bool = True
     TESTING: bool = False
+
+    # 1. Local Callback for Portal Login
+    GOOGLE_CALLBACK_URL = os.environ.get('LOCAL_CALLBACK_URL','http://127.0.0.1:5000/login/google/callback')
+    # 2. Local Desktop Credentials for Google Docs API
+    GOOGLE_CLIENT_SECRETS = os.environ.get('LOCAL_CLIENT_SECRETS', str(BASE_DIR / 'desktop_credentials.json'))
 
     @classmethod
     def init_app(cls, app):
         Config.init_app(app)
-
-        # Development-specific initialization
         print(f"🚧 Development mode enabled")
 
 
@@ -61,27 +68,34 @@ class TestingConfig(Config):
     TESTING: bool = True
     WTF_CSRF_ENABLED: bool = False
 
+    GOOGLE_CALLBACK_URL = os.environ.get('LOCAL_CALLBACK_URL', 'http://127.0.0.1:5000/login/google/callback')
+    GOOGLE_CLIENT_SECRETS = os.environ.get('LOCAL_CLIENT_SECRETS', 'dummy_credentials.json')
+   
     @classmethod
     def init_app(cls, app):
         Config.init_app(app)
-
-        # Testing-specific initialization
         print(f"🧪 Testing mode enabled")
 
 
 class ProductionConfig(Config):
-    """Production configuration."""
+    """Production configuration (IIS Server Tunnel)."""
     DEBUG: bool = False
     TESTING: bool = False
+
+    SESSION_COOKIE_DOMAIN = ".crminaec.com"
+    SESSION_COOKIE_SECURE = True 
+    SESSION_COOKIE_SAMESITE = 'Lax'
+
+    # 1. Production Callback for Portal Login
+    GOOGLE_CALLBACK_URL = os.environ.get('GOOGLE_CALLBACK_URL', 'https://pearson.crminaec.com/login/google/callback')
+    
+    # 2. Production Desktop Credentials for Google Docs API (MUST be in server env variables)
+    GOOGLE_CLIENT_SECRETS = os.environ.get('GOOGLE_CLIENT_SECRETS')
 
     @classmethod
     def init_app(cls, app):
         Config.init_app(app)
-
-        # Production-specific initialization
-        print(f"🚀 Production mode enabled")
-
-        # Ensure data directory exists
+        print(f"🚀 Production mode enabled (IIS Tunnel)")
         cls.DATA_DIR.mkdir(exist_ok=True)
 
 
@@ -95,15 +109,7 @@ config: dict[str, type[Config]] = {
 
 
 def get_config(config_name: Optional[str] = None) -> type[Config]:
-    """
-    Get configuration class by name.
-
-    Args:
-        config_name (str): Configuration name ('development', 'testing', 'production')
-
-    Returns:
-        Config: Configuration class
-    """
+    """Get configuration class by name."""
     if config_name is None:
         config_name = os.environ.get('FLASK_ENV', 'development')
 

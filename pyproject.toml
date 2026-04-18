@@ -2,39 +2,33 @@
 requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools.dynamic]
+version = {attr = "crminaec.__about__.__version__"}
+
 [project]
-name = "Course-manager"
-version = "1.0.0"
-description = "Course Management System with Learning Outcome Tracking"
+name = "crminaec"  # Updated to match the package name
+dynamic = ["version"]
+description = "Interoperable CRM, AEC & Education Management Ecosystem"
 readme = "README.md"
 authors = [
     {name = "Dr. Kerem ERCOŞKUN", email = "ercoskunkerem@gmail.com"}
 ]
 license = {text = "MIT"}
-classifiers = [
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
-    "Framework :: Flask",
-    "Topic :: Education",
-]
 requires-python = ">=3.8"
+
 dependencies = [
-    "Flask>=2.3.0",
-    "Flask-WTF>=1.1.0",
+    "Flask>=3.0.0",
+    "Flask-Login>=0.6.3",     # 🚨 CRITICAL: Required for the Traffic Cop
+    "Flask-SQLAlchemy>=3.1.0",
     "SQLAlchemy>=2.0.0",
-    "click>=8.1.0",
+    "Flask-WTF>=1.1.0",
     "python-dotenv>=1.0.0",
-    "Jinja2>=3.1.2",
-    "Werkzeug>=2.3.0",
-    "markdown>=3.4.4",
-    "pandas>=2.0.0",
-    "openpyxl>=3.1.0",
-    "python-dateutil>=2.8.0",
+    "waitress>=3.0.0",        # Required for IIS deployment
+    "markdown2>=2.4.0",
+    "jsTree>=0.0.1",          # If you use the python wrapper, otherwise handled in JS
+    "beautifulsoup4>=4.12.0",
     "requests>=2.31.0",
-    "typing-extensions>=4.5.0",
-    "xhtml2pdf>=0.2.13",
-    "reportlab>=4.0.4",
+    "cryptography>=40.0.0",
 ]
 
 [project.optional-dependencies]

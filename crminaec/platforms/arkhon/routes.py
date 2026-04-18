@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from werkzeug.utils import secure_filename
 
+from crminaec.core.interop.manager import Platform, create_interop_manager
 from crminaec.core.models import (CatalogProduct, Order, OrderItem,
                                   PaymentInstallment, PriceRecord,
                                   ProjectPreference, Quote, db)
@@ -430,7 +431,7 @@ def format_try(amount):
 
 @arkhon_bp.route('/quote/<int:quote_id>/export/gdoc', methods=['POST'])
 def export_quote_gdoc(quote_id):
-    """Gathers B2B project quote data (using the ERP PriceRecord) and sends it to Google Docs."""
+    """Gathers B2B project quote data and sends it to Google Docs."""
     quote = db.get_or_404(Quote, quote_id)
     order = quote.order
     
@@ -454,7 +455,6 @@ def export_quote_gdoc(quote_id):
                 
                 visible_items = [item for item in typo.items if item.is_visible_on_quote]
                 
-                # NEW LOGIC: Safely extract price from the linked PriceRecord
                 unit_cost = 0.0
                 for item in visible_items:
                     if item.price_record and item.price_record.final_unit_price is not None:
@@ -481,11 +481,9 @@ def export_quote_gdoc(quote_id):
             })
             
         else:
-            # Fallback for standard B2C (Single Kitchen)
             total_kitchen_count = 1
             visible_items = [item for item in order.items if item.is_visible_on_quote]
             
-            # Extract price from the linked PriceRecord
             unit_cost = 0.0
             for item in visible_items:
                 if item.price_record and item.price_record.final_unit_price is not None:
@@ -501,35 +499,70 @@ def export_quote_gdoc(quote_id):
                 "items": [{"name": i.ura, "code": i.urk, "qty": i.adet, "unit": i.brm} for i in visible_items]
             })
 
-        # 3. Build Google Docs Payload
-        payload = {
-            "quote_number": f"{order.order_number}-V{quote.version}",
-            "date": datetime.now().strftime('%d.%m.%Y'),
-            "customer_name": customer_fullname,
-            "project_name": project_name,
-            "total_kitchen_count": str(total_kitchen_count),
-            "typology_list_bulleted": typology_list_bulleted.strip(),
-            "project_summary_table": project_summary_table,
-            "typology_itemized_pages": typology_itemized_pages,
-            "payment_terms": quote.payment_terms or "Ödeme planı ektedir.",
-            "validity_date": validity_date_str
-        }
+        # 3. Format the tables into clean strings for the Google Doc
+        summary_text = ""
+        for row in project_summary_table:
+            mutfak = str(row.get("MUTFAK TİPİ", "")).ljust(40)
+            fiyat = str(row.get("ADET FİYATI", "")).rjust(15)
+            toplam = str(row.get("TOPLAM FİYAT", "")).rjust(15)
+            summary_text += f"{mutfak}\t{fiyat}\t{toplam}\n"
+
+        itemized_text = ""
+        for page in typology_itemized_pages:
+            itemized_text += f"\n--- {page['typology_name']} MUTFAK ÜNİTELERİ ---\n"
+            for item in page['items']:
+                itemized_text += f"• [{item['code']}] {item['name']} - {item['qty']} {item['unit']}\n"
+
+        # 4. Build the Replacement Dictionary (Tag -> Value)
+        replacements = [
+            {'{{quote_number}}': f"{order.order_number}-V{quote.version}"},
+            {'{{date}}': datetime.now().strftime('%d.%m.%Y')},
+            {'{{customer_name}}': customer_fullname},
+            {'{{project_name}}': project_name},
+            {'{{total_kitchen_count}}': str(total_kitchen_count)},
+            {'{{typology_list_bulleted}}': typology_list_bulleted.strip()},
+            {'{{project_summary_table}}': summary_text},
+            {'{{typology_itemized_pages}}': itemized_text},
+            {'{{payment_terms}}': quote.payment_terms or "Ödeme planı ektedir."},
+            {'{{validity_date}}': validity_date_str}
+        ]
         
-        # ... (your existing payload dictionary) ...
+        # 5. Initialize the Universal Manager
+        interop = create_interop_manager()
+        gdocs_client = interop.clients.get(Platform.GOOGLE_DOCS)
         
-        # Call the Google Docs Service
-        # You will need to get the Template ID and Folder ID from your Google Drive URLs
+        # PYLANCE LEAK 1: If client doesn't exist, we MUST return a redirect!
+        if not gdocs_client:
+            flash("Google Docs platform is not enabled or failed to initialize.", "danger")
+            return redirect(url_for('arkhon.order_detail', order_id=order.order_id))
+
         TEMPLATE_ID = "1X1VEL2p54n2BIrcWslEmbiyV24KmL4XVy0JWBVAJfnQ" 
         FOLDER_ID = "1WH9vQuJVEvKEFYK4vi-np3KSDhp2o8jT"
+        NEW_TITLE = f"Teklif_{order.order_number}_{customer_fullname}"
         
-        from crminaec.platforms.arkhon.gdocs_service import generate_quote_doc
-        
-        gdoc_url = generate_quote_doc(payload, TEMPLATE_ID, FOLDER_ID)
-        
-        flash(f'Teklif başarıyla oluşturuldu! <a href="{gdoc_url}" target="_blank" class="alert-link">Buraya tıklayarak belgeyi açabilirsiniz.</a>', 'success')
+        # 6. Generate!
+        if hasattr(gdocs_client, 'generate_from_template'):
+            new_doc_id = gdocs_client.generate_from_template( # type: ignore
+                template_id=TEMPLATE_ID,
+                title=NEW_TITLE,
+                replacements=replacements,
+                folder_id=FOLDER_ID
+            )
+            
+            if new_doc_id:
+                gdoc_url = f"https://docs.google.com/document/d/{new_doc_id}/edit"
+                flash(f'Teklif başarıyla oluşturuldu! <a href="{gdoc_url}" target="_blank" class="alert-link">Buraya tıklayarak belgeyi açabilirsiniz.</a>', 'success')
+            else:
+                flash('Google Docs API reddetti. Konsol loglarını kontrol edin.', 'danger')
+        else:
+            flash("The selected client does not support template generation.", "danger")
+            
+        # PYLANCE LEAK 2: The successful try block MUST return a redirect!
         return redirect(url_for('arkhon.order_detail', order_id=order.order_id))
         
     except Exception as e:
         logger.error(f"Google Docs Export Failed: {e}")
         flash(f'Google Docs oluşturulurken bir hata oluştu: {str(e)}', 'danger')
+        # PYLANCE LEAK 3: The exception block MUST return a redirect!
         return redirect(url_for('arkhon.order_detail', order_id=order.order_id))
+    

@@ -1,57 +1,107 @@
+# crminaec/__init__.py
 import os
 from pathlib import Path
 from typing import cast
 
+from authlib.integrations.flask_client import OAuth
 from flask import Flask, render_template
+from flask_login import LoginManager
+from flask_mail import Mail
+from werkzeug.middleware.proxy_fix import ProxyFix
 
-from crminaec.config import Config
-from crminaec.core.models import db
+# Use the dynamic config loader
+from crminaec.config import Config, get_config
+from crminaec.core.models import Party, db
 
+# Initialize extensions globally
+login_manager = LoginManager()
+oauth = OAuth()
+mail=Mail()
+
+class IISTunnelFix(object):
+    """Forces Flask and Authlib to trust the IIS HTTPS tunnel."""
+    def __init__(self, app):
+        self.app = app
+
+    def __call__(self, environ, start_response):
+        environ['wsgi.url_scheme'] = 'https'
+        environ['HTTP_X_FORWARDED_PROTO'] = 'https'
+        return self.app(environ, start_response)
+    
 
 class AppFactory:
     @staticmethod
-    def create_app(config_class=Config):
-        # Determine the absolute project root (e.g., C:\...\Portal)
+    def create_app(config_name=None):
         project_root = Path(__file__).parent.parent.absolute()
         
-        # Point to the new centralized templates folder!
         app = Flask(__name__, template_folder='web/templates')
+        
+        #1. LOAD DYNAMIC CONFIGURATION
+        config_class = get_config(config_name)
         app.config.from_object(config_class)
+        
+        # 2. TRIGGER ENVIRONMENT-SPECIFIC SETUP
+        config_class.init_app(app)
 
-        # Ensure folders exist
+        # 🚨 CUSTOM MIDDLEWARE (Conditional!)
+        # Only apply the HTTPS trick if we are in the production tunnel
+        if os.environ.get('FLASK_ENV') == 'production':
+            app.wsgi_app = IISTunnelFix(app.wsgi_app) # type: ignore
+
         AppFactory._prepare_environment(app, project_root)
 
-        # Absolute Pathing for SQLite fallback
         if not app.config.get('SQLALCHEMY_DATABASE_URI'):
             db_path = project_root / 'data' / 'portal.db'
             app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{db_path}"
 
-        # Initialize the database extension
         db.init_app(app)
+        mail.init_app(app)
+
+        # ==========================================
+        # 🔐 FLASK-LOGIN SETUP
+        # ==========================================
+        login_manager.init_app(app)
+        login_manager.login_view = 'main.login' # type: ignore
+        login_manager.login_message = "Lütfen giriş yapınız."
+
+        @login_manager.user_loader
+        def load_user(party_id):
+            return db.session.get(Party, int(party_id))
+
+        # ==========================================
+        # 🔑 GOOGLE OAUTH SETUP (The Missing Piece)
+        # ==========================================
+        oauth.init_app(app)
+        oauth.register(
+            name='google',
+            client_id=app.config.get('GOOGLE_CLIENT_ID'),
+            client_secret=app.config.get('GOOGLE_CLIENT_SECRET'),
+            server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+            client_kwargs={'scope': 'openid email profile'}
+        )
 
         # ==============================================================
         # 🔗 IMPORT AND REGISTER BLUEPRINTS
-        # Now they are imported fully loaded with their routes!
         # ==============================================================
+
+        from crminaec.auth.routes import auth_bp
         from crminaec.platforms.arkhon.routes import arkhon_bp
         from crminaec.platforms.emek.routes import emek_bp
         from crminaec.platforms.pearson.routes import pearson_bp
+        from crminaec.routes import main_bp
         
+        app.register_blueprint(main_bp)
+        app.register_blueprint(auth_bp)
         app.register_blueprint(pearson_bp, url_prefix='/pearson')
         app.register_blueprint(arkhon_bp, url_prefix='/arkhon')
         app.register_blueprint(emek_bp, url_prefix='/emek')
-
-        # Initialize API & Webhook Routes
+        
+        # 3. Initialize API & Webhook Routes
         from crminaec.api.courses import init_course_routes
         from crminaec.api.webhooks import init_webhook_routes
         
         init_course_routes(app)
         init_webhook_routes(app)
-
-        # Global Portal Landing Page
-        @app.route('/')
-        def index():
-            return render_template('portal_home.html')
 
         return app
 
@@ -65,9 +115,11 @@ class AppFactory:
         for f in folders:
             os.makedirs(f, exist_ok=True)
 
-def create_app():
-    return AppFactory.create_app()
+def create_app(config_name=None):
+    return AppFactory.create_app(config_name)
 
 def get_database_url() -> str:
-    url = Config.SQLALCHEMY_DATABASE_URI or "sqlite:///data/portal.db"
+    # Get the active config based on the current environment
+    active_config = get_config()
+    url = active_config.SQLALCHEMY_DATABASE_URI or "sqlite:///data/portal.db"
     return cast(str, url)

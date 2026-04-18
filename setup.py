@@ -1,8 +1,4 @@
-from setuptools import find_packages, setup
+from setuptools import setup
 
-setup(
-    name="crminaec",
-    version="1.0.0",
-    packages=find_packages(),   # automatically finds the inner 'crminaec' package
-    install_requires=[],        # list your dependencies here
-)
+if __name__ == "__main__":
+    setup()

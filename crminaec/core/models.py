@@ -3,11 +3,13 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any, Dict, List, Optional, cast
 
+from flask_login import UserMixin
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import (Boolean, DateTime, Float, ForeignKey, Index, Integer,
                         Numeric, String, Text, UniqueConstraint)
 from sqlalchemy.orm import (DeclarativeBase, Mapped, MappedAsDataclass,
                             mapped_column, relationship, validates)
+from werkzeug.security import check_password_hash, generate_password_hash
 
 
 # --- THE SINGLE INITIALIZATION POINT ---
@@ -21,14 +23,53 @@ db = SQLAlchemy(model_class=Base)
 # 👥 CORE & AEC PLATFORM (crminaec)
 # ================================================================
 
-class Party(db.Model, MappedAsDataclass):
-    __tablename__ = "parties"
-
-    party_id: Mapped[int] = mapped_column(primary_key=True, init=False)
-    username: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
-    email: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
+class UserAccount(db.Model):
+    """Strictly Portal Authentication & Security Data."""
+    __tablename__ = 'user_accounts'
     
-    role: Mapped[str] = mapped_column(String(20), default="guest")
+    # 🔴 REQUIRED FIELDS (Must be first)
+    # init=False because the database generates this ID
+    account_id: Mapped[int] = mapped_column(primary_key=True, init=False) 
+    party_id: Mapped[int] = mapped_column(ForeignKey('parties.party_id'), unique=True)
+    password_hash: Mapped[str] = mapped_column(String(256), init=False)
+    
+    # 🔗 RELATIONSHIP
+    # default=None is required here so the dataclass doesn't ask for a Party object on creation
+    party: Mapped[Optional["Party"]] = relationship("Party", back_populates="account", default=None)
+    
+    # 🟢 OPTIONAL FIELDS (Must go last, and MUST have default=...)
+    role: Mapped[str] = mapped_column(String(50), default='customer')
+    is_confirmed: Mapped[bool] = mapped_column(default=False)
+    kvkk_approved: Mapped[bool] = mapped_column(default=False)
+    
+    # THE FIX: Explicit default=None added to these columns!
+    confirmed_on: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=None)
+    kvkk_approval_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=None)
+    kvkk_approval_ip: Mapped[Optional[str]] = mapped_column(String(45), default=None)
+
+    # Note: The manual __init__ was DELETED. MappedAsDataclass handles it automatically!
+
+    def set_password(self, password: str) -> None:
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password: str) -> bool:
+        return check_password_hash(self.password_hash, password)
+
+
+class Party(db.Model, UserMixin):
+    __tablename__ = "parties"
+    
+    def get_id(self):
+        return str(self.party_id)
+
+    # 🔴 REQUIRED FIELDS
+    party_id: Mapped[int] = mapped_column(primary_key=True, init=False)
+    email: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
+    # REMOVED: username (We only use email now)
+    
+    # 🟢 OPTIONAL / DEFAULT FIELDS
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    # REMOVED: role (Role is now strictly managed in UserAccount)
     first_name: Mapped[Optional[str]] = mapped_column(String(50), default=None)
     last_name: Mapped[Optional[str]] = mapped_column(String(50), default=None)
     phone: Mapped[Optional[str]] = mapped_column(String(20), default=None)
@@ -37,8 +78,17 @@ class Party(db.Model, MappedAsDataclass):
     city: Mapped[Optional[str]] = mapped_column(String(50), default=None)
     district: Mapped[Optional[str]] = mapped_column(String(50), default=None)
 
-    # RELATIONS: 1 Party -> Many Orders
+    # 🔗 RELATIONS
     orders: Mapped[List["Order"]] = relationship("Order", back_populates="party", default_factory=list)
+    
+    # ADDED: The missing 1-to-1 link back to UserAccount
+    account: Mapped[Optional["UserAccount"]] = relationship(
+        "UserAccount", 
+        back_populates="party", 
+        uselist=False, 
+        cascade="all, delete-orphan", 
+        default=None
+    )
 
 # ================================================================
 # 💰 THE ERP PRICING ENGINE (New)
