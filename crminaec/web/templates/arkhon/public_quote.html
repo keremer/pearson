@@ -6,13 +6,9 @@
     <title>Teklif Onayı - Arkhon Mimarlık</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        body { background-color: #f4f7f6; }
-        .quote-container { max-width: 900px; margin: 40px auto; }
-        .brand-header { border-bottom: 3px solid #0d6efd; padding-bottom: 20px; }
-    </style>
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
 </head>
-<body>
+<body class="public-quote-body">
 
 <div class="container quote-container">
     
@@ -70,6 +66,67 @@
                         {% endfor %}
                     </tbody>
                 </table>
+            </div>
+
+            <h5 class="fw-bold mb-3 mt-5"><i class="fas fa-palette me-2"></i> Tasarım ve Donanım Tercihleri</h5>
+            <div class="row mb-5">
+                <div class="col-md-6 mb-3 mb-md-0">
+                    <ul class="list-group shadow-sm border-0">
+                        <li class="list-group-item d-flex justify-content-between align-items-center bg-light">
+                            <span class="text-muted">Kapak Modeli</span>
+                            <span class="fw-bold">{{ order.preferences.model_name or '-' }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span class="text-muted">Kapak Rengi</span>
+                            <span class="fw-bold">{{ order.preferences.front_color or '-' }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center bg-light">
+                            <span class="text-muted">Gövde Rengi</span>
+                            <span class="fw-bold">{{ order.preferences.body_color or '-' }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span class="text-muted">Baza Detayı</span>
+                            <span class="fw-bold">{{ order.preferences.plinth_detail or '-' }}</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <ul class="list-group shadow-sm border-0">
+                        <li class="list-group-item d-flex justify-content-between align-items-center bg-light">
+                            <span class="text-muted">Kulp Kodu</span>
+                            <span class="fw-bold">{{ order.preferences.handle_code or '-' }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span class="text-muted">Cam Rengi / Tipi</span>
+                            <span class="fw-bold">{{ order.preferences.glass_color or '-' }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center bg-light">
+                            <span class="text-muted">Aydınlatma</span>
+                            <span class="fw-bold">
+                                {% if order.preferences.led_strip %}Şerit LED {% endif %}
+                                {% if order.preferences.led_strip and order.preferences.spotlight %} + {% endif %}
+                                {% if order.preferences.spotlight %}Spot{% endif %}
+                                {% if not order.preferences.led_strip and not order.preferences.spotlight %}Yok{% endif %}
+                            <span class="fw-bold text-end" style="max-width: 60%; font-size: 0.85em;">
+                                {% set lights = [] %}
+                                {% if order.preferences.light_cab_spot %}{% set _ = lights.append('Dolap İçi Spot') %}{% endif %}
+                                {% if order.preferences.light_cab_led %}{% set _ = lights.append('Dolap İçi Gömme LED (' ~ order.preferences.light_cab_led ~ ')') %}{% endif %}
+                                {% if order.preferences.light_counter_spot %}{% set _ = lights.append('Tezgah Arası Spot') %}{% endif %}
+                                {% if order.preferences.light_counter_led %}{% set _ = lights.append('Tezgah Arası Şerit LED') %}{% endif %}
+                                {% if order.preferences.light_bt_led %}{% set _ = lights.append('Bluetooth Şerit LED') %}{% endif %}
+                                {% if order.preferences.sensor_dimmer %}{% set _ = lights.append('Dimerli Sensör') %}{% endif %}
+                                {% if order.preferences.sensor_door %}{% set _ = lights.append('Kapak Sensörü') %}{% endif %}
+                                {{ lights | join(', ') if lights else 'Yok' }}
+                            </span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span class="text-muted">Mekanizma / Aksesuar</span>
+                            <span class="fw-bold text-end" style="max-width: 60%; font-size: 0.9em;">
+                                {{ [order.preferences.cutlery_tray, order.preferences.trash_bin, order.preferences.mechanisms] | reject("none") | reject("equalto", "") | join(', ') or '-' }}
+                            </span>
+                        </li>
+                    </ul>
+                </div>
             </div>
 
             <h5 class="fw-bold mb-3"><i class="fas fa-file-contract me-2"></i> Şartlar ve Koşullar</h5>

@@ -21,7 +21,7 @@ class KelebekOrderParser:
     ]
 
     @classmethod
-    def parse_html(cls, html_content: str) -> List[Dict[str, Any]]:
+    def parse_html(cls, html_content: str) -> Dict[str, Any]:
         """
         Extracts product rows and hidden input configurations from the Kelebek HTML table.
         
@@ -29,17 +29,41 @@ class KelebekOrderParser:
             html_content (str): The raw HTML string uploaded by the user.
             
         Returns:
-            List[Dict[str, Any]]: A list of parsed product dictionaries.
+            Dict: A dictionary containing 'items' (list of products) and 'customer' (dict of details).
         """
         if not html_content:
             logger.warning("Empty HTML content provided to parser.")
-            return []
+            return {'items': [], 'customer': {}}
 
         try:
             soup = BeautifulSoup(html_content, 'html.parser')
             products: List[Dict[str, Any]] = []
+            
+            # --- 1. EXTRACT CUSTOMER INFO (Best Effort) ---
+            customer = {
+                'first_name': '', 'last_name': '', 'email': '', 'phone': '', 'address': ''
+            }
+            
+            # Search for common Kelebek/ProSAP hidden inputs or IDs related to the customer
+            search_map = {
+                'first_name': ['MusteriAdi', 'Ad', 'Müşteri Adı'],
+                'last_name': ['MusteriSoyadi', 'Soyad', 'Müşteri Soyadı'],
+                'email': ['MusteriEmail', 'EPosta', 'Email', 'E-Posta'],
+                'phone': ['MusteriTelefon', 'CepTel', 'Telefon', 'Cep Telefonu'],
+                'address': ['FaturaAdresi', 'Adres', 'Teslimat Adresi']
+            }
+            
+            for field, keys in search_map.items():
+                for key in keys:
+                    # Try input name or id
+                    inp = soup.find('input', {'name': key}) or soup.find('input', {'id': key})
+                    if inp and inp.get('value'):
+                        value = inp.get('value')
+                        if isinstance(value, str):
+                            customer[field] = value.strip()
+                            break
 
-            # Search through all table rows
+            # --- 2. EXTRACT PRODUCTS ---
             rows = soup.find_all('tr')
             
             for row in rows:
@@ -65,9 +89,9 @@ class KelebekOrderParser:
                 products.append(product)
 
             logger.info(f"Successfully parsed {len(products)} products from Kelebek HTML.")
-            return products
+            return {'items': products, 'customer': customer}
 
         except Exception as e:
             logger.error(f"Failed to parse Kelebek order HTML: {e}")
-            # Returning an empty list ensures the calling route doesn't crash with a 500 Error
-            return []
+            # Return empty structure to prevent 500 crashes
+            return {'items': [], 'customer': {}}

@@ -10,7 +10,7 @@
     </div>
 </div>
 
-<form method="POST" action="{{ url_for('arkhon.build_quote', order_id=order.order_id) }}">
+<form id="quoteBuilderForm" method="POST" action="{% if is_edit_mode %}{{ url_for('arkhon.build_quote', order_id=order.order_id, edit=source_quote.quote_id) }}{% else %}{{ url_for('arkhon.build_quote', order_id=order.order_id) }}{% endif %}">
     <div class="row g-4">
         
         <div class="col-md-4">
@@ -23,10 +23,9 @@
                         <label for="list_price" class="form-label text-muted small fw-bold">Liste Fiyatı</label>
                         <div class="input-group">
                             <span class="input-group-text bg-light fw-bold">₺</span>
-                            <input type="number" step="0.01" class="form-control text-end fw-bold fs-5" id="list_price" name="list_price" required>
                             <input type="number" step="0.01" class="form-control text-end fw-bold fs-5" id="list_price" name="list_price" value="{{ source_quote.list_price if source_quote else '' }}" required>
                         </div>
-                        <div class="formatted-preview text-primary small text-end fw-bold" style="min-height: 20px; font-size: 0.85rem; margin-top: 2px;"></div>
+                        <div class="formatted-preview text-primary small text-end fw-bold"></div>
                     </div>
                     <div class="mb-3">
                         <label for="discount_amount" class="form-label text-muted small fw-bold">İndirim (Oran / Tutar)</label>
@@ -34,14 +33,12 @@
                             <span class="input-group-text bg-light fw-bold">%</span>
                             <input type="number" step="0.1" class="form-control text-danger text-end fw-bold fs-5" id="discount_percentage" placeholder="0.0">
                             <span class="input-group-text bg-light text-danger fw-bold">₺</span>
-                            <input type="number" step="0.01" class="form-control text-danger text-end fw-bold fs-5" id="discount_amount" name="discount_amount" value="0">
                             <input type="number" step="0.01" class="form-control text-danger text-end fw-bold fs-5" id="discount_amount" name="discount_amount" value="{{ source_quote.discount_amount if source_quote else '0' }}">
                         </div>
-                        <div class="formatted-preview text-danger small text-end fw-bold" style="min-height: 20px; font-size: 0.85rem; margin-top: 2px;"></div>
+                        <div class="formatted-preview text-danger small text-end fw-bold"></div>
                     </div>
                     <div class="mb-3">
                         <label for="tax_rate" class="form-label text-muted small fw-bold">KDV Oranı (%)</label>
-                        <input type="number" step="0.1" class="form-control text-end fw-bold fs-5" id="tax_rate" name="tax_rate" value="20.0" required>
                         <input type="number" step="0.1" class="form-control text-end fw-bold fs-5" id="tax_rate" name="tax_rate" value="{{ source_quote.tax_rate if source_quote else '20.0' }}" required>
                     </div>
                     <hr>
@@ -60,12 +57,10 @@
                 <div class="card-body">
                     <div class="mb-3">
                         <label for="validity_days" class="form-label small fw-bold">Geçerlilik Süresi (Gün)</label>
-                        <input type="number" class="form-control" id="validity_days" name="validity_days" value="15">
                         <input type="number" class="form-control" id="validity_days" name="validity_days" value="{{ source_quote.validity_days if source_quote else '15' }}">
                     </div>
                     <div class="mb-3">
                         <label for="delivery_place" class="form-label small fw-bold">Teslimat Yeri</label>
-                        <input type="text" class="form-control" id="delivery_place" name="delivery_place" placeholder="Örn: Müşteri Adresi">
                         <input type="text" class="form-control" id="delivery_place" name="delivery_place" placeholder="Örn: Müşteri Adresi" value="{{ source_quote.delivery_place if source_quote else '' }}">
                     </div>
                     <div class="mb-3">
@@ -85,11 +80,6 @@
                         <option value="Kredi Kartı Tek Çekim">
                     </datalist>
 
-                    <div id="installmentsContainer">
-                                <div class="row g-2 align-items-end mb-3 installment-row">
-                                    <div class="col-md-3 col-12">
-                                        <label class="form-label small text-muted mb-0 fw-bold">Tarih</label>
-                                        <input type="date" class="form-control fw-bold" name="installment_date[]" aria-label="Ödeme Tarihi" required>
                             <div id="installmentsContainer">
                                 {% if source_quote and source_quote.installments %}
                                     {% for inst in source_quote.installments %}
@@ -108,21 +98,12 @@
                                                 <span class="input-group-text bg-white fw-bold">₺</span>
                                                 <input type="number" step="0.01" class="form-control fw-bold fs-5 text-end installment-amount" name="installment_amount[]" aria-label="Taksit Tutarı" value="{{ inst.amount }}" required>
                                             </div>
-                                            <div class="formatted-preview text-primary small text-end fw-bold" style="min-height: 20px; font-size: 0.85rem; margin-top: 2px;"></div>
+                                            <div class="formatted-preview text-primary small text-end fw-bold"></div>
                                         </div>
                                         <div class="col-md-1 col-2 text-end">
-                                            <button type="button" class="btn btn-outline-danger remove-row w-100" {% if loop.index == 1 %}disabled{% endif %} aria-label="Bu taksiti sil" title="Bu taksiti sil" style="margin-bottom: 22px;"><i class="fas fa-trash"></i></button>
+                                            <button type="button" class="btn btn-outline-danger remove-row w-100 remove-row-btn" {% if loop.index == 1 %}disabled{% endif %} aria-label="Bu taksiti sil" title="Bu taksiti sil"><i class="fas fa-trash"></i></button>
                                         </div>
                                     </div>
-                                    <div class="col-md-4 col-12">
-                                        <label class="form-label small text-muted mb-0 fw-bold">Yöntem</label>
-                                        <input type="text" class="form-control fw-bold" name="installment_method[]" list="paymentMethods" aria-label="Ödeme Yöntemi" placeholder="Örn: Havale" required>
-                                    </div>
-                                    <div class="col-md-4 col-10">
-                                        <label class="form-label small text-muted mb-0 fw-bold">Tutar</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text bg-white fw-bold">₺</span>
-                                            <input type="number" step="0.01" class="form-control fw-bold fs-5 text-end installment-amount" name="installment_amount[]" aria-label="Taksit Tutarı" required>
                                     {% endfor %}
                                 {% else %}
                                     <div class="row g-2 align-items-end mb-3 installment-row">
@@ -130,7 +111,6 @@
                                             <label class="form-label small text-muted mb-0 fw-bold">Tarih</label>
                                             <input type="date" class="form-control fw-bold" name="installment_date[]" aria-label="Ödeme Tarihi" required>
                                         </div>
-                                        <div class="formatted-preview text-primary small text-end fw-bold" style="min-height: 20px; font-size: 0.85rem; margin-top: 2px;"></div>
                                         <div class="col-md-4 col-12">
                                             <label class="form-label small text-muted mb-0 fw-bold">Yöntem</label>
                                             <input type="text" class="form-control fw-bold" name="installment_method[]" list="paymentMethods" aria-label="Ödeme Yöntemi" placeholder="Örn: Havale" required>
@@ -141,16 +121,12 @@
                                                 <span class="input-group-text bg-white fw-bold">₺</span>
                                                 <input type="number" step="0.01" class="form-control fw-bold fs-5 text-end installment-amount" name="installment_amount[]" aria-label="Taksit Tutarı" required>
                                             </div>
-                                            <div class="formatted-preview text-primary small text-end fw-bold" style="min-height: 20px; font-size: 0.85rem; margin-top: 2px;"></div>
+                                            <div class="formatted-preview text-primary small text-end fw-bold"></div>
                                         </div>
                                         <div class="col-md-1 col-2 text-end">
-                                            <button type="button" class="btn btn-outline-danger remove-row w-100" disabled aria-label="Bu taksiti sil" title="Bu taksiti sil" style="margin-bottom: 22px;"><i class="fas fa-trash"></i></button>
+                                            <button type="button" class="btn btn-outline-danger remove-row w-100 remove-row-btn" disabled aria-label="Bu taksiti sil" title="Bu taksiti sil"><i class="fas fa-trash"></i></button>
                                         </div>
                                     </div>
-                                    <div class="col-md-1 col-2 text-end">
-                                        <button type="button" class="btn btn-outline-danger remove-row w-100" disabled aria-label="Bu taksiti sil" title="Bu taksiti sil" style="margin-bottom: 22px;"><i class="fas fa-trash"></i></button>
-                                    </div>
-                                </div>
                                 {% endif %}
                             </div>
                     
@@ -169,14 +145,13 @@
                 </div>
                     <div class="mb-3">
                         <label for="special_notes" class="form-label small fw-bold">İç/Özel Notlar</label>
-                        <textarea class="form-control" id="special_notes" name="special_notes" rows="2" placeholder="Örn: Çizilme riskine rağmen müşteri mat yüzeyde ısrar etti."></textarea>
                         <textarea class="form-control" id="special_notes" name="special_notes" rows="2" placeholder="Örn: Çizilme riskine rağmen müşteri mat yüzeyde ısrar etti.">{{ source_quote.special_notes if source_quote else '' }}</textarea>
                     </div>
                 </div>
             </div>
             
-            <button type="submit" class="btn btn-success btn-lg w-100 mt-4 shadow" title="Güvenli Teklif Oluştur" aria-label="Güvenli Teklif Oluştur">
-                <i class="fas fa-magic me-2"></i> Güvenli Teklif Oluştur
+            <button type="submit" class="btn btn-{{ 'primary' if is_edit_mode else 'success' }} btn-lg w-100 mt-4 shadow" title="{{ 'Teklifi Güncelle' if is_edit_mode else 'Yeni Versiyon Oluştur' }}" aria-label="{{ 'Teklifi Güncelle' if is_edit_mode else 'Yeni Versiyon Oluştur' }}">
+                <i class="fas fa-{{ 'save' if is_edit_mode else 'magic' }} me-2"></i> {{ 'Teklifi Güncelle (v' ~ source_quote.version ~ ')' if is_edit_mode else 'Yeni Versiyon Oluştur' }}
             </button>
         </div>
 

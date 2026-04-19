@@ -23,10 +23,6 @@
                 <i class="fas fa-file-invoice-dollar me-2" aria-hidden="true"></i> Teklif Oluştur
             </a>
 
-            <a href="{{ url_for('arkhon.order_preferences', order_id=order.order_id) }}" class="btn btn-info text-white shadow-sm" title="Sipariş Tercihlerini Yönet" aria-label="Sipariş Tercihlerini Yönet">
-                <i class="fas fa-clipboard-list me-2"></i> Tercihleri Yönet
-            </a>
-            
             <a href="{{ url_for('arkhon.index') }}" class="btn btn-outline-secondary me-2" title="Dashboard'a Dön" aria-label="Dashboard'a Dön">
                 <i class="fas fa-arrow-left"></i> Dashboard
             </a>
@@ -39,13 +35,15 @@
     </div>
 
     {% if order.quotes %}
+    {% set active_quotes = order.quotes | selectattr("status", "ne", "archived") | list %}
+    {% set archived_quotes = order.quotes | selectattr("status", "eq", "archived") | list %}
     <div class="card shadow-sm border-0 mt-4 mb-4">
         <div class="card-header bg-success text-white fw-bold d-flex justify-content-between align-items-center">
             <span><i class="fas fa-file-invoice-dollar me-2"></i> Oluşturulan Teklifler</span>
         </div>
         <div class="card-body p-0">
             <ul class="list-group list-group-flush">
-                {% for quote in order.quotes %}
+                {% for quote in active_quotes %}
                 <li class="list-group-item d-flex justify-content-between align-items-center p-3">
                     <div>
                         <span class="badge bg-secondary me-2">v{{ quote.version }}</span>
@@ -59,20 +57,99 @@
                         {% endif %}
                     </div>
                     
-                    <div class="d-flex gap-2">
-                        <form method="POST" action="{{ url_for('arkhon.export_quote_gdoc', quote_id=quote.quote_id) }}" class="m-0" target="_blank">
-                            <button type="submit" class="btn btn-sm btn-outline-primary" title="Google Docs Olarak Dışa Aktar" aria-label="Google Docs Olarak Dışa Aktar">
-                                <i class="fab fa-google-drive me-1"></i> Docs'a Aktar
+                    <div class="d-flex gap-1">
+                        <form method="POST" action="{{ url_for('arkhon.archive_quote', quote_id=quote.quote_id) }}" class="m-0" onsubmit="return confirm('Bu teklifi arşive kaldırmak istediğinize emin misiniz?');">
+                            <button type="submit" class="btn btn-sm btn-outline-secondary" title="Arşive Kaldır" aria-label="Arşive Kaldır">
+                                <i class="fas fa-archive"></i>
                             </button>
                         </form>
 
-                        <a href="{{ url_for('arkhon.public_quote', access_token=quote.access_token) }}" target="_blank" class="btn btn-sm btn-outline-success" title="Müşteri Portalını Aç" aria-label="Müşteri Portalını Aç">
-                            <i class="fas fa-external-link-alt me-1"></i> Portalı Aç
+                        <a href="{{ url_for('arkhon.order_preferences', order_id=order.order_id) }}" class="btn btn-sm btn-outline-secondary" title="Sipariş Tercihleri" aria-label="Sipariş Tercihleri">
+                            <i class="fas fa-clipboard-list"></i>
                         </a>
+
+                        <a href="{{ url_for('arkhon.build_quote', order_id=order.order_id, edit=quote.quote_id) }}" class="btn btn-sm btn-outline-primary" title="Bu Teklifi Düzenle" aria-label="Bu Teklifi Düzenle">
+                            <i class="fas fa-edit"></i>
+                        </a>
+
+                        <a href="{{ url_for('arkhon.build_quote', order_id=order.order_id, source=quote.quote_id) }}" class="btn btn-sm btn-outline-info" title="Bu Teklifi Kopyala (Yeni Versiyon)" aria-label="Bu Teklifi Kopyala (Yeni Versiyon)">
+                            <i class="fas fa-copy"></i>
+                        </a>
+
+                        <form method="POST" action="{{ url_for('arkhon.export_quote_gdoc', quote_id=quote.quote_id) }}" class="m-0" target="_blank">
+                            <button type="submit" class="btn btn-sm btn-outline-primary" title="Google Docs Olarak Dışa Aktar" aria-label="Google Docs Olarak Dışa Aktar">
+                                <i class="fab fa-google-drive"></i>
+                            </button>
+                        </form>
+
+                        <a href="{{ url_for('arkhon.public_quote', access_token=quote.access_token) }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-dark" title="Müşteri Portalını Aç" aria-label="Müşteri Portalını Aç">
+                            <i class="fas fa-external-link-alt"></i>
+                        </a>
+                        
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="copyToClipboard(`{{ url_for('arkhon.public_quote', access_token=quote.access_token, _external=True) }}`, this)" title="Bağlantıyı Kopyala" aria-label="Bağlantıyı Kopyala">
+                            <i class="fas fa-link"></i>
+                        </button>
+                        
+                        <form method="POST" action="{{ url_for('arkhon.email_quote', quote_id=quote.quote_id) }}" class="m-0" onsubmit="return confirm('Teklif bağlantısı müşteriye e-posta olarak gönderilecek. Devam edilsin mi?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="E-posta ile Gönder" aria-label="E-posta ile Gönder">
+                                <i class="fas fa-envelope"></i>
+                            </button>
+                        </form>
+
+                        {% if order.party and order.party.phone %}
+                            {% set phone_clean = order.party.phone | string | replace(' ', '') | replace('(', '') | replace(')', '') | replace('-', '') | replace('+', '') %}
+                            {% if phone_clean.startswith('0') %}
+                                {% set wa_phone = '90' ~ phone_clean[1:] %}
+                            {% elif phone_clean|length == 10 %}
+                                {% set wa_phone = '90' ~ phone_clean %}
+                            {% else %}
+                                {% set wa_phone = phone_clean %}
+                            {% endif %}
+                            {% set wa_text = "Merhaba " ~ (order.party.first_name or '') ~ ", " ~ quote.quote_category ~ " teklifinizi (v" ~ quote.version ~ ") incelemek ve onaylamak için aşağıdaki bağlantıya tıklayabilirsiniz:%0A" ~ url_for('arkhon.public_quote', access_token=quote.access_token, _external=True) %}
+                            <a href="https://wa.me/{{ wa_phone }}?text={{ wa_text }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-success" title="WhatsApp ile Gönder" aria-label="WhatsApp ile Gönder">
+                                <i class="fab fa-whatsapp"></i>
+                            </a>
+                        {% endif %}
                     </div>
                 </li>
                 {% endfor %}
             </ul>
+            
+            {% if archived_quotes %}
+            <div class="p-3 bg-light border-top">
+                <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#archivedQuotes" aria-expanded="false" aria-controls="archivedQuotes">
+                    <i class="fas fa-archive me-1"></i> Arşivlenmiş Teklifleri Göster ({{ archived_quotes|length }})
+                </button>
+                <div class="collapse mt-3" id="archivedQuotes">
+                    <ul class="list-group list-group-flush opacity-75 rounded border">
+                        {% for quote in archived_quotes %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center p-2 bg-white border-bottom">
+                            <div>
+                                <span class="badge bg-secondary me-2">v{{ quote.version }}</span>
+                                <span class="text-muted text-decoration-line-through">{{ quote.quote_category }} Teklifi</span>
+                                <span class="text-muted small ms-2">(Toplam: {{ "%.2f"|format(quote.total_amount) }} ₺)</span>
+                            </div>
+                            <div class="d-flex gap-1">
+                                <a href="{{ url_for('arkhon.order_preferences', order_id=order.order_id) }}" class="btn btn-sm btn-outline-secondary" title="Sipariş Tercihleri" aria-label="Sipariş Tercihleri">
+                                    <i class="fas fa-clipboard-list"></i>
+                                </a>
+                                <a href="{{ url_for('arkhon.build_quote', order_id=order.order_id, edit=quote.quote_id) }}" class="btn btn-sm btn-outline-primary" title="Bu Teklifi Düzenle" aria-label="Bu Teklifi Düzenle">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{{ url_for('arkhon.build_quote', order_id=order.order_id, source=quote.quote_id) }}" class="btn btn-sm btn-outline-info" title="Bu Teklifi Kopyala (Yeni Versiyon)" aria-label="Bu Teklifi Kopyala (Yeni Versiyon)">
+                                    <i class="fas fa-copy"></i>
+                                </a>
+                                
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="copyToClipboard(`{{ url_for('arkhon.public_quote', access_token=quote.access_token, _external=True) }}`, this)" title="Bağlantıyı Kopyala" aria-label="Bağlantıyı Kopyala">
+                                    <i class="fas fa-link"></i>
+                                </button>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
     {% endif %}
@@ -209,4 +286,17 @@
     </div>
 </div>
 
+<script>
+function copyToClipboard(text, btn) {
+    navigator.clipboard.writeText(text).then(function() {
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check text-success"></i>';
+        setTimeout(function() {
+            btn.innerHTML = originalHtml;
+        }, 2000);
+    }).catch(function(err) {
+        console.error('Kopyalama başarısız oldu: ', err);
+    });
+}
+</script>
 {% endblock %}

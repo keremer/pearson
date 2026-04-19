@@ -61,11 +61,11 @@ def google_callback():
     # If the email isn't in our database yet, create BOTH records
     if not party:
         # 1. Create Party (NO username parameter here!)
-        party = Party(
-            email=email, # type: ignore
-            first_name=user_info.get('given_name'), # type: ignore
-            last_name=user_info.get('family_name') # type: ignore
-        )
+        party = Party(**{
+            'email': email,
+            'first_name': user_info.get('given_name'),
+            'last_name': user_info.get('family_name')
+        })
         db.session.add(party)
         db.session.flush() # Get the party_id
         
@@ -73,15 +73,15 @@ def google_callback():
         # Google users bypass the password requirement because Google authenticated them
         # We assign a random impossibly-long password hash just to satisfy the database
         import secrets
-        new_account = UserAccount(
-            party_id=party.party_id, # type: ignore
-            role="guest", # type: ignore
-            is_confirmed=True, # type: ignore
-            confirmed_on=datetime.datetime.utcnow(), # type: ignore
-            kvkk_approved=True, # type: ignore
-            kvkk_approval_date=datetime.datetime.utcnow(), # type: ignore
-            kvkk_approval_ip=request.remote_addr or '0.0.0.0' # type: ignore
-        )
+        new_account = UserAccount(**{
+            'party_id': party.party_id,
+            'role': "guest",
+            'is_confirmed': True,
+            'confirmed_on': datetime.datetime.utcnow(),
+            'kvkk_approved': True,
+            'kvkk_approval_date': datetime.datetime.utcnow(),
+            'kvkk_approval_ip': request.remote_addr or '0.0.0.0'
+        })
         new_account.set_password(secrets.token_urlsafe(32))
         party.account = new_account
         db.session.add(new_account)
@@ -90,15 +90,15 @@ def google_callback():
     # If they existed as a CRM contact but had no account, attach one
     elif not party.account:
         import secrets
-        new_account = UserAccount(
-            party_id=party.party_id, # type: ignore
-            role="guest", # type: ignore
-            is_confirmed=True, # type: ignore
-            confirmed_on=datetime.datetime.utcnow(), # type: ignore
-            kvkk_approved=True, # type: ignore
-            kvkk_approval_date=datetime.datetime.utcnow(), # type: ignore
-            kvkk_approval_ip=request.remote_addr or '0.0.0.0' # type: ignore
-        )
+        new_account = UserAccount(**{
+            'party_id': party.party_id,
+            'role': "guest",
+            'is_confirmed': True,
+            'confirmed_on': datetime.datetime.utcnow(),
+            'kvkk_approved': True,
+            'kvkk_approval_date': datetime.datetime.utcnow(),
+            'kvkk_approval_ip': request.remote_addr or '0.0.0.0'
+        })
         new_account.set_password(secrets.token_urlsafe(32))
         party.account = new_account
         db.session.add(new_account)
@@ -146,23 +146,23 @@ def register():
                 if not party.last_name and last_name: party.last_name = last_name
         else:
             # NEW USER: Create the Party record first
-            party = Party(
-                email=email, # type: ignore
-                first_name=first_name, # type: ignore
-                last_name=last_name # type: ignore
-            )
+            party = Party(**{
+                'email': email,
+                'first_name': first_name,
+                'last_name': last_name
+            })
             db.session.add(party)
             # flush() asks the DB for the new party_id without finalizing the commit yet
             db.session.flush() 
             
         # 3. Create the UserAccount using the party_id
-        new_user = UserAccount(
-            party_id=party.party_id, # type: ignore
-            kvkk_approved=True, # type: ignore
-            kvkk_approval_date=datetime.datetime.utcnow(), # type: ignore
-            kvkk_approval_ip=request.remote_addr or '0.0.0.0', # type: ignore
-            role='customer' # type: ignore
-        )
+        new_user = UserAccount(**{
+            'party_id': party.party_id,
+            'kvkk_approved': True,
+            'kvkk_approval_date': datetime.datetime.utcnow(),
+            'kvkk_approval_ip': request.remote_addr or '0.0.0.0',
+            'role': 'customer'
+        })
         new_user.set_password(password)
         
         db.session.add(new_user)

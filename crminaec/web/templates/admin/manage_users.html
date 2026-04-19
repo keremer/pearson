@@ -40,7 +40,7 @@
                     <td>
                         <input type="checkbox" name="is_confirmed" {% if user.account and user.account.is_confirmed %}checked{% endif %} {% if not user.account %}disabled{% endif %} title="E-posta Onay Durumu" aria-label="E-posta Onay Durumu"> Onaylı
                     </td>
-                    <td><button type="submit" class="CommandButton" style="padding: 6px 12px; font-size: 0.8rem;" {% if not user.account %}disabled{% endif %} title="Yetkileri Güncelle" aria-label="Yetkileri Güncelle">Güncelle</button></td>
+                    <td><button type="submit" class="CommandButton btn-update-role" {% if not user.account %}disabled{% endif %} title="Yetkileri Güncelle" aria-label="Yetkileri Güncelle">Güncelle</button></td>
                 </form>
             </tr>
             {% endfor %}

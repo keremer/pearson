@@ -27,8 +27,8 @@
         </div>
         
         <div class="form-group kvkk-box">
-            <label style="display: flex; align-items: start; gap: 10px; font-size: 0.9em; cursor: pointer;">
-                <input type="checkbox" name="kvkk_consent" required style="margin-top: 3px;">
+            <label class="kvkk-label">
+                <input type="checkbox" name="kvkk_consent" required class="kvkk-checkbox">
                 <span>
                     <strong>KVKK Aydınlatma Metni:</strong> 6698 sayılı Kişisel Verilerin Korunması Kanunu kapsamında, 
                     formda paylaştığım kimlik ve iletişim verilerimin, müşteri ilişkileri yönetimi (CRM), 
@@ -41,7 +41,7 @@
         <button type="submit" class="CommandButton full-width" title="Kayıt Ol" aria-label="Kayıt Ol">Kayıt Ol</button>
     </form>
     
-    <div style="text-align: center; margin-top: 15px;">
+    <div class="login-footer">
         <a href="{{ url_for('auth.login') }}" title="Giriş Sayfasına Git" aria-label="Giriş Sayfasına Git">Zaten hesabınız var mı? Giriş yapın.</a>
     </div>
 

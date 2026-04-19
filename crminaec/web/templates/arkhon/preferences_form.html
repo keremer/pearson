@@ -6,15 +6,52 @@
 <div class="row mb-4">
     <div class="col-12 d-flex justify-content-between align-items-center">
         <h2><i class="fas fa-clipboard-list text-primary me-2"></i> Müşteri ve Sipariş Takip Formu</h2>
-        <a href="{{ url_for('arkhon.order_detail', order_id=order.order_id) }}" class="btn btn-outline-secondary" title="Siparişe Dön" aria-label="Siparişe Dön">
-            <i class="fas fa-arrow-left me-2"></i> Siparişe Dön
-        </a>
+        <div>
+            <a href="{{ url_for('arkhon.order_preferences', order_id=order.order_id, rebuild=1) }}" class="btn btn-warning shadow-sm me-2" title="Kelebek Verilerini Yeniden Çek" aria-label="Kelebek Verilerini Yeniden Çek" onclick="return confirm('Mevcut tercihlerin üzerine orijinal Kelebek verileri yazılacak. Emin misiniz?');">
+                <i class="fas fa-sync-alt me-1"></i> Verileri Yenile
+            </a>
+            <a href="{{ url_for('arkhon.order_detail', order_id=order.order_id) }}" class="btn btn-outline-secondary shadow-sm" title="Siparişe Dön" aria-label="Siparişe Dön">
+                <i class="fas fa-arrow-left me-2"></i> Siparişe Dön
+            </a>
+        </div>
     </div>
 </div>
 
 <form method="POST" action="{{ url_for('arkhon.order_preferences', order_id=order.order_id) }}">
     <div class="row g-4">
         
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white fw-bold">
+                    <i class="fas fa-user-tie me-2"></i> Müşteri & İletişim Bilgileri
+                </div>
+                <div class="card-body bg-light">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label for="customer_first_name" class="form-label fw-bold small text-muted">Müşteri Adı</label>
+                            <input type="text" class="form-control" id="customer_first_name" name="customer_first_name" value="{{ order.party.first_name if order.party else '' }}" placeholder="Adı" required>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="customer_last_name" class="form-label fw-bold small text-muted">Müşteri Soyadı</label>
+                            <input type="text" class="form-control" id="customer_last_name" name="customer_last_name" value="{{ order.party.last_name if order.party else '' }}" placeholder="Soyadı" required>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="customer_email" class="form-label fw-bold small text-muted">E-Posta Adresi</label>
+                            <input type="email" class="form-control" id="customer_email" name="customer_email" value="{{ order.party.email if order.party and '@crminaec.local' not in order.party.email else '' }}" placeholder="ornek@email.com">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="customer_phone" class="form-label fw-bold small text-muted">Cep Telefonu</label>
+                            <input type="text" class="form-control" id="customer_phone" name="customer_phone" value="{{ order.party.phone if order.party and order.party.phone else '' }}" placeholder="05XX XXX XX XX">
+                        </div>
+                        <div class="col-12 mb-2">
+                            <label for="customer_address" class="form-label fw-bold small text-muted">Fatura / Teslimat Adresi</label>
+                            <textarea class="form-control" id="customer_address" name="customer_address" rows="2" placeholder="Açık adres bilgilerini giriniz...">{{ order.party.address if order.party and order.party.address else '' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="col-md-6">
             <div class="card shadow-sm border-0 h-100">
                 <div class="card-header bg-dark text-white fw-bold">

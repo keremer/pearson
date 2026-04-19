@@ -4,79 +4,42 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Project Summary - {{ order.order_number }}</title>
-    <style>
-        body {
-            font-family: "Courier New", Courier, monospace;
-            max-width: 800px;
-            margin: 40px auto;
-            color: #000;
-            padding: 20px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            margin-bottom: 40px;
-        }
-        th, td {
-            border: 1px solid #ccc;
-            padding: 10px;
-            text-align: left;
-        }
-        th {
-            background-color: #f9f9f9;
-        }
-        .text-right {
-            text-align: right;
-        }
-        .grand-total {
-            font-size: 1.2em;
-            font-weight: bold;
-        }
-        .confidential {
-            font-size: 0.8em;
-            color: #666;
-            text-align: center;
-            margin-top: 50px;
-            border-top: 1px dashed #ccc;
-            padding-top: 10px;
-        }
-    </style>
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
 </head>
-<body>
+<body class="ghost-summary-body">
 
     <h2>Project Estimate Summary</h2>
     <p><strong>Ref:</strong> {{ order.order_number }}</p>
     <p><strong>Date:</strong> {{ current_date }}</p>
 
-    <table>
+    <table class="ghost-table">
         <thead>
             <tr>
                 <th>Category</th>
                 <th>Description</th>
-                <th class="text-right">Amount (₺)</th>
+                <th class="ghost-text-right">Amount (₺)</th>
             </tr>
         </thead>
         <tbody>
             {% set grand_total = namespace(value=0) %}
             {% for quote in order.quotes %}
-                {% if quote.status != 'draft' %}
+                {% if quote.status not in ['draft', 'archived'] %}
                 <tr>
                     <td>{{ quote.quote_category }}</td>
                     <td>Quote v{{ quote.version }}</td>
-                    <td class="text-right">{{ "%.2f"|format(quote.total_amount) }}</td>
+                    <td class="ghost-text-right">{{ "%.2f"|format(quote.total_amount) }}</td>
                 </tr>
                 {% set grand_total.value = grand_total.value + quote.total_amount %}
                 {% endif %}
             {% endfor %}
-            <tr class="grand-total">
-                <td colspan="2" class="text-right">ESTIMATED GRAND TOTAL (Inc. Tax):</td>
-                <td class="text-right">{{ "%.2f"|format(grand_total.value) }} ₺</td>
+            <tr class="ghost-grand-total">
+                <td colspan="2" class="ghost-text-right">ESTIMATED GRAND TOTAL (Inc. Tax):</td>
+                <td class="ghost-text-right">{{ "%.2f"|format(grand_total.value) }} ₺</td>
             </tr>
         </tbody>
     </table>
 
-    <div class="confidential">
+    <div class="ghost-confidential">
         <p>FOR DISCUSSION PURPOSES ONLY. NOT A BINDING CONTRACT.</p>
         <p>This document does not constitute a formal offer of sale.</p>
     </div>

@@ -1,4 +1,5 @@
 from typing import Optional
+from datetime import datetime
 
 from crminaec.core.models import Course, Order, Party, UserAccount, db
 from crminaec.platforms.emek import models as emek_models
@@ -30,18 +31,18 @@ class DatabaseSetup:
                 if not db.session.query(Party).filter_by(email="kerem@emek.com").first():
                     
                     # Step A: Create CRM Entities
-                    kerem_party = Party(email="doarch@gmail.com", first_name="Kerem") # type: ignore
-                    emre_party = Party(email="emerter@gmail.com", first_name="Emre") # type: ignore
-                    ediz_party = Party(email="edizer28@gmail.com", first_name="Ediz") # type: ignore
+                    kerem_party = Party(**{'email': "doarch@gmail.com", 'first_name': "Kerem"})
+                    emre_party = Party(**{'email': "emerter@gmail.com", 'first_name': "Emre Mert"})
+                    ediz_party = Party(**{'email': "edizer28@gmail.com", 'first_name': "Ediz"})
                     
-                    db.session.add_all([kerem_party, emre_party, ediz_party]) # type: ignore
+                    db.session.add_all([kerem_party, emre_party, ediz_party])
                     db.session.commit() # Get the auto-generated party_ids safely
                     
                     # Step B: Create Security Accounts
                     accounts = [
-                        UserAccount(party_id=kerem_party.party_id, role="admin", is_confirmed=True, kvkk_approved=True), # type: ignore
-                        UserAccount(party_id=emre_party.party_id, role="power_user", is_confirmed=True, kvkk_approved=True), # type: ignore
-                        UserAccount(party_id=ediz_party.party_id, role="instructor", is_confirmed=True, kvkk_approved=True) # type: ignore
+                        UserAccount(**{'party_id': kerem_party.party_id, 'role': "admin", 'is_confirmed': True, 'kvkk_approved': True}),
+                        UserAccount(**{'party_id': emre_party.party_id, 'role': "power_user", 'is_confirmed': True, 'kvkk_approved': True}),
+                        UserAccount(**{'party_id': ediz_party.party_id, 'role': "instructor", 'is_confirmed': True, 'kvkk_approved': True})
                     ]
                     
                     # Set a default password for local dev testing
@@ -52,11 +53,17 @@ class DatabaseSetup:
 
                 # 2. Pearson Sample
                 if not db.session.query(Course).filter_by(course_code="HND5-ID").first():
-                    course = Course(
-                        course_title="Interior Design Specification",
-                        course_code="HND5-ID",
-                        level="Level 5"
-                    )
+                    course = Course(**{
+                        'course_title': "Interior Design Specification",
+                        'course_code': "HND5-ID",
+                        'level': "Level 5",
+                        'created_date': datetime.now(),
+                        'updated_date': datetime.now(),
+                        'lessons': [],
+                        'learning_outcomes': [],
+                        'assessment_formats': [],
+                        'tools': []
+                    })
                     db.session.add(course)
 
                 # 3. Arkhon Sample
@@ -65,11 +72,11 @@ class DatabaseSetup:
                     kerem = db.session.query(Party).filter_by(email="kerem@emek.com").first()
                     kerem_id = kerem.party_id if kerem else None
                     
-                    order = Order(
-                        order_number="ORD-2026-001",
-                        party_id=kerem_id, 
-                        status="pending"
-                    )
+                    order = Order(**{
+                        'order_number': "ORD-2026-001",
+                        'party_id': kerem_id, 
+                        'status': "pending"
+                    })
                     db.session.add(order)
 
                 db.session.commit()

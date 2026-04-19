@@ -8,11 +8,12 @@ import logging
 import os
 from datetime import datetime, timedelta
 
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import (Blueprint, current_app, flash, redirect, render_template,
+                   request, url_for)
 from werkzeug.utils import secure_filename
 
 from crminaec.core.interop.manager import Platform, create_interop_manager
-from crminaec.core.models import (CatalogProduct, Order, OrderItem,
+from crminaec.core.models import (CatalogProduct, Order, OrderItem, Party,
                                   PaymentInstallment, PriceRecord,
                                   ProjectPreference, Quote, db)
 from crminaec.platforms.arkhon.orderparser import KelebekOrderParser
@@ -98,8 +99,12 @@ def import_kelebek_order():
         
     try:
         html_content = file.read().decode('utf-8', errors='ignore')
-        parsed_items = KelebekOrderParser.parse_html(html_content)
+        parsed_data = KelebekOrderParser.parse_html(html_content)
         
+        # Handle dictionary structure
+        parsed_items = parsed_data.get('items', [])
+        cust_info = parsed_data.get('customer', {})
+
         if not parsed_items:
             flash('No valid products found in the uploaded HTML file. Is it a valid Kelebek export?', 'warning')
             return redirect(request.url)
@@ -108,6 +113,7 @@ def import_kelebek_order():
         timestamp = datetime.now().strftime("%Y%m%d-%H%M")
         generated_order_number = f"{base_filename}-{timestamp}"
         
+        # Only pass valid Order fields to constructor
         new_order = Order(order_number=generated_order_number)
         
         for item_data in parsed_items:
@@ -115,6 +121,30 @@ def import_kelebek_order():
             order_item = OrderItem(**safe_data)
             new_order.items.append(order_item)
             
+        # --- AUTO-LINK CUSTOMER PARTY ---
+        email = cust_info.get('email', '')
+        first_name = cust_info.get('first_name', '')
+        last_name = cust_info.get('last_name', '')
+        
+        if email or first_name or last_name:
+            party = db.session.query(Party).filter_by(email=email).first() if email else None
+            if not party:
+                party = Party(
+                    email=email if email else f"temp_{timestamp}@crminaec.local",
+                    first_name=first_name,
+                    last_name=last_name
+                )
+                db.session.add(party)
+                db.session.flush()
+            
+            # Attach phone and address if model supports it
+            if hasattr(party, 'phone') and cust_info.get('phone'):
+                party.phone = cust_info.get('phone')
+            if hasattr(party, 'address') and cust_info.get('address'):
+                party.address = cust_info.get('address')
+                
+            new_order.party_id = party.party_id
+
         db.session.add(new_order)
         db.session.commit()
         
@@ -133,6 +163,25 @@ def import_kelebek_order():
 def import_prosap_csv(order_id):
     """Reads a ProSAP CSV and injects prices into the Order's PriceRecords."""
     order = db.get_or_404(Order, order_id)
+    
+    # --- STRICT PREFERENCE VALIDATION GATE ---
+    prefs = order.preferences
+    if not prefs:
+        flash('Lütfen teklif oluşturmadan önce Sipariş Tercihlerini (Müşteri, Renk, Kulp vb.) onaylayıp kaydedin.', 'warning')
+        return redirect(url_for('arkhon.order_preferences', order_id=order.order_id))
+        
+    missing_fields = []
+    if not order.party or not order.party.first_name or not order.party.last_name:
+        missing_fields.append("Müşteri Adı ve Soyadı")
+    if not prefs.model_name: missing_fields.append("Kapak Modeli")
+    if not prefs.front_color: missing_fields.append("Kapak Rengi")
+    if not prefs.body_color: missing_fields.append("Gövde Rengi")
+    if not prefs.plinth_detail: missing_fields.append("Baza Yüksekliği/Rengi")
+    if not prefs.handle_code: missing_fields.append("Kulp Kodu/Modeli")
+    
+    if missing_fields:
+        flash(f'Teklif oluşturmadan önce şu bilgilerin eksiksiz olması gereklidir: {", ".join(missing_fields)}', 'warning')
+        return redirect(url_for('arkhon.order_preferences', order_id=order.order_id))
     
     if 'prosap_file' not in request.files:
         flash('Lütfen bir CSV dosyası seçin.', 'warning')
@@ -168,13 +217,13 @@ def import_prosap_csv(order_id):
                 new_price_val = prosap_prices[item.urk]
                 
                 # Create a new historical PriceRecord
-                new_price_record = PriceRecord(
-                    entity_code=item.urk or "BİLİNMEYEN", # THE FIX: Guarantees a string for Pylance
-                    supplier="Kelebek (ProSAP)",
-                    price_type="cost",
-                    base_material_cost=new_price_val,
-                    final_unit_price=new_price_val 
-                )
+                new_price_record = PriceRecord(**{
+                    'entity_code': item.urk or "BİLİNMEYEN",
+                    'supplier': "Kelebek (ProSAP)",
+                    'price_type': "cost",
+                    'base_material_cost': new_price_val,
+                    'final_unit_price': new_price_val 
+                })
                 db.session.add(new_price_record)
                 
                 # Link the item to this new price record
@@ -205,15 +254,15 @@ def add_catalog_item(order_id):
     if product_id:
         product = db.session.query(CatalogProduct).get(product_id)
         if product:
-            new_item = OrderItem(
-                urk=product.product_code,
-                ura=f"{product.brand} - {product.product_name}",
-                adet=qty,
-                brm="adet",
-                category=product.category,
-                is_visible_on_quote=True,
-                accessory_image_path=product.image_url
-            )
+            new_item = OrderItem(**{
+                'urk': product.product_code,
+                'ura': f"{product.brand} - {product.product_name}",
+                'adet': qty,
+                'brm': "adet",
+                'category': product.category,
+                'is_visible_on_quote': True,
+                'accessory_image_path': product.image_url
+            })
             order.items.append(new_item)
             db.session.commit()
             flash(f'Added {product.product_name} to the order.', 'success')
@@ -228,6 +277,19 @@ def build_quote(order_id):
     """Internal UI to set ProSAP pricing, hide margin items, and generate a Quote."""
     order = db.get_or_404(Order, order_id)
     
+    # Check if we are editing or duplicating an existing quote
+    source_quote_id = request.args.get('source', type=int)
+    edit_quote_id = request.args.get('edit', type=int)
+    
+    quote_to_load = None
+    is_edit_mode = False
+    
+    if edit_quote_id:
+        quote_to_load = db.session.query(Quote).filter_by(quote_id=edit_quote_id, order_id=order.order_id).first()
+        is_edit_mode = True
+    elif source_quote_id:
+        quote_to_load = db.session.query(Quote).filter_by(quote_id=source_quote_id, order_id=order.order_id).first()
+
     if request.method == 'POST':
         try:
             # ... (Keep your existing visibility and category loop here) ...
@@ -241,21 +303,46 @@ def build_quote(order_id):
             discount = float(request.form.get('discount_amount', 0))
             tax_rate = float(request.form.get('tax_rate', 20.0))
             total_amount = float(request.form.get('total_amount', 0))
+            validity_days = int(request.form.get('validity_days', 15))
+            payment_terms = request.form.get('payment_terms', '')
+            delivery_place = request.form.get('delivery_place', '')
+            special_notes = request.form.get('special_notes', '')
 
-            current_quotes = db.session.query(Quote).filter_by(order_id=order.order_id).count()
-            next_version = current_quotes + 1
+            if is_edit_mode and quote_to_load:
+                # Update existing quote in place
+                quote_to_load.list_price = list_price
+                quote_to_load.discount_amount = discount
+                quote_to_load.tax_rate = tax_rate
+                quote_to_load.total_amount = total_amount
+                quote_to_load.validity_days = validity_days
+                quote_to_load.payment_terms = payment_terms
+                quote_to_load.delivery_place = delivery_place
+                quote_to_load.special_notes = special_notes
+                
+                # Clear out old installments to cleanly replace them
+                for inst in quote_to_load.installments:
+                    db.session.delete(inst)
+                    
+                target_quote = quote_to_load
+                flash_msg = f'Teklif Versiyon {quote_to_load.version} başarıyla güncellendi!'
+            else:
+                # Create a brand new version
+                current_quotes = db.session.query(Quote).filter_by(order_id=order.order_id).count()
+                next_version = current_quotes + 1
 
-            new_quote = Quote(
-                version=next_version,
-                list_price=list_price,
-                discount_amount=discount,
-                tax_rate=tax_rate,
-                total_amount=total_amount,
-                validity_days=int(request.form.get('validity_days', 15)),
-                payment_terms=request.form.get('payment_terms', ''),
-                delivery_place=request.form.get('delivery_place', ''),
-                special_notes=request.form.get('special_notes', '')
-            )
+                target_quote = Quote(**{
+                    'version': next_version,
+                    'list_price': list_price,
+                    'discount_amount': discount,
+                    'tax_rate': tax_rate,
+                    'total_amount': total_amount,
+                    'validity_days': validity_days,
+                    'payment_terms': payment_terms,
+                    'delivery_place': delivery_place,
+                    'special_notes': special_notes
+                })
+                order.quotes.append(target_quote)
+                flash_msg = f'Teklif Versiyon {next_version} başarıyla oluşturuldu!'
             
             # ==========================================
             # 🛑 NEW: PROCESS DYNAMIC PAYMENT INSTALLMENTS
@@ -271,25 +358,72 @@ def build_quote(order_id):
                     # Convert date string to datetime if provided, else leave None
                     parsed_date = datetime.strptime(date_str, '%Y-%m-%d') if date_str else None
                     
-                    installment = PaymentInstallment(
-                        date=parsed_date,
-                        method=method,
-                        amount=amount_val,
-                        status="Bekliyor" # Default status
-                    )
-                    new_quote.installments.append(installment)
+                    installment = PaymentInstallment(**{
+                        'date': parsed_date,
+                        'method': method,
+                        'amount': amount_val,
+                        'status': "Bekliyor"
+                    })
+                    target_quote.installments.append(installment)
             
-            order.quotes.append(new_quote)
             db.session.commit()
             
-            flash(f'Teklif Versiyon {next_version} başarıyla oluşturuldu!', 'success')
+            flash(flash_msg, 'success')
             return redirect(url_for('arkhon.order_detail', order_id=order.order_id))
             
         except Exception as e:
             db.session.rollback()
             flash(f'Teklif oluşturulurken hata: {str(e)}', 'danger')
 
-    return render_template('arkhon/quote_builder.html', order=order)
+    return render_template('arkhon/quote_builder.html', order=order, source_quote=quote_to_load, is_edit_mode=is_edit_mode)
+
+@arkhon_bp.route('/quote/<int:quote_id>/archive', methods=['POST'])
+def archive_quote(quote_id):
+    """Marks a quote as archived so it is hidden from the main active list."""
+    quote = db.get_or_404(Quote, quote_id)
+    try:
+        quote.status = 'archived'
+        db.session.commit()
+        flash(f'Teklif v{quote.version} arşive kaldırıldı.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Arşive kaldırma sırasında hata: {str(e)}', 'danger')
+    return redirect(url_for('arkhon.order_detail', order_id=quote.order_id))
+
+@arkhon_bp.route('/quote/<int:quote_id>/email', methods=['POST'])
+def email_quote(quote_id):
+    """Sends the quote link to the customer via Email."""
+    quote = db.get_or_404(Quote, quote_id)
+    order = quote.order
+    
+    if not order.party or not order.party.email:
+        flash("Müşterinin e-posta adresi kayıtlı değil. Lütfen 'Tercihler' kısmından ekleyin.", "warning")
+        return redirect(url_for('arkhon.order_detail', order_id=order.order_id))
+        
+    try:
+        from flask_mail import Message
+
+        from crminaec import mail
+        
+        portal_url = url_for('arkhon.public_quote', access_token=quote.access_token, _external=True)
+        customer_name = order.party.first_name or "Değerli Müşterimiz"
+        
+        msg = Message(
+            subject=f"Arkhon Mimarlık - {quote.quote_category} Teklifiniz (v{quote.version})",
+            recipients=[order.party.email],
+            body=f"Merhaba {customer_name},\n\n{quote.quote_category} teklifinizi (Versiyon {quote.version}) incelemek ve dijital olarak onaylamak için aşağıdaki bağlantıya tıklayabilirsiniz:\n\n{portal_url}\n\nSaygılarımızla,\nArkhon Mimarlık",
+        )
+        sender = current_app.config.get('MAIL_DEFAULT_SENDER')
+        if sender:
+            msg.sender = sender
+            
+        mail.send(msg)
+        flash(f"Teklif bağlantısı başarıyla {order.party.email} adresine gönderildi.", "success")
+    except Exception as e:
+        logger.error(f"Email sending failed: {e}")
+        flash(f"E-posta gönderilirken bir hata oluştu: {str(e)}", "danger")
+        
+    return redirect(url_for('arkhon.order_detail', order_id=order.order_id))
 
 @arkhon_bp.route('/order/<int:order_id>/ghost_summary')
 def ghost_summary(order_id):
@@ -351,49 +485,119 @@ def approve_quote(access_token):
 def order_preferences(order_id):
     """Turkish UI for Müşteri ve Sipariş Takip Formu with Auto-Extraction."""
     order = db.get_or_404(Order, order_id)
-
-    # 1. AUTO-EXTRACTION ENGINE (Runs only if preferences don't exist yet)
-    if not order.preferences:
-        prefs = ProjectPreference()
+    
+    # 1. AUTO-EXTRACTION ENGINE (Runs if preferences don't exist, OR if user forces a rebuild)
+    rebuild = request.args.get('rebuild', type=int) == 1
+    
+    if not order.preferences or rebuild:
+        prefs = order.preferences if order.preferences else ProjectPreference()
+        
+        if rebuild:
+            prefs.model_name = None
+            prefs.body_color = None
+            prefs.front_color = None
+            prefs.handle_code = None
+            prefs.plinth_detail = None
+            prefs.cutlery_tray = None
+            prefs.trash_bin = None
+            prefs.mechanisms = None
+            prefs.glass_color = None
+            prefs.led_strip = False
+            prefs.spotlight = False
+            
         mechanisms_list = []
         
         for item in order.items:
             name_lower = (item.ura or "").lower()
             
-            # Extract Global Colors (Grabs from the first item that has them)
-            if not prefs.body_color and item.govdernk and item.govdernk != "-":
-                prefs.body_color = item.govdernk
-            if not prefs.front_color and item.rnk and item.rnk != "-":
-                prefs.front_color = item.rnk
+            # Extract Global Model & Colors
+            if not prefs.model_name and hasattr(item, 'oza') and item.oza and item.oza.strip() != "-":
+                code_str = f" ({item.ozk.strip()})" if hasattr(item, 'ozk') and item.ozk and item.ozk.strip() not in ["", "-"] else ""
+                prefs.model_name = f"{item.oza.strip()}{code_str}"
                 
-            # Extract Handle (Kulp)
-            if "kulp" in name_lower:
-                prefs.handle_code = item.ura
+            if not prefs.body_color and hasattr(item, 'govderna') and item.govderna and item.govderna.strip() != "-":
+                code_str = f" ({item.govdernk.strip()})" if hasattr(item, 'govdernk') and item.govdernk and item.govdernk.strip() not in ["", "-"] else ""
+                prefs.body_color = f"{item.govderna.strip()}{code_str}"
                 
-            # Extract Accessories
-            if "kaşıklık" in name_lower or "kasiklik" in name_lower:
-                prefs.cutlery_tray = item.ura
+            if not prefs.front_color and hasattr(item, 'rna') and item.rna and item.rna.strip() != "-":
+                code_str = f" ({item.rnk.strip()})" if hasattr(item, 'rnk') and item.rnk and item.rnk.strip() not in ["", "-"] else ""
+                prefs.front_color = f"{item.rna.strip()}{code_str}"
+                
+            # Extract Handle (Kulp) - Kelebek handles usually start with YH in URK
+            if "kulp" in name_lower or (item.urk and str(item.urk).startswith("YH")):
+                if not prefs.handle_code:
+                    prefs.handle_code = item.ura
+                    
+            # Extract Plinth (Baza/Tamel) - Kelebek plinths usually start with M7600
+            if "tamel" in name_lower or "baza" in name_lower or (item.urk and "M7600" in str(item.urk)):
+                if not prefs.plinth_detail:
+                    prefs.plinth_detail = "12cm Baza" if "05" in str(item.urk) else "15cm Baza"
+                
+            # Extract Accessories & Mechanisms
+            if "kaşıklık" in name_lower or "kasiklik" in name_lower or "kaşıklığı" in name_lower:
+                if not prefs.cutlery_tray:
+                    prefs.cutlery_tray = item.ura
             if "çöp" in name_lower or "cop" in name_lower:
-                prefs.trash_bin = item.ura
+                if not prefs.trash_bin:
+                    prefs.trash_bin = item.ura
                 
-            # Extract Mechanisms (Kiler, Kör Köşe)
-            if "kiler" in name_lower or "kör köşe" in name_lower or "mekanizma" in name_lower:
+            if any(x in name_lower for x in ["kiler", "kör köşe", "mekanizma", "şişelik", "siselik", "fasulye", "le mans"]):
                 mechanisms_list.append(item.ura)
                 
             # Extract Glass
-            if "cam" in name_lower:
+            if "cam" in name_lower and not prefs.glass_color:
                 prefs.glass_color = item.ura
+                
+            # Extract Lighting
+            if "led" in name_lower or "aydınlatma" in name_lower:
+                prefs.led_strip = True
+            if "spot" in name_lower:
+                prefs.spotlight = True
 
         if mechanisms_list:
-            prefs.mechanisms = ", ".join(mechanisms_list)
+            # Deduplicate and join multiple mechanisms neatly
+            prefs.mechanisms = " \n".join(list(set(mechanisms_list)))
             
-        order.preferences = prefs
+        if not order.preferences:
+            order.preferences = prefs
+            
         db.session.commit()
-        flash('Tercihler Kelebek sipariş verilerinden otomatik olarak ayıklandı!', 'success')
+        
+        if rebuild:
+            flash('Tercihler Kelebek verilerinden yeniden çekilerek güncellendi!', 'success')
+            return redirect(url_for('arkhon.order_preferences', order_id=order.order_id))
+        else:
+            flash('Tercihler Kelebek sipariş verilerinden otomatik olarak ayıklandı!', 'success')
 
     # 2. HANDLE FORM SUBMISSION (Updating the values manually)
     if request.method == 'POST':
         try:
+            # --- 1. PROCESS CUSTOMER INFO (Party Linking & Updates) ---
+            cust_first = request.form.get('customer_first_name', '').strip()
+            cust_last = request.form.get('customer_last_name', '').strip()
+            cust_email = request.form.get('customer_email', '').strip()
+            cust_phone = request.form.get('customer_phone', '').strip()
+            cust_address = request.form.get('customer_address', '').strip()
+            
+            if cust_first or cust_email:
+                # Find existing by email, or use the currently linked party
+                party = db.session.query(Party).filter_by(email=cust_email).first() if cust_email else None
+                
+                if not party and order.party:
+                    party = order.party
+                elif not party:
+                    party = Party(**{'email': cust_email})
+                    db.session.add(party)
+                    
+                party.first_name = cust_first
+                party.last_name = cust_last
+                if cust_email: party.email = cust_email
+                if hasattr(party, 'phone'): party.phone = cust_phone
+                if hasattr(party, 'address'): party.address = cust_address
+                    
+                order.party = party
+
+            # --- 2. PROCESS PREFERENCES ---
             order.preferences.model_name = request.form.get('model_name')
             order.preferences.front_color = request.form.get('front_color')
             order.preferences.body_color = request.form.get('body_color')
@@ -454,7 +658,8 @@ def export_quote_gdoc(quote_id):
         else:
             for item in order.items:
                 if hasattr(item, 'oza') and item.oza and item.oza.strip() and item.oza.strip() != '-':
-                    model_name = item.oza.strip()
+                    code_str = f" ({item.ozk.strip()})" if hasattr(item, 'ozk') and item.ozk and item.ozk.strip() not in ["", "-"] else ""
+                    model_name = f"{item.oza.strip()}{code_str}"
                     break
         
         # 2. B2B Typology Logic with ERP Pricing

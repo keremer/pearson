@@ -247,6 +247,117 @@ body {
     transition: background-color 0.2s;
 }
 
+/* =========================================
+   Component-Specific Extracted Classes
+   ========================================= */
+
+/* --- Quote Builder --- */
+.formatted-preview {
+    min-height: 20px;
+    font-size: 0.85rem;
+    margin-top: 2px;
+}
+.remove-row-btn {
+    margin-bottom: 22px;
+}
+
+/* --- Manage Users --- */
+.btn-update-role {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+}
+
+/* --- Register Form --- */
+.kvkk-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 0.9em;
+    cursor: pointer;
+}
+.kvkk-checkbox {
+    margin-top: 3px;
+}
+.login-footer {
+    text-align: center;
+    margin-top: 15px;
+}
+
+/* --- Public Quote --- */
+.public-quote-body {
+    background-color: var(--bg-light);
+}
+.quote-container {
+    max-width: 900px;
+    margin: 40px auto;
+}
+.brand-header {
+    border-bottom: 3px solid var(--primary-dark);
+    padding-bottom: 20px;
+}
+
+/* --- Portal Home --- */
+.portal-home-body {
+    background-color: var(--bg-light);
+}
+.platform-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+    height: 100%;
+}
+.platform-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+.icon-circle {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+/* --- Ghost Summary --- */
+.ghost-summary-body {
+    font-family: "Courier New", Courier, monospace;
+    max-width: 800px;
+    margin: 40px auto;
+    color: #000;
+    padding: 20px;
+    background-color: #fff;
+}
+.ghost-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    margin-bottom: 40px;
+}
+.ghost-table th, .ghost-table td {
+    border: 1px solid #ccc;
+    padding: 10px;
+    text-align: left;
+}
+.ghost-table th {
+    background-color: #f9f9f9;
+}
+.ghost-text-right {
+    text-align: right;
+}
+.ghost-grand-total {
+    font-size: 1.2em;
+    font-weight: bold;
+}
+.ghost-confidential {
+    font-size: 0.8em;
+    color: #666;
+    text-align: center;
+    margin-top: 50px;
+    border-top: 1px dashed #ccc;
+    padding-top: 10px;
+}
+
 .CommandButton:hover {
     background-color: var(--accent-red);
     color: var(--white);
