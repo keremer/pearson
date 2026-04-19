@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 
-{% block title %}Build Quote - {{ order.order_number }}{% endblock %}
+{% block title %}Teklif Oluştur - {{ order.order_number }}{% endblock %}
 
 {% block content %}
 <div class="row mb-4">
     <div class="col-12 d-flex justify-content-between align-items-center">
-        <h2><i class="fas fa-file-invoice-dollar text-success me-2"></i> Quote Builder</h2>
+        <h2><i class="fas fa-file-invoice-dollar text-success me-2"></i> Teklif Oluşturucu</h2>
         <h4 class="text-muted">{{ order.order_number }}</h4>
     </div>
 </div>
@@ -16,54 +16,67 @@
         <div class="col-md-4">
             <div class="card shadow-sm border-0 mb-4">
                 <div class="card-header bg-dark text-white fw-bold">
-                    <i class="fas fa-calculator me-2"></i> ProSAP Pricing
+                    <i class="fas fa-calculator me-2"></i> ProSAP Fiyatlandırması
                 </div>
                 <div class="card-body bg-light">
                     <div class="mb-3">
-                        <label for="list_price" class="form-label text-muted small fw-bold">List Price (₺)</label>
-                        <input type="number" step="0.01" class="form-control" id="list_price" name="list_price" required>
+                        <label for="list_price" class="form-label text-muted small fw-bold">Liste Fiyatı</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light fw-bold">₺</span>
+                            <input type="number" step="0.01" class="form-control text-end fw-bold fs-5" id="list_price" name="list_price" required>
+                            <input type="number" step="0.01" class="form-control text-end fw-bold fs-5" id="list_price" name="list_price" value="{{ source_quote.list_price if source_quote else '' }}" required>
+                        </div>
+                        <div class="formatted-preview text-primary small text-end fw-bold" style="min-height: 20px; font-size: 0.85rem; margin-top: 2px;"></div>
                     </div>
                     <div class="mb-3">
-                        <label for="discount_amount" class="form-label text-muted small fw-bold">Discount Amount (₺)</label>
-                        <input type="number" step="0.01" class="form-control text-danger" id="discount_amount" name="discount_amount" value="0">
+                        <label for="discount_amount" class="form-label text-muted small fw-bold">İndirim (Oran / Tutar)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light fw-bold">%</span>
+                            <input type="number" step="0.1" class="form-control text-danger text-end fw-bold fs-5" id="discount_percentage" placeholder="0.0">
+                            <span class="input-group-text bg-light text-danger fw-bold">₺</span>
+                            <input type="number" step="0.01" class="form-control text-danger text-end fw-bold fs-5" id="discount_amount" name="discount_amount" value="0">
+                            <input type="number" step="0.01" class="form-control text-danger text-end fw-bold fs-5" id="discount_amount" name="discount_amount" value="{{ source_quote.discount_amount if source_quote else '0' }}">
+                        </div>
+                        <div class="formatted-preview text-danger small text-end fw-bold" style="min-height: 20px; font-size: 0.85rem; margin-top: 2px;"></div>
                     </div>
                     <div class="mb-3">
-                        <label for="tax_rate" class="form-label text-muted small fw-bold">Tax Rate (%)</label>
-                        <input type="number" step="0.1" class="form-control" id="tax_rate" name="tax_rate" value="20.0" required>
+                        <label for="tax_rate" class="form-label text-muted small fw-bold">KDV Oranı (%)</label>
+                        <input type="number" step="0.1" class="form-control text-end fw-bold fs-5" id="tax_rate" name="tax_rate" value="20.0" required>
+                        <input type="number" step="0.1" class="form-control text-end fw-bold fs-5" id="tax_rate" name="tax_rate" value="{{ source_quote.tax_rate if source_quote else '20.0' }}" required>
                     </div>
                     <hr>
-                    <div class="mb-3">
-                        <label for="total_amount" class="form-label fw-bold text-success">Total Customer Pays (₺)</label>
-                        <input type="number" step="0.01" class="form-control form-control-lg border-success text-success fw-bold" id="total_amount" name="total_amount" readonly>
+                    <div class="mb-3 text-end">
+                        <label class="form-label fw-bold text-success mb-0">Müşterinin Ödeyeceği Toplam</label>
+                        <h2 id="total_amount_display" class="text-success fw-bold mb-0">₺0.00</h2>
+                        <input type="hidden" id="total_amount" name="total_amount" value="0">
                     </div>
                 </div>
             </div>
 
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-secondary text-white fw-bold">
-                    <i class="fas fa-handshake me-2"></i> Terms & Conditions
+                    <i class="fas fa-handshake me-2"></i> Şartlar & Koşullar
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <label for="validity_days" class="form-label small fw-bold">Validity (Days)</label>
+                        <label for="validity_days" class="form-label small fw-bold">Geçerlilik Süresi (Gün)</label>
                         <input type="number" class="form-control" id="validity_days" name="validity_days" value="15">
+                        <input type="number" class="form-control" id="validity_days" name="validity_days" value="{{ source_quote.validity_days if source_quote else '15' }}">
                     </div>
                     <div class="mb-3">
-                        <label for="delivery_place" class="form-label small fw-bold">Delivery Place</label>
-                        <input type="text" class="form-control" id="delivery_place" name="delivery_place" placeholder="e.g., Customer Address">
+                        <label for="delivery_place" class="form-label small fw-bold">Teslimat Yeri</label>
+                        <input type="text" class="form-control" id="delivery_place" name="delivery_place" placeholder="Örn: Müşteri Adresi">
+                        <input type="text" class="form-control" id="delivery_place" name="delivery_place" placeholder="Örn: Müşteri Adresi" value="{{ source_quote.delivery_place if source_quote else '' }}">
                     </div>
                     <div class="mb-3">
-                        <label for="payment_terms" class="form-label small fw-bold">Payment Terms</label>
-                        <textarea class="form-control" id="payment_terms" name="payment_terms" rows="2" placeholder="e.g., 50% upfront, 50% upon delivery"></textarea>
-                    </div>
-                    <div class="card shadow-sm border-0 mt-4">
-                <div class="card-header bg-primary text-white fw-bold d-flex justify-content-between align-items-center">
-                    <span><i class="fas fa-money-check-alt me-2"></i> Ödeme Planı</span>
-                    <button type="button" class="btn btn-sm btn-light text-primary fw-bold" id="addInstallmentBtn">
-                        <i class="fas fa-plus"></i> Ekle
-                    </button>
-                </div>
-                <div class="card-body bg-light p-2">
+                    <div class="card shadow-sm border-0 mt-4 mb-4">
+                        <div class="card-header bg-primary text-white fw-bold d-flex justify-content-between align-items-center">
+                            <span><i class="fas fa-money-check-alt me-2"></i> Ödeme Planı</span>
+                            <button type="button" class="btn btn-sm btn-light text-primary fw-bold" id="addInstallmentBtn">
+                                <i class="fas fa-plus"></i> Ekle
+                            </button>
+                        </div>
+                        <div class="card-body bg-light p-3">
                     
                     <datalist id="paymentMethods">
                         <option value="Kredi Kartı 3+5 Taksit">
@@ -73,41 +86,97 @@
                     </datalist>
 
                     <div id="installmentsContainer">
-                        <div class="row g-1 align-items-end mb-2 installment-row">
-                            <div class="col-4">
-                                <label class="form-label small text-muted mb-0">Tarih</label>
-                                <input type="date" class="form-control form-control-sm" name="installment_date[]" aria-label="Ödeme Tarihi" required>
+                                <div class="row g-2 align-items-end mb-3 installment-row">
+                                    <div class="col-md-3 col-12">
+                                        <label class="form-label small text-muted mb-0 fw-bold">Tarih</label>
+                                        <input type="date" class="form-control fw-bold" name="installment_date[]" aria-label="Ödeme Tarihi" required>
+                            <div id="installmentsContainer">
+                                {% if source_quote and source_quote.installments %}
+                                    {% for inst in source_quote.installments %}
+                                    <div class="row g-2 align-items-end mb-3 installment-row">
+                                        <div class="col-md-3 col-12">
+                                            <label class="form-label small text-muted mb-0 fw-bold">Tarih</label>
+                                            <input type="date" class="form-control fw-bold" name="installment_date[]" aria-label="Ödeme Tarihi" value="{{ inst.date.strftime('%Y-%m-%d') if inst.date else '' }}" required>
+                                        </div>
+                                        <div class="col-md-4 col-12">
+                                            <label class="form-label small text-muted mb-0 fw-bold">Yöntem</label>
+                                            <input type="text" class="form-control fw-bold" name="installment_method[]" list="paymentMethods" aria-label="Ödeme Yöntemi" placeholder="Örn: Havale" value="{{ inst.method }}" required>
+                                        </div>
+                                        <div class="col-md-4 col-10">
+                                            <label class="form-label small text-muted mb-0 fw-bold">Tutar</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text bg-white fw-bold">₺</span>
+                                                <input type="number" step="0.01" class="form-control fw-bold fs-5 text-end installment-amount" name="installment_amount[]" aria-label="Taksit Tutarı" value="{{ inst.amount }}" required>
+                                            </div>
+                                            <div class="formatted-preview text-primary small text-end fw-bold" style="min-height: 20px; font-size: 0.85rem; margin-top: 2px;"></div>
+                                        </div>
+                                        <div class="col-md-1 col-2 text-end">
+                                            <button type="button" class="btn btn-outline-danger remove-row w-100" {% if loop.index == 1 %}disabled{% endif %} aria-label="Bu taksiti sil" title="Bu taksiti sil" style="margin-bottom: 22px;"><i class="fas fa-trash"></i></button>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 col-12">
+                                        <label class="form-label small text-muted mb-0 fw-bold">Yöntem</label>
+                                        <input type="text" class="form-control fw-bold" name="installment_method[]" list="paymentMethods" aria-label="Ödeme Yöntemi" placeholder="Örn: Havale" required>
+                                    </div>
+                                    <div class="col-md-4 col-10">
+                                        <label class="form-label small text-muted mb-0 fw-bold">Tutar</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white fw-bold">₺</span>
+                                            <input type="number" step="0.01" class="form-control fw-bold fs-5 text-end installment-amount" name="installment_amount[]" aria-label="Taksit Tutarı" required>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="row g-2 align-items-end mb-3 installment-row">
+                                        <div class="col-md-3 col-12">
+                                            <label class="form-label small text-muted mb-0 fw-bold">Tarih</label>
+                                            <input type="date" class="form-control fw-bold" name="installment_date[]" aria-label="Ödeme Tarihi" required>
+                                        </div>
+                                        <div class="formatted-preview text-primary small text-end fw-bold" style="min-height: 20px; font-size: 0.85rem; margin-top: 2px;"></div>
+                                        <div class="col-md-4 col-12">
+                                            <label class="form-label small text-muted mb-0 fw-bold">Yöntem</label>
+                                            <input type="text" class="form-control fw-bold" name="installment_method[]" list="paymentMethods" aria-label="Ödeme Yöntemi" placeholder="Örn: Havale" required>
+                                        </div>
+                                        <div class="col-md-4 col-10">
+                                            <label class="form-label small text-muted mb-0 fw-bold">Tutar</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text bg-white fw-bold">₺</span>
+                                                <input type="number" step="0.01" class="form-control fw-bold fs-5 text-end installment-amount" name="installment_amount[]" aria-label="Taksit Tutarı" required>
+                                            </div>
+                                            <div class="formatted-preview text-primary small text-end fw-bold" style="min-height: 20px; font-size: 0.85rem; margin-top: 2px;"></div>
+                                        </div>
+                                        <div class="col-md-1 col-2 text-end">
+                                            <button type="button" class="btn btn-outline-danger remove-row w-100" disabled aria-label="Bu taksiti sil" title="Bu taksiti sil" style="margin-bottom: 22px;"><i class="fas fa-trash"></i></button>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-1 col-2 text-end">
+                                        <button type="button" class="btn btn-outline-danger remove-row w-100" disabled aria-label="Bu taksiti sil" title="Bu taksiti sil" style="margin-bottom: 22px;"><i class="fas fa-trash"></i></button>
+                                    </div>
+                                </div>
+                                {% endif %}
                             </div>
-                            <div class="col-4">
-                                <label class="form-label small text-muted mb-0">Yöntem</label>
-                                <input type="text" class="form-control form-control-sm" name="installment_method[]" list="paymentMethods" aria-label="Ödeme Yöntemi" required placeholder="Örn: Havale" required>
-                            </div>
-                            <div class="col-3">
-                                <label class="form-label small text-muted mb-0">Tutar (₺)</label>
-                                <input type="number" step="0.01" class="form-control form-control-sm installment-amount" name="installment_amount[]" aria-label="Taksit Tutarı" required>
-                            </div>
-                            <div class="col-1 text-end">
-                                <button type="button" class="btn btn-sm btn-outline-danger remove-row" disabled aria-label="Bu taksiti sil" title="Bu taksiti sil"><i class="fas fa-times"></i></button>
+                    
+                            <hr class="my-3">
+                            <div class="d-flex justify-content-between align-items-center p-3 bg-white border rounded">
+                                <span class="fs-5 fw-bold text-muted">Kalan Bakiye:</span>
+                                <div class="d-flex align-items-center gap-3">
+                                    <span class="fs-4 fw-bold text-danger" id="balanceRemaining">₺0.00</span>
+                                    <button type="button" class="btn btn-sm btn-outline-success" id="quickFillBtn" title="Kalan Bakiyeyi Yeni Taksite Ekle">
+                                        <i class="fas fa-magic"></i> Hızlı Doldur
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    
-                    <hr class="my-2">
-                    <div class="d-flex justify-content-between align-items-center px-2">
-                        <span class="small fw-bold text-muted">Kalan Bakiye:</span>
-                        <span class="fw-bold text-danger" id="balanceRemaining">0.00 ₺</span>
-                    </div>
                 </div>
-            </div>
                     <div class="mb-3">
-                        <label for="special_notes" class="form-label small fw-bold">Internal/Special Notes</label>
-                        <textarea class="form-control" id="special_notes" name="special_notes" rows="2" placeholder="e.g., Customer insisted on matte finish despite scratching risk."></textarea>
+                        <label for="special_notes" class="form-label small fw-bold">İç/Özel Notlar</label>
+                        <textarea class="form-control" id="special_notes" name="special_notes" rows="2" placeholder="Örn: Çizilme riskine rağmen müşteri mat yüzeyde ısrar etti."></textarea>
+                        <textarea class="form-control" id="special_notes" name="special_notes" rows="2" placeholder="Örn: Çizilme riskine rağmen müşteri mat yüzeyde ısrar etti.">{{ source_quote.special_notes if source_quote else '' }}</textarea>
                     </div>
                 </div>
             </div>
             
             <button type="submit" class="btn btn-success btn-lg w-100 mt-4 shadow" title="Güvenli Teklif Oluştur" aria-label="Güvenli Teklif Oluştur">
-                <i class="fas fa-magic me-2"></i> Generate Secure Quote
+                <i class="fas fa-magic me-2"></i> Güvenli Teklif Oluştur
             </button>
         </div>
 
@@ -115,20 +184,20 @@
             <div class="card shadow-sm border-0 h-100">
                 <div class="card-header bg-white border-bottom-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0 fw-bold text-secondary">
-                        <i class="fas fa-eye-slash me-2"></i> Client Visibility & Categories
+                        <i class="fas fa-eye-slash me-2"></i> Müşteri Görünürlüğü & Kategoriler
                     </h5>
-                    <span class="badge bg-warning text-dark">Uncheck to hide for margin</span>
+                    <span class="badge bg-warning text-dark">Gizlemek için işareti kaldırın</span>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table table-hover align-middle">
                             <thead class="table-light">
                                 <tr>
-                                    <th scope="col" class="text-center">Visible</th>
-                                    <th scope="col">Category</th>
-                                    <th scope="col">Code (URK)</th>
-                                    <th scope="col">Product Name</th>
-                                    <th scope="col">Qty</th>
+                                    <th scope="col" class="text-center">Görünür</th>
+                                    <th scope="col">Kategori</th>
+                                    <th scope="col">Kod (URK)</th>
+                                    <th scope="col">Ürün Adı</th>
+                                    <th scope="col">Miktar</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -136,7 +205,7 @@
                                 <tr>
                                     <td class="text-center">
                                         <div class="form-check form-switch d-flex justify-content-center">
-                                            <label class="visually-hidden" for="visibility_{{ item.item_id }}">Toggle visibility for {{ item.ura }}</label>
+                                            <label class="visually-hidden" for="visibility_{{ item.item_id }}">{{ item.ura }} için görünürlüğü değiştir</label>
                                             <input class="form-check-input fs-4" type="checkbox" 
                                                    id="visibility_{{ item.item_id }}"
                                                    name="visibility_{{ item.item_id }}" 
@@ -145,12 +214,12 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <label class="visually-hidden" for="category_{{ item.item_id }}">Select category for {{ item.ura }}</label>
+                                        <label class="visually-hidden" for="category_{{ item.item_id }}">{{ item.ura }} için kategori seç</label>
                                     <select class="form-select form-select-sm" id="category_{{ item.item_id }}" name="category_{{ item.item_id }}" title="Kategori Seç" aria-label="Kategori Seç">
-                                            <option value="Furniture" {% if item.category == 'Furniture' %}selected{% endif %}>Kelebek Furniture</option>
-                                            <option value="Appliance" {% if item.category == 'Appliance' %}selected{% endif %}>Appliance / Sink</option>
-                                            <option value="Countertop" {% if item.category == 'Countertop' %}selected{% endif %}>Countertop</option>
-                                            <option value="Accessory" {% if item.category == 'Accessory' %}selected{% endif %}>Accessory</option>
+                                            <option value="Furniture" {% if item.category == 'Furniture' %}selected{% endif %}>Kelebek Mobilya</option>
+                                            <option value="Appliance" {% if item.category == 'Appliance' %}selected{% endif %}>Cihaz / Eviye</option>
+                                            <option value="Countertop" {% if item.category == 'Countertop' %}selected{% endif %}>Tezgah</option>
+                                            <option value="Accessory" {% if item.category == 'Accessory' %}selected{% endif %}>Aksesuar</option>
                                         </select>
                                     </td>
                                     <td class="text-muted small"><code>{{ item.urk }}</code></td>
@@ -172,8 +241,36 @@
     document.addEventListener("DOMContentLoaded", function() {
         const listPriceInput = document.getElementById('list_price');
         const discountInput = document.getElementById('discount_amount');
+        const discountPercInput = document.getElementById('discount_percentage');
         const taxRateInput = document.getElementById('tax_rate');
         const totalInput = document.getElementById('total_amount');
+        const totalDisplay = document.getElementById('total_amount_display');
+        const installContainer = document.getElementById('installmentsContainer');
+        const balanceDisplay = document.getElementById('balanceRemaining');
+
+        // Initialize discount percentage from pre-filled values
+        if (listPriceInput.value && discountInput.value) {
+            const lp = parseFloat(listPriceInput.value) || 0;
+            const da = parseFloat(discountInput.value) || 0;
+            if (lp > 0) {
+                discountPercInput.value = ((da / lp) * 100).toFixed(2);
+            }
+        }
+
+        // Custom format: ₺###'###.##
+        function formatCurrency(value) {
+            if (isNaN(value)) return "₺0.00";
+            let parts = Number(value).toFixed(2).split('.');
+            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, "'");
+            return "₺" + parts[0] + "." + parts[1];
+        }
+
+        function updatePreview(inputElem) {
+            let previewElem = inputElem.parentElement.nextElementSibling;
+            if (previewElem && previewElem.classList.contains('formatted-preview')) {
+                previewElem.textContent = inputElem.value ? formatCurrency(inputElem.value) : '';
+            }
+        }
 
         function calculateTotal() {
             const listPrice = parseFloat(listPriceInput.value) || 0;
@@ -185,11 +282,154 @@
             const total = subtotal + taxAmount;
             
             totalInput.value = total.toFixed(2);
+            totalDisplay.textContent = formatCurrency(total);
+            
+            updatePreview(listPriceInput);
+            updatePreview(discountInput);
+            
+            calculateBalance();
         }
 
-        listPriceInput.addEventListener('input', calculateTotal);
-        discountInput.addEventListener('input', calculateTotal);
+        function calculateBalance() {
+            const total = parseFloat(totalInput.value) || 0;
+            let installmentSum = 0;
+            
+            document.querySelectorAll('.installment-amount').forEach(input => {
+                installmentSum += parseFloat(input.value) || 0;
+                updatePreview(input);
+            });
+            
+            const balance = total - installmentSum;
+            balanceDisplay.textContent = formatCurrency(balance);
+            
+            if (balance === 0 && total > 0) {
+                balanceDisplay.className = "fs-4 fw-bold text-success";
+            } else if (balance < 0) {
+                balanceDisplay.className = "fs-4 fw-bold text-warning";
+            } else {
+                balanceDisplay.className = "fs-4 fw-bold text-danger";
+            }
+        }
+
+        // Sync inputs: List Price changes keep the amount static but update the percentage display
+        listPriceInput.addEventListener('input', function() {
+            const listPrice = parseFloat(this.value) || 0;
+            const amount = parseFloat(discountInput.value) || 0;
+            if (listPrice > 0) {
+                discountPercInput.value = ((amount / listPrice) * 100).toFixed(2);
+            }
+            calculateTotal();
+        });
+        
+        // Sync inputs: Typing a percentage automatically calculates the discount amount
+        discountPercInput.addEventListener('input', function() {
+            const listPrice = parseFloat(listPriceInput.value) || 0;
+            const perc = parseFloat(this.value) || 0;
+            discountInput.value = (listPrice * (perc / 100)).toFixed(2);
+            calculateTotal();
+        });
+
+        // Sync inputs: Typing an amount automatically calculates the percentage
+        discountInput.addEventListener('input', function() {
+            const listPrice = parseFloat(listPriceInput.value) || 0;
+            const amount = parseFloat(this.value) || 0;
+            if (listPrice > 0) {
+                discountPercInput.value = ((amount / listPrice) * 100).toFixed(2);
+            }
+            calculateTotal();
+        });
+        
         taxRateInput.addEventListener('input', calculateTotal);
+
+        document.getElementById('addInstallmentBtn').addEventListener('click', function() {
+            const firstRow = document.querySelector('.installment-row');
+            const newRow = firstRow.cloneNode(true);
+            
+            newRow.querySelectorAll('input').forEach(input => {
+                input.value = '';
+                if (input.classList.contains('installment-amount')) {
+                    input.addEventListener('input', calculateBalance);
+                }
+            });
+            
+            const preview = newRow.querySelector('.formatted-preview');
+            if (preview) preview.textContent = '';
+            
+            const deleteBtn = newRow.querySelector('.remove-row');
+            deleteBtn.disabled = false;
+            deleteBtn.addEventListener('click', function() {
+                newRow.remove();
+                calculateBalance();
+            });
+            
+            installContainer.appendChild(newRow);
+        });
+
+        document.querySelectorAll('.installment-amount').forEach(input => {
+            input.addEventListener('input', calculateBalance);
+        });
+
+        // Attach listeners to pre-rendered remove buttons (if they exist from a duplicated quote)
+        document.querySelectorAll('.remove-row').forEach(btn => {
+            if (!btn.disabled) {
+                btn.addEventListener('click', function() {
+                    this.closest('.installment-row').remove();
+                    calculateBalance();
+                });
+            }
+        });
+
+        // Quick Fill Logic
+        const quickFillBtn = document.getElementById('quickFillBtn');
+        if (quickFillBtn) {
+            quickFillBtn.addEventListener('click', function() {
+                const total = parseFloat(totalInput.value) || 0;
+                let installmentSum = 0;
+                
+                document.querySelectorAll('.installment-amount').forEach(input => {
+                    installmentSum += parseFloat(input.value) || 0;
+                });
+                
+                const balance = total - installmentSum;
+                
+                if (balance > 0.01) {
+                    // Click the 'add' button to create a new row
+                    document.getElementById('addInstallmentBtn').click();
+                    
+                    // Find the newly created row's amount input and set the remaining balance
+                    const amountInputs = document.querySelectorAll('.installment-amount');
+                    const lastInput = amountInputs[amountInputs.length - 1];
+                    lastInput.value = balance.toFixed(2);
+                    lastInput.dispatchEvent(new Event('input')); // Force recalculation and format
+                } else {
+                    alert("Eklenecek bakiye bulunmuyor veya bakiye zaten sıfırlandı.");
+                }
+            });
+        }
+
+        // Form Submission Validation: Enforce Zero Balance
+        const quoteForm = document.getElementById('quoteBuilderForm');
+        if (quoteForm) {
+            quoteForm.addEventListener('submit', function(e) {
+                const total = parseFloat(totalInput.value) || 0;
+                let installmentSum = 0;
+                
+                document.querySelectorAll('.installment-amount').forEach(input => {
+                    installmentSum += parseFloat(input.value) || 0;
+                });
+                
+                const balance = total - installmentSum;
+                
+                // Allow a 1 cent margin for float precision errors, otherwise block!
+                if (total > 0 && Math.abs(balance) > 0.01) {
+                    e.preventDefault();
+                    alert("Hata: Ödeme planı eksik veya hatalı.\nKalan Bakiye tam olarak sıfır (₺0.00) olana kadar teklif oluşturulamaz.");
+                    balanceDisplay.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+        }
+
+        calculateTotal();
     });
 </script>
 {% endblock %}

@@ -447,6 +447,16 @@ def export_quote_gdoc(quote_id):
         typology_itemized_pages = []
         grand_total = 0.0
         
+        # Determine Kitchen Model Name dynamically
+        model_name = "Standart Mutfak"
+        if order.preferences and order.preferences.model_name:
+            model_name = order.preferences.model_name
+        else:
+            for item in order.items:
+                if hasattr(item, 'oza') and item.oza and item.oza.strip() and item.oza.strip() != '-':
+                    model_name = item.oza.strip()
+                    break
+        
         # 2. B2B Typology Logic with ERP Pricing
         if hasattr(order, 'typologies') and order.typologies:
             for typo in order.typologies:
@@ -484,34 +494,38 @@ def export_quote_gdoc(quote_id):
             total_kitchen_count = 1
             visible_items = [item for item in order.items if item.is_visible_on_quote]
             
-            unit_cost = 0.0
-            for item in visible_items:
-                if item.price_record and item.price_record.final_unit_price is not None:
-                    unit_cost += float(item.price_record.final_unit_price)
-            
             project_summary_table.append({
-                "MUTFAK TİPİ": "Standart Mutfak",
-                "ADET FİYATI": format_try(unit_cost),
-                "TOPLAM FİYAT": format_try(unit_cost)
+                "MUTFAK TİPİ": model_name,
+                "ADET FİYATI": format_try(quote.total_amount),
+                "TOPLAM FİYAT": format_try(quote.total_amount)
             })
             typology_itemized_pages.append({
-                "typology_name": "Standart Mutfak",
+                "typology_name": model_name,
                 "items": [{"name": i.ura, "code": i.urk, "qty": i.adet, "unit": i.brm} for i in visible_items]
             })
 
         # 3. Format the tables into clean strings for the Google Doc
         summary_text = ""
         for row in project_summary_table:
-            mutfak = str(row.get("MUTFAK TİPİ", "")).ljust(40)
-            fiyat = str(row.get("ADET FİYATI", "")).rjust(15)
-            toplam = str(row.get("TOPLAM FİYAT", "")).rjust(15)
-            summary_text += f"{mutfak}\t{fiyat}\t{toplam}\n"
+            if row.get("MUTFAK TİPİ") == "TOPLAM":
+                summary_text += f"\nGENEL TOPLAM: {row.get('TOPLAM FİYAT')} ₺\n"
+            else:
+                summary_text += f"• {row.get('MUTFAK TİPİ')} : {row.get('TOPLAM FİYAT')} ₺\n"
 
         itemized_text = ""
         for page in typology_itemized_pages:
             itemized_text += f"\n--- {page['typology_name']} MUTFAK ÜNİTELERİ ---\n"
             for item in page['items']:
                 itemized_text += f"• [{item['code']}] {item['name']} - {item['qty']} {item['unit']}\n"
+
+        # 3.5 Build the Installment Breakdown Table
+        installment_text = ""
+        if quote.installments:
+            for inst in quote.installments:
+                date_str = inst.date.strftime('%d.%m.%Y') if inst.date else "Belirtilmedi"
+                installment_text += f"• {date_str}  |  {inst.method}  |  {format_try(inst.amount)} ₺\n"
+        else:
+            installment_text = "Özel bir ödeme planı belirtilmemiştir."
 
         # 4. Build the Replacement Dictionary (Tag -> Value)
         replacements = [
@@ -523,6 +537,7 @@ def export_quote_gdoc(quote_id):
             {'{{typology_list_bulleted}}': typology_list_bulleted.strip()},
             {'{{project_summary_table}}': summary_text},
             {'{{typology_itemized_pages}}': itemized_text},
+            {'{{installment_plan_table}}': installment_text},
             {'{{payment_terms}}': quote.payment_terms or "Ödeme planı ektedir."},
             {'{{validity_date}}': validity_date_str}
         ]
@@ -551,7 +566,8 @@ def export_quote_gdoc(quote_id):
             
             if new_doc_id:
                 gdoc_url = f"https://docs.google.com/document/d/{new_doc_id}/edit"
-                flash(f'Teklif başarıyla oluşturuldu! <a href="{gdoc_url}" target="_blank" class="alert-link">Buraya tıklayarak belgeyi açabilirsiniz.</a>', 'success')
+                # Instantly redirect the new tab directly to the Google Doc
+                return redirect(gdoc_url)
             else:
                 flash('Google Docs API reddetti. Konsol loglarını kontrol edin.', 'danger')
         else:

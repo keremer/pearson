@@ -22,7 +22,7 @@ def index():
     # 2. Check the role on the linked UserAccount!
     user_role = current_user.account.role # type: ignore
 
-    if user_role == "architect":
+    if user_role == "power_user":
         return redirect(url_for('arkhon.dashboard'))
     elif user_role == "instructor":
         return redirect(url_for('pearson.courses'))

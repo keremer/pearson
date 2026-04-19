@@ -102,15 +102,27 @@ class GoogleDocsClient(BaseInteropClient):
                         self.config.client_secrets_path, self.config.scopes
                     )
 
-                    # This generates the URL and opens it in your browser automatically
-                    auth_url, _ = flow.authorization_url(prompt='consent')
-                    print(f"🌐 Opening browser for Google Authorization: {auth_url}")
-                    webbrowser.open(auth_url)
-            
-                    # 🚨 THE FIX: Force IPv4 lock and a static port to bypass the Windows localhost/IPv6 ghost
-                    # CRITICAL: Use port 8088. WinError 10013 means Windows/Hyper-V is blocking 8080!
-                    # prompt='select_account' forces the UI to let you pick the right email
-                    creds = flow.run_local_server(host='127.0.0.1', port=8088, prompt='select_account')
+                    # 🚨 PORT SHIFT & RETRY LOGIC
+                    # Windows Hyper-V and WSL frequently reserve random blocks of ports (especially in the 8000s),
+                    # causing WinError 10013 (Access Denied). We will try port 5005 (adjacent to Flask), 
+                    # and fall back gracefully if it's taken.
+                    success = False
+                    for port in [5005, 5006, 5007]:
+                        try:
+                            creds = flow.run_local_server(host='127.0.0.1', port=port, prompt='select_account')
+                            success = True
+                            break
+                        except OSError as e:
+                            if getattr(e, 'winerror', None) in (10013, 10048):
+                                logger.warning(f"Port {port} is blocked by Windows Firewall/Hyper-V. Trying next...")
+                                continue
+                            raise
+                            
+                    if not success:
+                        raise RuntimeError("All designated Google Auth ports (5005-5007) are blocked by Windows.")
+
+                if creds is None:
+                    raise RuntimeError("Failed to obtain credentials from authentication flow.")
 
                 with open(self.config.token_path, 'w') as token:
                     token.write(creds.to_json())

@@ -40,7 +40,7 @@ class DatabaseSetup:
                     # Step B: Create Security Accounts
                     accounts = [
                         UserAccount(party_id=kerem_party.party_id, role="admin", is_confirmed=True, kvkk_approved=True), # type: ignore
-                        UserAccount(party_id=emre_party.party_id, role="architect", is_confirmed=True, kvkk_approved=True), # type: ignore
+                        UserAccount(party_id=emre_party.party_id, role="power_user", is_confirmed=True, kvkk_approved=True), # type: ignore
                         UserAccount(party_id=ediz_party.party_id, role="instructor", is_confirmed=True, kvkk_approved=True) # type: ignore
                     ]
                     

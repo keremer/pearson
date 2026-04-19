@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 
-{% block title %}Order #{{ order.order_number }} - Arkhon{% endblock %}
+{% block title %}Sipariş #{{ order.order_number }} - Arkhon{% endblock %}
 
 {% block content %}
 <div class="container-fluid mt-4">
     
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2 class="mb-0"><i class="fas fa-clipboard-list text-success me-2"></i> Order #{{ order.order_number }}</h2>
-            <p class="text-muted mt-1 mb-0">Total Items: <strong>{{ items|length }}</strong> | Imported on: {{ order.date.strftime('%Y-%m-%d') if order.date else 'Unknown' }}</p>
+            <h2 class="mb-0"><i class="fas fa-clipboard-list text-success me-2"></i> Sipariş #{{ order.order_number }}</h2>
+            <p class="text-muted mt-1 mb-0">Toplam Ürün: <strong>{{ items|length }}</strong> | İçe Aktarılma: {{ order.date.strftime('%Y-%m-%d') if order.date else 'Bilinmiyor' }}</p>
         </div>
         <div>
             <button type="button" class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#addCatalogModal" title="Cihaz veya Tezgah Ekle" aria-label="Cihaz veya Tezgah Ekle">
@@ -30,7 +30,7 @@
             <a href="{{ url_for('arkhon.index') }}" class="btn btn-outline-secondary me-2" title="Dashboard'a Dön" aria-label="Dashboard'a Dön">
                 <i class="fas fa-arrow-left"></i> Dashboard
             </a>
-            <form action="{{ url_for('arkhon.delete_order', order_id=order.order_id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this entire order?');">
+            <form action="{{ url_for('arkhon.delete_order', order_id=order.order_id) }}" method="POST" class="d-inline" onsubmit="return confirm('Bu siparişi ve tüm içeriğini silmek istediğinize emin misiniz?');">
                 <button type="submit" class="btn btn-danger" title="Siparişi Sil" aria-label="Siparişi Sil">
                     <i class="fas fa-trash-alt"></i> Siparişi Sil
                 </button>
@@ -60,7 +60,7 @@
                     </div>
                     
                     <div class="d-flex gap-2">
-                        <form method="POST" action="{{ url_for('arkhon.export_quote_gdoc', quote_id=quote.quote_id) }}" class="m-0">
+                        <form method="POST" action="{{ url_for('arkhon.export_quote_gdoc', quote_id=quote.quote_id) }}" class="m-0" target="_blank">
                             <button type="submit" class="btn btn-sm btn-outline-primary" title="Google Docs Olarak Dışa Aktar" aria-label="Google Docs Olarak Dışa Aktar">
                                 <i class="fab fa-google-drive me-1"></i> Docs'a Aktar
                             </button>
@@ -84,12 +84,12 @@
                     <thead class="table-dark">
                         <tr>
                             <th scope="col" class="ps-4">Pozno</th>
-                            <th scope="col">Code (URK)</th>
-                            <th scope="col">Product Name (URA)</th>
-                            <th scope="col" class="text-center">Qty</th>
-                            <th scope="col">Dimensions (W x H x D)</th>
-                            <th scope="col">Body Color</th>
-                            <th scope="col">Cover Color</th>
+                            <th scope="col">Kod (URK)</th>
+                            <th scope="col">Ürün Adı (URA)</th>
+                            <th scope="col" class="text-center">Miktar</th>
+                            <th scope="col">Boyutlar (G x Y x D)</th>
+                            <th scope="col">Gövde Rengi</th>
+                            <th scope="col">Kapak Rengi</th>
                             <th scope="col" class="text-end pe-4">Fiyat (₺)</th>
                         </tr>
                     </thead>
@@ -98,8 +98,8 @@
                         <tr>
                             <td class="ps-4 fw-bold text-secondary">{{ item.pozno or '-' }}</td>
                             <td><span class="badge bg-light text-dark border">{{ item.urk or 'N/A' }}</span></td>
-                            <td class="fw-medium">{{ item.ura or 'Unknown Product' }}</td>
-                            <td class="text-center fw-bold">{{ item.adet or 0 }} {{ item.brm or 'Ad' }}</td>
+                            <td class="fw-medium">{{ item.ura or 'Bilinmeyen Ürün' }}</td>
+                            <td class="text-center fw-bold">{{ item.adet or 0 }} {{ item.brm or 'adet' }}</td>
                             
                             <td>
                                 {% if item.byt_x or item.byt_y or item.byt_z %}
@@ -138,7 +138,7 @@
                         <tr>
                             <td colspan="8" class="text-center py-5 text-muted">
                                 <i class="fas fa-box-open fa-3x mb-3 text-light"></i><br>
-                                No items were parsed for this order.
+                                Bu sipariş için hiçbir ürün bulunamadı.
                             </td>
                         </tr>
                         {% endfor %}
@@ -153,15 +153,15 @@
     <div class="modal-dialog">
         <div class="modal-content border-0 shadow">
             <div class="modal-header bg-dark text-white">
-                <h5 class="modal-title" id="addCatalogModalLabel"><i class="fas fa-box-open me-2" aria-hidden="true"></i> Add Catalog Item</h5>
+                <h5 class="modal-title" id="addCatalogModalLabel"><i class="fas fa-box-open me-2" aria-hidden="true"></i> Katalog Ürünü Ekle</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Kapat" title="Kapat"></button>
             </div>
             <form method="POST" action="{{ url_for('arkhon.add_catalog_item', order_id=order.order_id) }}">
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="catalog_product_id" class="form-label fw-bold">Select Product</label>
+                        <label for="catalog_product_id" class="form-label fw-bold">Ürün Seçin</label>
                         <select class="form-select" id="catalog_product_id" name="catalog_product_id" required>
-                            <option value="" disabled selected>Choose an appliance or countertop...</option>
+                            <option value="" disabled selected>Bir cihaz veya tezgah seçin...</option>
                             {% for product in catalog_items %}
                                 <option value="{{ product.product_id }}">
                                     [{{ product.category }}] {{ product.brand }} - {{ product.product_name }}
@@ -170,13 +170,13 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label for="qty" class="form-label fw-bold">Quantity</label>
+                        <label for="qty" class="form-label fw-bold">Miktar</label>
                         <input type="number" class="form-control" id="qty" name="qty" value="1" min="0.5" step="0.5" required>
                     </div>
                 </div>
                 <div class="modal-footer bg-light">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" title="İptal" aria-label="İptal">Cancel</button>
-                <button type="submit" class="btn btn-primary" title="Siparişe Ekle" aria-label="Siparişe Ekle"><i class="fas fa-plus me-2" aria-hidden="true"></i> Add to Order</button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" title="İptal" aria-label="İptal">İptal</button>
+                <button type="submit" class="btn btn-primary" title="Siparişe Ekle" aria-label="Siparişe Ekle"><i class="fas fa-plus me-2" aria-hidden="true"></i> Siparişe Ekle</button>
                 </div>
             </form>
         </div>

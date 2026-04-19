@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quote Approval - Arkhon Mimarlık</title>
+    <title>Teklif Onayı - Arkhon Mimarlık</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -33,28 +33,28 @@
             <div class="brand-header d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h2 class="fw-bold mb-0 text-primary">Arkhon Mimarlık</h2>
-                    <p class="text-muted small mb-0">Authorized Kelebek Mutfak & Banyo Dealer</p>
+                    <p class="text-muted small mb-0">Yetkili Kelebek Mutfak & Banyo Bayisi</p>
                 </div>
                 <div class="text-end">
-                    <h4 class="text-muted">Quote #{{ order.order_number }}-v{{ quote.version }}</h4>
-                    <p class="mb-0 small"><strong>Date:</strong> {{ quote.date.strftime('%d %b %Y') if quote.date else 'N/A' }}</p>
-                    <p class="mb-0 small"><strong>Valid For:</strong> {{ quote.validity_days }} Days</p>
+                    <h4 class="text-muted">Teklif #{{ order.order_number }}-v{{ quote.version }}</h4>
+                    <p class="mb-0 small"><strong>Tarih:</strong> {{ quote.date.strftime('%d %b %Y') if quote.date else 'Belirtilmedi' }}</p>
+                    <p class="mb-0 small"><strong>Geçerlilik:</strong> {{ quote.validity_days }} Gün</p>
                 </div>
             </div>
 
             <div class="alert alert-light border border-2 d-flex justify-content-between align-items-center mb-5">
-                <h5 class="mb-0 text-secondary">Total Investment (Inc. Tax):</h5>
+                <h5 class="mb-0 text-secondary">Toplam Tutar (KDV Dahil):</h5>
                 <h3 class="mb-0 text-success fw-bold">{{ "%.2f"|format(quote.total_amount) }} ₺</h3>
             </div>
 
-            <h5 class="fw-bold mb-3"><i class="fas fa-list-ul me-2"></i> Included Items</h5>
+            <h5 class="fw-bold mb-3"><i class="fas fa-list-ul me-2"></i> Dahil Olan Ürünler</h5>
             <div class="table-responsive mb-5">
                 <table class="table table-bordered table-striped align-middle">
                     <thead class="table-light">
                         <tr>
-                            <th>Category</th>
-                            <th>Product Details</th>
-                            <th class="text-center">Qty</th>
+                            <th>Kategori</th>
+                            <th>Ürün Detayları</th>
+                            <th class="text-center">Miktar</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -63,7 +63,7 @@
                             <td><span class="badge bg-secondary">{{ item.category }}</span></td>
                             <td>
                                 <strong>{{ item.ura }}</strong><br>
-                                <small class="text-muted">Code: {{ item.urk }}</small>
+                                <small class="text-muted">Kod: {{ item.urk }}</small>
                             </td>
                             <td class="text-center">{{ item.adet }} {{ item.brm }}</td>
                         </tr>
@@ -72,39 +72,39 @@
                 </table>
             </div>
 
-            <h5 class="fw-bold mb-3"><i class="fas fa-file-contract me-2"></i> Terms & Conditions</h5>
+            <h5 class="fw-bold mb-3"><i class="fas fa-file-contract me-2"></i> Şartlar ve Koşullar</h5>
             <div class="bg-light p-4 rounded mb-5 border">
-                <p><strong>Delivery Location:</strong> {{ quote.delivery_place or 'To be confirmed' }}</p>
-                <p><strong>Payment Terms:</strong> {{ quote.payment_terms or 'Standard terms apply.' }}</p>
+                <p><strong>Teslimat Yeri:</strong> {{ quote.delivery_place or 'Teyit edilecek' }}</p>
+                <p><strong>Ödeme Şartları:</strong> {{ quote.payment_terms or 'Standart şartlar geçerlidir.' }}</p>
                 {% if quote.special_notes %}
                     <hr>
-                    <p class="mb-0 text-danger small"><i class="fas fa-exclamation-circle me-1"></i> <strong>Note:</strong> {{ quote.special_notes }}</p>
+                    <p class="mb-0 text-danger small"><i class="fas fa-exclamation-circle me-1"></i> <strong>Not:</strong> {{ quote.special_notes }}</p>
                 {% endif %}
             </div>
 
             {% if quote.status == 'approved' %}
                 <div class="alert alert-success border-success shadow-sm">
-                    <h4 class="alert-heading fw-bold"><i class="fas fa-check-circle me-2"></i> Quote Approved</h4>
+                    <h4 class="alert-heading fw-bold"><i class="fas fa-check-circle me-2"></i> Teklif Onaylandı</h4>
                     <hr>
-                    <p class="mb-1"><strong>Signature Text:</strong> "{{ quote.approval_text }}"</p>
-                    <p class="mb-1"><strong>Timestamp:</strong> {{ quote.approval_date.strftime('%Y-%m-%d %H:%M:%S UTC') }}</p>
-                    <p class="mb-0"><strong>Digital IP Footprint:</strong> {{ quote.approval_ip }}</p>
+                    <p class="mb-1"><strong>İmza Metni:</strong> "{{ quote.approval_text }}"</p>
+                    <p class="mb-1"><strong>Zaman Damgası:</strong> {{ quote.approval_date.strftime('%Y-%m-%d %H:%M:%S UTC') }}</p>
+                    <p class="mb-0"><strong>Dijital IP İzi:</strong> {{ quote.approval_ip }}</p>
                 </div>
             {% else %}
                 <div class="card border-primary shadow-sm">
                     <div class="card-header bg-primary text-white fw-bold">
-                        <i class="fas fa-signature me-2"></i> Client Digital Approval
+                        <i class="fas fa-signature me-2"></i> Müşteri Dijital Onayı
                     </div>
                     <div class="card-body">
-                        <p class="small text-muted mb-3">To legally approve this quote and proceed to contracting, please type the exact phrase below into the text box.</p>
+                        <p class="small text-muted mb-3">Bu teklifi yasal olarak onaylamak ve sözleşme aşamasına geçmek için lütfen aşağıdaki ifadeyi metin kutusuna eksiksiz yazın.</p>
                         
                         <div class="alert alert-warning text-center fw-bold font-monospace fs-5 user-select-all mb-3">
-                            I have read and approve this quote and its terms.
+                            Okudum anladım onaylıyorum
                         </div>
 
                         <form method="POST" action="{{ url_for('arkhon.approve_quote', access_token=quote.access_token) }}">
                             <div class="mb-3">
-                                <input type="text" class="form-control form-control-lg text-center" name="approval_text" placeholder="Type the phrase above..." required autocomplete="off">
+                                <input type="text" class="form-control form-control-lg text-center" name="approval_text" placeholder="Yukarıdaki ifadeyi yazın..." required autocomplete="off">
                             </div>
                         <button type="submit" class="btn btn-success btn-lg w-100 fw-bold shadow" title="Bağlayıcı Onayı Gönder" aria-label="Bağlayıcı Onayı Gönder">
                                 <i class="fas fa-lock me-2"></i> Submit Binding Approval
