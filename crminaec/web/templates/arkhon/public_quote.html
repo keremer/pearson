@@ -21,7 +21,7 @@
         {% for category, message in messages %}
           <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
             {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Kapat" title="Kapat"></button>
           </div>
         {% endfor %}
       {% endif %}
@@ -106,7 +106,7 @@
                             <div class="mb-3">
                                 <input type="text" class="form-control form-control-lg text-center" name="approval_text" placeholder="Type the phrase above..." required autocomplete="off">
                             </div>
-                            <button type="submit" class="btn btn-success btn-lg w-100 fw-bold shadow">
+                        <button type="submit" class="btn btn-success btn-lg w-100 fw-bold shadow" title="Bağlayıcı Onayı Gönder" aria-label="Bağlayıcı Onayı Gönder">
                                 <i class="fas fa-lock me-2"></i> Submit Binding Approval
                             </button>
                         </form>

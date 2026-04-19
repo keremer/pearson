@@ -68,11 +68,9 @@ class GoogleDocsClient(BaseInteropClient):
         self.user_email: Optional[str] = None
         self.extractor = DocumentContentExtractor()
         
-        # Try to authenticate on initialization
-        try:
-            self.authenticate()
-        except Exception as e:
-            logger.warning(f"Initial authentication deferred: {e}")
+        # 🚨 FIX: Deferred Authentication
+        # We removed self.authenticate() from __init__ to stop the browser from 
+        # opening automatically twice during Flask startup/reloading.
     
     
 
@@ -110,8 +108,9 @@ class GoogleDocsClient(BaseInteropClient):
                     webbrowser.open(auth_url)
             
                     # 🚨 THE FIX: Force IPv4 lock and a static port to bypass the Windows localhost/IPv6 ghost
-                    # CRITICAL: prompt='select_account' forces the UI to let you pick the right email
-                    creds = flow.run_local_server(host='127.0.0.1', port=5000, prompt='select_account')
+                    # CRITICAL: Use port 8088. WinError 10013 means Windows/Hyper-V is blocking 8080!
+                    # prompt='select_account' forces the UI to let you pick the right email
+                    creds = flow.run_local_server(host='127.0.0.1', port=8088, prompt='select_account')
 
                 with open(self.config.token_path, 'w') as token:
                     token.write(creds.to_json())

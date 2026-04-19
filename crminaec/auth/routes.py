@@ -1,8 +1,8 @@
 # crminaec/auth/routes.py
 import datetime
 
-from flask import (Blueprint, flash, redirect, render_template, request,
-                   session, url_for)
+from flask import (Blueprint, current_app, flash, redirect, render_template,
+                   request, session, url_for)
 from flask_login import login_required, login_user, logout_user
 from werkzeug.exceptions import NotFound
 
@@ -35,13 +35,20 @@ def login():
 # --- 2. Google Login Initiation ---
 @auth_bp.route('/login/google')
 def google_login():
-    redirect_uri = url_for('auth.google_callback', _external=True)
-    return oauth.google.authorize_redirect(redirect_uri)
+    # Double safety: Force HTTPS scheme if the request originated from the live domain
+    x_host = request.headers.get('X-Forwarded-Host') or ''
+    live_domain = 'crminaec.com' in request.host or 'crminaec.com' in x_host
+    if live_domain:
+        redirect_uri = url_for('auth.google_callback', _external=True, _scheme='https')
+    else:
+        redirect_uri = url_for('auth.google_callback', _external=True)
+    # 🚨 Force redirect_uri as a keyword argument so Authlib doesn't drop it
+    return oauth.google.authorize_redirect(redirect_uri=redirect_uri, prompt='select_account') # type: ignore
 
 # --- 3. Google Callback Handler (Modernized) ---
 @auth_bp.route('/login/google/callback')
 def google_callback():
-    token = oauth.google.authorize_access_token()
+    token = oauth.google.authorize_access_token() # type: ignore
     user_info = token.get('userinfo')
     
     if not user_info:
@@ -55,9 +62,9 @@ def google_callback():
     if not party:
         # 1. Create Party (NO username parameter here!)
         party = Party(
-            email=email,
-            first_name=user_info.get('given_name'),
-            last_name=user_info.get('family_name')
+            email=email, # type: ignore
+            first_name=user_info.get('given_name'), # type: ignore
+            last_name=user_info.get('family_name') # type: ignore
         )
         db.session.add(party)
         db.session.flush() # Get the party_id
@@ -67,15 +74,16 @@ def google_callback():
         # We assign a random impossibly-long password hash just to satisfy the database
         import secrets
         new_account = UserAccount(
-            party_id=party.party_id,
-            role="guest", 
-            is_confirmed=True, # Google verified their email
-            confirmed_on=datetime.datetime.utcnow(),
-            kvkk_approved=True, # You might want them to accept KVKK after first login instead
-            kvkk_approval_date=datetime.datetime.utcnow(),
-            kvkk_approval_ip=request.remote_addr or '0.0.0.0'
+            party_id=party.party_id, # type: ignore
+            role="guest", # type: ignore
+            is_confirmed=True, # type: ignore
+            confirmed_on=datetime.datetime.utcnow(), # type: ignore
+            kvkk_approved=True, # type: ignore
+            kvkk_approval_date=datetime.datetime.utcnow(), # type: ignore
+            kvkk_approval_ip=request.remote_addr or '0.0.0.0' # type: ignore
         )
         new_account.set_password(secrets.token_urlsafe(32))
+        party.account = new_account
         db.session.add(new_account)
         db.session.commit()
     
@@ -83,12 +91,16 @@ def google_callback():
     elif not party.account:
         import secrets
         new_account = UserAccount(
-            party_id=party.party_id,
-            role="guest",
-            is_confirmed=True,
-            confirmed_on=datetime.datetime.utcnow()
+            party_id=party.party_id, # type: ignore
+            role="guest", # type: ignore
+            is_confirmed=True, # type: ignore
+            confirmed_on=datetime.datetime.utcnow(), # type: ignore
+            kvkk_approved=True, # type: ignore
+            kvkk_approval_date=datetime.datetime.utcnow(), # type: ignore
+            kvkk_approval_ip=request.remote_addr or '0.0.0.0' # type: ignore
         )
         new_account.set_password(secrets.token_urlsafe(32))
+        party.account = new_account
         db.session.add(new_account)
         db.session.commit()
 
@@ -135,9 +147,9 @@ def register():
         else:
             # NEW USER: Create the Party record first
             party = Party(
-                email=email,
-                first_name=first_name,
-                last_name=last_name
+                email=email, # type: ignore
+                first_name=first_name, # type: ignore
+                last_name=last_name # type: ignore
             )
             db.session.add(party)
             # flush() asks the DB for the new party_id without finalizing the commit yet
@@ -145,11 +157,11 @@ def register():
             
         # 3. Create the UserAccount using the party_id
         new_user = UserAccount(
-            party_id=party.party_id, 
-            kvkk_approved=True,
-            kvkk_approval_date=datetime.datetime.utcnow(),
-            kvkk_approval_ip=request.remote_addr or '0.0.0.0',
-            role='customer'
+            party_id=party.party_id, # type: ignore
+            kvkk_approved=True, # type: ignore
+            kvkk_approval_date=datetime.datetime.utcnow(), # type: ignore
+            kvkk_approval_ip=request.remote_addr or '0.0.0.0', # type: ignore
+            role='customer' # type: ignore
         )
         new_user.set_password(password)
         
@@ -164,7 +176,7 @@ def register():
         email_sent = send_confirmation_email(party.email, confirm_url)
         
         if email_sent:
-            flash('Kayıt başarılı! Lütfen e-posta adresinize gönderilen onay linkine tıklayın.', 'success')
+            flash('Kayıt başarılı! Lütfen e-posta adresinize gönderilen onay linkine tıklayın. (Link 1 saat geçerlidir)', 'success')
         else:
             flash('Kayıt başarılı, ancak onay e-postası gönderilirken bir hata oluştu.', 'warning')
             
@@ -177,7 +189,7 @@ def confirm_email(token):
     try:
         email = confirm_token(token)
     except:
-        flash('Onay linki geçersiz veya süresi dolmuş.', 'danger')
+        flash('Onay linki geçersiz veya süresi dolmuş (1 saatlik süre aşılmış olabilir).', 'danger')
         return redirect(url_for('auth.login'))
         
     # Query the Party first, then access the linked account

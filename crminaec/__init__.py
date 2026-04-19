@@ -13,21 +13,24 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from crminaec.config import Config, get_config
 from crminaec.core.models import Party, db
 
+
+class AutoSchemeMiddleware:
+    """Dynamically routes HTTP/HTTPS based on the requested Host domain."""
+    def __init__(self, app):
+        self.app = app
+
+    def __call__(self, environ, start_response):
+        # IIS overwrites HTTP_HOST before ProxyFix runs, so we must check X-Forwarded-Host
+        host = str(environ.get('HTTP_X_FORWARDED_HOST') or environ.get('HTTP_HOST') or '')
+        # Force HTTPS if accessed via the production domain
+        environ['wsgi.url_scheme'] = 'https' if 'crminaec.com' in host else 'http'
+        return self.app(environ, start_response)
+
 # Initialize extensions globally
 login_manager = LoginManager()
 oauth = OAuth()
 mail=Mail()
 
-class IISTunnelFix(object):
-    """Forces Flask and Authlib to trust the IIS HTTPS tunnel."""
-    def __init__(self, app):
-        self.app = app
-
-    def __call__(self, environ, start_response):
-        environ['wsgi.url_scheme'] = 'https'
-        environ['HTTP_X_FORWARDED_PROTO'] = 'https'
-        return self.app(environ, start_response)
-    
 
 class AppFactory:
     @staticmethod
@@ -43,10 +46,11 @@ class AppFactory:
         # 2. TRIGGER ENVIRONMENT-SPECIFIC SETUP
         config_class.init_app(app)
 
-        # 🚨 CUSTOM MIDDLEWARE (Conditional!)
-        # Only apply the HTTPS trick if we are in the production tunnel
-        if os.environ.get('FLASK_ENV') == 'production':
-            app.wsgi_app = IISTunnelFix(app.wsgi_app) # type: ignore
+        # 🚨 CUSTOM MIDDLEWARE
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=0, x_host=1, x_prefix=1) # type: ignore
+        
+        # Automatically switch to HTTPS for live domains to bypass IIS limitations
+        app.wsgi_app = AutoSchemeMiddleware(app.wsgi_app)
 
         AppFactory._prepare_environment(app, project_root)
 
@@ -61,7 +65,7 @@ class AppFactory:
         # 🔐 FLASK-LOGIN SETUP
         # ==========================================
         login_manager.init_app(app)
-        login_manager.login_view = 'main.login' # type: ignore
+        login_manager.login_view = 'auth.login' # type: ignore
         login_manager.login_message = "Lütfen giriş yapınız."
 
         @login_manager.user_loader

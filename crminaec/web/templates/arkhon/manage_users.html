@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-container">
+    <h2 class="Head">Kullanıcı Yönetimi (Admin)</h2>
+    <hr>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}{% for category, message in messages %}<div class="alert alert-{{ category }}">{{ message }}</div>{% endfor %}{% endif %}
+    {% endwith %}
+
+    <table class="corporate-table">
+        <thead>
+            <tr>
+                <th>İsim Soyisim</th>
+                <th>E-posta</th>
+                <th>Mevcut Rol</th>
+                <th>E-posta Onayı</th>
+                <th>İşlem</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td>{{ user.first_name }} {{ user.last_name }}</td>
+                <td>{{ user.email }}</td>
+                
+                <form method="POST" action="{{ url_for('main.manage_users') }}">
+                    <input type="hidden" name="party_id" value="{{ user.party_id }}">
+                    
+                    <td>
+                        <select name="role" class="NormalTextBox" {% if not user.account %}disabled{% endif %} title="Kullanıcı Rolü Seç" aria-label="Kullanıcı Rolü Seç">
+                            <option value="guest" {% if user.account and user.account.role == 'guest' %}selected{% endif %}>Misafir (Guest)</option>
+                            <option value="customer" {% if user.account and user.account.role == 'customer' %}selected{% endif %}>Müşteri (Customer)</option>
+                            <option value="architect" {% if user.account and user.account.role == 'architect' %}selected{% endif %}>Mimar (Architect)</option>
+                            <option value="instructor" {% if user.account and user.account.role == 'instructor' %}selected{% endif %}>Eğitmen (Instructor)</option>
+                            <option value="admin" {% if user.account and user.account.role == 'admin' %}selected{% endif %}>Sistem Yöneticisi (Admin)</option>
+                        </select>
+                    </td>
+                    <td>
+                        <input type="checkbox" name="is_confirmed" {% if user.account and user.account.is_confirmed %}checked{% endif %} {% if not user.account %}disabled{% endif %} title="E-posta Onay Durumu" aria-label="E-posta Onay Durumu"> Onaylı
+                    </td>
+                    <td><button type="submit" class="CommandButton" style="padding: 6px 12px; font-size: 0.8rem;" {% if not user.account %}disabled{% endif %} title="Yetkileri Güncelle" aria-label="Yetkileri Güncelle">Güncelle</button></td>
+                </form>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

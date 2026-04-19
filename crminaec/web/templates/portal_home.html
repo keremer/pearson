@@ -29,7 +29,7 @@
         <div class="row g-4 justify-content-center">
             
             <div class="col-md-4">
-                <a href="{{ url_for('pearson.index') }}" class="text-decoration-none text-dark" aria-label="Launch Pearson Platform">
+                <a href="{{ url_for('pearson.index') }}" class="text-decoration-none text-dark" title="Launch Pearson Platform" aria-label="Launch Pearson Platform">
                     <div class="card platform-card shadow-sm h-100 border-0">
                         <div class="card-body text-center p-4">
                             <div class="icon-circle bg-primary bg-opacity-10 text-primary mx-auto">
@@ -44,7 +44,7 @@
             </div>
 
             <div class="col-md-4">
-                <a href="{{ url_for('arkhon.index') }}" class="text-decoration-none text-dark" aria-label="Launch Arkhon Platform">
+                <a href="{{ url_for('arkhon.index') }}" class="text-decoration-none text-dark" title="Launch Arkhon Platform" aria-label="Launch Arkhon Platform">
                     <div class="card platform-card shadow-sm h-100 border-0">
                         <div class="card-body text-center p-4">
                             <div class="icon-circle bg-success bg-opacity-10 text-success mx-auto">
@@ -59,7 +59,7 @@
             </div>
 
             <div class="col-md-4">
-                <a href="{{ url_for('emek.bom_editor') }}" class="text-decoration-none text-dark" aria-label="Launch Emek Platform">
+                <a href="{{ url_for('emek.bom_editor') }}" class="text-decoration-none text-dark" title="Launch Emek Platform" aria-label="Launch Emek Platform">
                     <div class="card platform-card shadow-sm h-100 border-0">
                         <div class="card-body text-center p-4">
                             <div class="icon-circle bg-warning bg-opacity-10 text-warning mx-auto">
@@ -72,6 +72,23 @@
                     </div>
                 </a>
             </div>
+
+            {% if current_user.is_authenticated and current_user.account and current_user.account.role == 'admin' %}
+            <div class="col-md-4">
+                <a href="{{ url_for('main.manage_users') }}" class="text-decoration-none text-dark" title="Launch Admin Panel" aria-label="Launch Admin Panel">
+                    <div class="card platform-card shadow-sm h-100 border-0">
+                        <div class="card-body text-center p-4">
+                            <div class="icon-circle bg-danger bg-opacity-10 text-danger mx-auto">
+                                <i class="fas fa-users-cog fa-2x" aria-hidden="true"></i>
+                            </div>
+                            <h4 class="card-title fw-bold">Admin Panel</h4>
+                            <p class="card-text text-muted">Manage system users, roles, and portal access approvals.</p>
+                            <span class="btn btn-outline-danger mt-3 w-100">Launch Panel</span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% endif %}
 
         </div>
     </div>

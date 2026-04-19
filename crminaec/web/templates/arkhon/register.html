@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="login-container">
+    <h2 class="Head">Portal Kayıt Ekranı</h2>
+    <hr>
+    
+    <form method="POST" action="{{ url_for('auth.register') }}">
+        <div class="form-group">
+            <label for="first_name">Adınız:</label>
+            <input type="text" id="first_name" name="first_name" class="NormalTextBox full-width" required autofocus>
+        </div>
+        
+        <div class="form-group">
+            <label for="last_name">Soyadınız:</label>
+            <input type="text" id="last_name" name="last_name" class="NormalTextBox full-width" required>
+        </div>
+
+        <div class="form-group">
+            <label for="email">E-posta Adresi:</label>
+            <input type="email" id="email" name="email" class="NormalTextBox full-width" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="password">Şifre Belirleyin:</label>
+            <input type="password" id="password" name="password" class="NormalTextBox full-width" required>
+        </div>
+        
+        <div class="form-group kvkk-box">
+            <label style="display: flex; align-items: start; gap: 10px; font-size: 0.9em; cursor: pointer;">
+                <input type="checkbox" name="kvkk_consent" required style="margin-top: 3px;">
+                <span>
+                    <strong>KVKK Aydınlatma Metni:</strong> 6698 sayılı Kişisel Verilerin Korunması Kanunu kapsamında, 
+                    formda paylaştığım kimlik ve iletişim verilerimin, müşteri ilişkileri yönetimi (CRM), 
+                    hizmet ifası ve yasal yükümlülüklerin yerine getirilmesi amacıyla işlenmesine, 
+                    saklanmasına ve aktarılmasına açık rıza gösteriyorum.
+                </span>
+            </label>
+        </div>
+        
+        <button type="submit" class="CommandButton full-width" title="Kayıt Ol" aria-label="Kayıt Ol">Kayıt Ol</button>
+    </form>
+    
+    <div style="text-align: center; margin-top: 15px;">
+        <a href="{{ url_for('auth.login') }}" title="Giriş Sayfasına Git" aria-label="Giriş Sayfasına Git">Zaten hesabınız var mı? Giriş yapın.</a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}{% for category, message in messages %}<p class="alert alert-{{ category }}">{{ message }}</p>{% endfor %}{% endif %}
+    {% endwith %}
+</div>
+{% endblock %}

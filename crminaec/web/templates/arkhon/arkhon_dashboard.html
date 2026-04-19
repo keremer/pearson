@@ -8,7 +8,7 @@
         <h1 class="display-4 mb-0">
             <i class="fas fa-drafting-compass text-success"></i> Arkhon Dashboard
         </h1>
-        <a href="{{ url_for('arkhon.import_kelebek_order') }}" class="btn btn-success btn-lg shadow-sm">
+        <a href="{{ url_for('arkhon.import_kelebek_order') }}" class="btn btn-success btn-lg shadow-sm" title="Kelebek Siparişini İçe Aktar" aria-label="Kelebek Siparişini İçe Aktar">
             <i class="fas fa-file-import me-2"></i> Import Kelebek Order
         </a>
     </div>
@@ -80,12 +80,12 @@
                                     <td class="text-end pe-3">
                                         <div class="btn-group">
                                             <a href="{{ url_for('arkhon.order_detail', order_id=order.order_id) }}" 
-                                               class="btn btn-outline-primary btn-sm" aria-label="View order details">
+                                           class="btn btn-outline-primary btn-sm" aria-label="View order details" title="Sipariş detaylarını görüntüle">
                                                 <i class="fas fa-eye" aria-hidden="true"></i> View
                                             </a>
                                             <form method="POST" action="{{ url_for('arkhon.delete_order', order_id=order.order_id) }}" 
                                                   class="d-inline" onsubmit="return confirm('Delete order {{ order.order_number }} and all its items?');">
-                                                <button type="submit" class="btn btn-outline-danger btn-sm" aria-label="Delete order">
+                                            <button type="submit" class="btn btn-outline-danger btn-sm" aria-label="Delete order" title="Siparişi sil">
                                                     <i class="fas fa-trash" aria-hidden="true"></i>
                                                 </button>
                                             </form>
@@ -101,7 +101,7 @@
                         <i class="fas fa-box-open fa-4x text-muted mb-3 opacity-50"></i>
                         <h4 class="text-muted fw-light">No orders found</h4>
                         <p class="text-muted mb-4">You haven't imported any Kelebek HTML files yet.</p>
-                        <a href="{{ url_for('arkhon.import_kelebek_order') }}" class="btn btn-outline-success">
+                    <a href="{{ url_for('arkhon.import_kelebek_order') }}" class="btn btn-outline-success" title="İlk Dışa Aktarmayı Yükle" aria-label="İlk Dışa Aktarmayı Yükle">
                             <i class="fas fa-upload me-2" aria-hidden="true"></i> Upload First Export
                         </a>
                     </div>

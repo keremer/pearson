@@ -1,13 +1,9 @@
 # crminaec/routes.py
-import datetime
-import secrets
+from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask_login import current_user, login_required, logout_user
 
-from flask import (Blueprint, current_app, flash, redirect, render_template,
-                   request, url_for)
-from flask_login import current_user, login_required, login_user, logout_user
-
-from crminaec import oauth
-from crminaec.core.models import Party, UserAccount, db  # 🚨 Added UserAccount
+from crminaec.core.models import Party, UserAccount, db
+from crminaec.core.security import role_required
 
 main_bp = Blueprint('main', __name__)
 
@@ -18,15 +14,15 @@ main_bp = Blueprint('main', __name__)
 @login_required
 def index():
     # 1. Safety check: Ensure they actually have a portal account linked
-    if not current_user.account:
-        return "Sisteme giriş yetkiniz bulunmamaktadır.", 403
+    if not current_user.account: # type: ignore
+        logout_user()
+        flash("Sisteme giriş yetkiniz bulunmamaktadır veya hesabınız güncel değil. Lütfen tekrar giriş yapın.", "warning")
+        return redirect(url_for('auth.login'))
 
     # 2. Check the role on the linked UserAccount!
-    user_role = current_user.account.role
+    user_role = current_user.account.role # type: ignore
 
-    if user_role == "admin":
-        return redirect(url_for('emek.bom_editor')) 
-    elif user_role == "architect":
+    if user_role == "architect":
         return redirect(url_for('arkhon.dashboard'))
     elif user_role == "instructor":
         return redirect(url_for('pearson.courses'))
@@ -34,86 +30,28 @@ def index():
         return render_template('portal_home.html')
 
 # ==========================================
-# 🔐 AUTHENTICATION ROUTES
+# 🔐 ADMIN: USER MANAGEMENT
 # ==========================================
-@main_bp.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        email = request.form.get('email') # 🚨 Changed to email
-        password = request.form.get('password')
-        
-        party = db.session.query(Party).filter_by(email=email).first()
-        
-        # 🚨 Verify the linked account and check the hashed password
-        if party and party.account and password and party.account.check_password(password): 
-            login_user(party)
-            return redirect(url_for('main.index'))
-        
-        flash('Geçersiz e-posta veya şifre.', 'danger')
-    return render_template('auth/login.html')
-
-@main_bp.route('/login/google')
-def google_login():
-    """Redirects the user to Google's OAuth consent screen."""
-    exact_redirect_uri = current_app.config.get('GOOGLE_CALLBACK_URL')
-    return oauth.google.authorize_redirect(exact_redirect_uri)
-
-@main_bp.route('/login/google/callback')
-def google_callback():
-    """Handles the response from Google and logs the Party in."""
-    token = oauth.google.authorize_access_token()
-    user_info = token.get('userinfo')
-    
-    if not user_info:
-        flash("Google girişi başarısız.", "danger")
-        return redirect(url_for('main.login'))
-
-    email = user_info.get('email')
-    party = db.session.query(Party).filter_by(email=email).first()
-
-    # 🚨 Dual-Table Creation Logic for Google Users
-    if not party:
-        # 1. Create CRM Party
-        party = Party(
-            email=email, #type: ignore
-            first_name=user_info.get('given_name'), #type: ignore
-            last_name=user_info.get('family_name') #type: ignore
-        )
-        db.session.add(party)
-        db.session.flush() # Get party_id without full commit
-        
-        # 2. Create Security Account
-        new_account = UserAccount(
-            party_id=party.party_id, #type: ignore
-            role="guest",           #type: ignore
-            is_confirmed=True,       #type: ignore
-            confirmed_on=datetime.datetime.utcnow(), #type: ignore               
-            kvkk_approved=True,     #type: ignore
-            kvkk_approval_date=datetime.datetime.utcnow(),  #type: ignore
-            kvkk_approval_ip=request.remote_addr or '0.0.0.0'   #type: ignore
-        )
-        new_account.set_password(secrets.token_urlsafe(32))
-        db.session.add(new_account)
-        db.session.commit()
-        
-    elif not party.account:
-        # If they existed as a CRM contact but had no account
-        new_account = UserAccount(
-            party_id=party.party_id,    #type: ignore
-            role="guest",               #type: ignore   
-            is_confirmed=True,          #type: ignore
-            kvkk_approved=False,         #type: ignore   
-            confirmed_on=datetime.datetime.utcnow() , #type: ignore
-        )
-        new_account.set_password(secrets.token_urlsafe(32))
-        db.session.add(new_account)
-        db.session.commit()
-
-    login_user(party)
-    return redirect(url_for('main.index'))
-
-@main_bp.route('/logout')
+@main_bp.route('/admin/users', methods=['GET', 'POST'])
 @login_required
-def logout():
-    logout_user()
-    return redirect(url_for('main.login'))
+@role_required('admin')
+def manage_users():
+    if request.method == 'POST':
+        party_id = request.form.get('party_id')
+        new_role = request.form.get('role')
+        is_confirmed = request.form.get('is_confirmed') == 'on'
+        
+        if not party_id or not new_role:
+            flash('Gerekli alanlar eksik.', 'error')
+            return redirect(url_for('main.manage_users'))
+        
+        party = db.session.get(Party, int(party_id))
+        if party and party.account:
+            party.account.role = new_role
+            party.account.is_confirmed = is_confirmed
+            db.session.commit()
+            flash(f'{party.first_name} {party.last_name} kullanıcısının yetkileri güncellendi.', 'success')
+        return redirect(url_for('main.manage_users'))
+        
+    users = db.session.query(Party).all()
+    return render_template('admin/manage_users.html', users=users)

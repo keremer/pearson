@@ -17,6 +17,7 @@ class Config:
     # Flask
     SECRET_KEY: str = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
     WTF_CSRF_ENABLED: bool = True
+    SESSION_COOKIE_SAMESITE: str = 'Lax'
 
     # Database - will be set by create_app
     DATABASE_URL: Optional[str] = None
@@ -84,7 +85,6 @@ class ProductionConfig(Config):
 
     SESSION_COOKIE_DOMAIN = ".crminaec.com"
     SESSION_COOKIE_SECURE = True 
-    SESSION_COOKIE_SAMESITE = 'Lax'
 
     # 1. Production Callback for Portal Login
     GOOGLE_CALLBACK_URL = os.environ.get('GOOGLE_CALLBACK_URL', 'https://pearson.crminaec.com/login/google/callback')
