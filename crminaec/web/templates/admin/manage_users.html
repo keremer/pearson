@@ -16,20 +16,33 @@
                 <th>E-posta</th>
                 <th>Mevcut Rol</th>
                 <th>E-posta Onayı</th>
+                <th>Son Giriş</th>
                 <th>İşlem</th>
             </tr>
         </thead>
         <tbody>
             {% for user in users %}
             <tr>
-                <td>{{ user.first_name }} {{ user.last_name }}</td>
+                <td>
+                    <a href="#" data-bs-toggle="modal" data-bs-target="#editPartyModal{{ user.party_id }}" class="text-decoration-none fw-bold text-primary" title="Kullanıcı Bilgilerini Düzenle">
+                        {{ user.first_name or 'İsimsiz' }} {{ user.last_name or 'Kullanıcı' }} <i class="fas fa-edit ms-1 small text-muted"></i>
+                    </a>
+                    {% if user.account and user.party_id != current_user.party_id %}
+                    <form method="POST" action="{{ url_for('main.impersonate', party_id=user.party_id) }}" class="d-inline ms-2">
+                        <button type="submit" class="btn btn-sm btn-outline-dark border-0 p-1" title="Bu kullanıcı kimliğine geçiş yap (Impersonate)">
+                            <i class="fas fa-user-secret"></i>
+                        </button>
+                    </form>
+                    {% endif %}
+                </td>
                 <td>{{ user.email }}</td>
                 
                 <form method="POST" action="{{ url_for('main.manage_users') }}">
                     <input type="hidden" name="party_id" value="{{ user.party_id }}">
                     
                     <td>
-                        <select name="role" class="NormalTextBox" {% if not user.account %}disabled{% endif %} title="Kullanıcı Rolü Seç" aria-label="Kullanıcı Rolü Seç">
+                        <select name="role" class="form-select form-select-sm" title="Kullanıcı Rolü Seç" aria-label="Kullanıcı Rolü Seç">
+                            <option value="none" {% if not user.account %}selected{% endif %}>Sistem Erişimi Yok</option>
                             <option value="guest" {% if user.account and user.account.role == 'guest' %}selected{% endif %}>Misafir (Guest)</option>
                             <option value="customer" {% if user.account and user.account.role == 'customer' %}selected{% endif %}>Müşteri (Customer)</option>
                             <option value="power_user" {% if user.account and user.account.role == 'power_user' %}selected{% endif %}>Platform Yöneticisi (Power User)</option>
@@ -38,11 +51,57 @@
                         </select>
                     </td>
                     <td>
-                        <input type="checkbox" name="is_confirmed" {% if user.account and user.account.is_confirmed %}checked{% endif %} {% if not user.account %}disabled{% endif %} title="E-posta Onay Durumu" aria-label="E-posta Onay Durumu"> Onaylı
+                        <input type="checkbox" class="form-check-input" name="is_confirmed" {% if user.account and user.account.is_confirmed %}checked{% endif %} title="E-posta Onay Durumu" aria-label="E-posta Onay Durumu"> Onaylı
                     </td>
-                    <td><button type="submit" class="CommandButton btn-update-role" {% if not user.account %}disabled{% endif %} title="Yetkileri Güncelle" aria-label="Yetkileri Güncelle">Güncelle</button></td>
+                    <td>
+                        <small class="text-muted">{{ user.account.last_login.strftime('%d.%m.%Y %H:%M') if user.account and user.account.last_login else 'Hiç girmedi' }}</small>
+                    </td>
+                    <td><button type="submit" class="CommandButton btn-update-role" title="Yetkileri Güncelle" aria-label="Yetkileri Güncelle">Güncelle</button></td>
                 </form>
             </tr>
+
+            <!-- Edit Party Modal -->
+            <div class="modal fade" id="editPartyModal{{ user.party_id }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content border-0 shadow">
+                        <div class="modal-header bg-dark text-white">
+                            <h5 class="modal-title"><i class="fas fa-user-edit me-2"></i>Kullanıcı Bilgilerini Düzenle</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <form method="POST" action="{{ url_for('main.edit_party') }}">
+                            <div class="modal-body p-4 bg-light">
+                                <input type="hidden" name="party_id" value="{{ user.party_id }}">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-bold">Ad</label>
+                                        <input type="text" name="first_name" class="form-control" value="{{ user.first_name or '' }}">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-bold">Soyad</label>
+                                        <input type="text" name="last_name" class="form-control" value="{{ user.last_name or '' }}">
+                                    </div>
+                                    <div class="col-md-12 mb-3">
+                                        <label class="form-label fw-bold">E-posta</label>
+                                        <input type="email" name="email" class="form-control" value="{{ user.email or '' }}" required>
+                                    </div>
+                                    <div class="col-md-12 mb-3">
+                                        <label class="form-label fw-bold">Telefon</label>
+                                        <input type="text" name="phone" class="form-control" value="{{ user.phone or '' }}">
+                                    </div>
+                                    <div class="col-md-12 mb-3">
+                                        <label class="form-label fw-bold">Adres</label>
+                                        <textarea name="address" class="form-control" rows="2">{{ user.address or '' }}</textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer bg-white">
+                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">İptal</button>
+                                <button type="submit" class="btn btn-primary fw-bold"><i class="fas fa-save me-2"></i>Kaydet</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
             {% endfor %}
         </tbody>
     </table>

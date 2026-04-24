@@ -12,8 +12,8 @@ from flask import jsonify, request
 from crminaec.core.interop import Platform
 from crminaec.core.interop.manager import InteropManager
 # Import the unified database and models
-from crminaec.core.models import (AssessmentFormat, Course, LearningOutcome,
-                                  Lesson, Tool, db)
+from crminaec.core.models import db
+from crminaec.platforms.emek.models import Item, ItemComposition, NodeType
 
 
 class GoogleDocsWebhookProcessor:
@@ -84,108 +84,77 @@ class GoogleDocsWebhookProcessor:
         """Update course database from imported data"""
         course_title = course_data.get('title', 'Untitled Course')
         
-        # Check for existing course using db.session
-        course = db.session.query(Course).filter(Course.course_title == course_title).first()
+        # Check for existing course
+        course = db.session.query(Item).filter_by(name=course_title, item_type='course').first()
+        
+        tech_specs = {
+            'instructor': "Instructor TBD",
+            'contact_email': "contact@institution.edu",
+            'level': "HND Art & Design",
+            'language': "English",
+            'delivery_mode': "Blended",
+            'aim': course_data.get('aim', ''),
+            'description': self._build_course_description(course_data),
+            'objectives': ", ".join(course_data.get('learning_outcomes', [])),
+            'learning_outcomes': course_data.get('learning_outcomes', []),
+            'assessment_formats': course_data.get('assessment_formats', []),
+            'tools': course_data.get('tools', [])
+        }
         
         if not course:
-            course = Course(
-                course_title=course_title,
-                course_code=self._generate_course_code(course_title),
-                instructor="Instructor TBD",
-                contact_email="contact@institution.edu",
-                level="HND Art & Design",
-                language="English",
-                delivery_mode="Blended",
-                aim=course_data.get('aim', ''),
-                description=self._build_course_description(course_data),
-                objectives=", ".join(course_data.get('learning_outcomes', []))
+            course = Item(
+                name=course_title,
+                code=self._generate_course_code(course_title),
+                item_type='course',
+                node_type=NodeType.ACTIVITY,
+                technical_specs=tech_specs
             )
             db.session.add(course)
-            db.session.flush() # Force ID generation for related tables
+            db.session.flush()
             action = 'created'
         else:
-            course.aim = course_data.get('aim', course.aim)
-            course.description = self._build_course_description(course_data)
-            course.objectives = ", ".join(course_data.get('learning_outcomes', []))
+            if not course.technical_specs:
+                course.technical_specs = {}
+            course.technical_specs.update(tech_specs)
+            # Clear old lessons to replace them cleanly
+            db.session.query(ItemComposition).filter_by(parent_id=course.item_id).delete()
             action = 'updated'
         
-        # Pass the course_id to the helper methods
-        self._update_learning_outcomes(course.course_id, course_data.get('learning_outcomes', []))
-        self._update_assessment_formats(course.course_id, course_data.get('assessment_formats', []))
-        self._update_tools(course.course_id, course_data.get('tools', []))
-        self._update_lessons(course.course_id, course_data.get('lessons', []))
+        # Add new lessons
+        lessons_data = course_data.get('lessons', [])
+        for i, lesson_data in enumerate(lessons_data, 1):
+            lesson_tech_specs = {
+                'duration': lesson_data.get('duration', 60),
+                'activity_type': lesson_data.get('activity_type', 'Lecture'),
+                'assignment_description': lesson_data.get('assignment', ''),
+                'materials_needed': lesson_data.get('materials', ''),
+                'content': lesson_data.get('content', '')
+            }
+            lesson = Item(
+                name=lesson_data.get('title', f'Week {i}'),
+                code=f"{course.code}-W{i}",
+                item_type='lesson',
+                node_type=NodeType.ACTIVITY,
+                technical_specs=lesson_tech_specs
+            )
+            db.session.add(lesson)
+            db.session.flush()
+            
+            comp = ItemComposition(parent_item=course, child_item=lesson, sort_order=i, optional_attributes={})
+            db.session.add(comp)
         
-        print(f"✅ Course {action}: {course.course_title} (ID: {course.course_id})")
+        print(f"✅ Course {action}: {course.name} (ID: {course.item_id})")
         
         return {
             'status': 'success',
             'action': action,
-            'course_id': course.course_id,
-            'course_title': course.course_title,
+            'course_id': course.item_id,
+            'course_title': course.name,
             'document_id': document_id,
             'updates': {
-                'learning_outcomes': len(course_data.get('learning_outcomes', [])),
-                'assessment_formats': len(course_data.get('assessment_formats', [])),
-                'tools': len(course_data.get('tools', [])),
-                'lessons': len(course_data.get('lessons', []))
+                'lessons': len(lessons_data)
             }
         }
-    
-    def _update_learning_outcomes(self, course_id: int, outcomes: List[str]):
-        """Update learning outcomes for course"""
-        db.session.query(LearningOutcome).filter(LearningOutcome.course_id == course_id).delete()
-        
-        for outcome in outcomes:
-            # Matched to the new Dataclass fields (outcome_text)
-            lo = LearningOutcome(
-                course_id=course_id,
-                outcome_text=outcome
-            )
-            db.session.add(lo)
-    
-    def _update_assessment_formats(self, course_id: int, assessments: List[Dict]):
-        """Update assessment formats for course"""
-        db.session.query(AssessmentFormat).filter(AssessmentFormat.course_id == course_id).delete()
-        
-        for assessment in assessments:
-            # Matched to the new Dataclass fields
-            af = AssessmentFormat(
-                course_id=course_id,
-                format_type=assessment.get('type', 'Assignment'),
-                description=assessment.get('description', '')
-            )
-            db.session.add(af)
-    
-    def _update_tools(self, course_id: int, tools: List[Dict]):
-        """Update tools for course"""
-        db.session.query(Tool).filter(Tool.course_id == course_id).delete()
-        
-        for tool_data in tools:
-            # Matched to the new Dataclass fields (tool_name, purpose)
-            tool = Tool(
-                course_id=course_id,
-                tool_name=tool_data.get('name', 'Tool'),
-                purpose=tool_data.get('description', '')
-            )
-            db.session.add(tool)
-    
-    def _update_lessons(self, course_id: int, lessons: List[Dict]):
-        """Update lessons for course"""
-        db.session.query(Lesson).filter(Lesson.course_id == course_id).delete()
-        
-        for i, lesson_data in enumerate(lessons, 1):
-            # Matched to the new Dataclass fields (lesson_title)
-            lesson = Lesson(
-                course_id=course_id,
-                lesson_title=lesson_data.get('title', f'Week {i}'),
-                content=lesson_data.get('content', ''),
-                duration=lesson_data.get('duration', 60),
-                order=i,
-                activity_type=lesson_data.get('activity_type', 'Lecture'),
-                assignment_description=lesson_data.get('assignment', ''),
-                materials_needed=lesson_data.get('materials', '')
-            )
-            db.session.add(lesson)
     
     def _generate_course_code(self, title: str) -> str:
         words = title.split()

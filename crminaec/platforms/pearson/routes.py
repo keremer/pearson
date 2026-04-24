@@ -19,8 +19,8 @@ from crminaec.cli.course_injector import CourseInjector
 # Google Interop Imports
 from crminaec.core.interop.google_docs.client import GoogleDocsClient
 from crminaec.core.interop.google_docs.config import GoogleDocsConfig
-from crminaec.core.models import (AssessmentFormat, Course, LearningOutcome,
-                                  Lesson, Tool, db)
+from crminaec.core.models import db
+from crminaec.platforms.emek.models import Item, ItemComposition, NodeType
 from crminaec.web.forms import CourseForm, ImportForm, LessonForm
 
 pearson_bp = Blueprint('pearson', __name__)
@@ -33,9 +33,9 @@ pearson_bp = Blueprint('pearson', __name__)
 def index():
     """Home page with overview"""
     try:
-        # Use the globally managed db.session!
-        courses = db.session.query(Course).all()
-        total_lessons = db.session.query(Lesson).count()
+        # Query Universal Items instead
+        courses = db.session.query(Item).filter_by(item_type='course').all()
+        total_lessons = db.session.query(Item).filter_by(item_type='lesson').count()
         
         stats = {
             'total_courses': len(courses),
@@ -52,7 +52,7 @@ def index():
 def list_courses():
     """List all courses"""
     try:
-        courses = db.session.query(Course).order_by(Course.created_date.desc()).all()
+        courses = db.session.query(Item).filter_by(item_type='course').all()
         return render_template('pearson/courses.html', courses=courses)
     except Exception as e:
         flash(f'Error loading courses: {str(e)}', 'error')
@@ -62,13 +62,14 @@ def list_courses():
 def course_detail(course_id):
     """Show course details and lessons"""
     try:
-        course = db.session.query(Course).filter_by(course_id=course_id).first()
+        course = db.session.query(Item).filter_by(item_id=course_id, item_type='course').first()
         if not course:
             flash('Course not found', 'error')
             return redirect(url_for('pearson.list_courses'))
         
-        # We can just pass the course object, as course.lessons is already sorted by the model
-        lessons = course.lessons
+        # Query BOM links for lessons
+        comps = db.session.query(ItemComposition).filter_by(parent_id=course_id).order_by(ItemComposition.sort_order).all()
+        lessons = [c.child_item for c in comps if c.child_item.item_type == 'lesson']
         
         return render_template('pearson/course_detail.html', course=course, lessons=lessons)
     except Exception as e:
@@ -79,12 +80,15 @@ def course_detail(course_id):
 def course_lessons(course_id):
     """Show lessons for a specific course"""
     try:
-        course = db.session.query(Course).filter_by(course_id=course_id).first()
+        course = db.session.query(Item).filter_by(item_id=course_id, item_type='course').first()
         if not course:
             flash('Course not found', 'error')
             return redirect(url_for('pearson.list_courses'))
         
-        return render_template('pearson/lessons.html', course=course, lessons=course.lessons)
+        comps = db.session.query(ItemComposition).filter_by(parent_id=course_id).order_by(ItemComposition.sort_order).all()
+        lessons = [c.child_item for c in comps if c.child_item.item_type == 'lesson']
+        
+        return render_template('pearson/lessons.html', course=course, lessons=lessons)
     except Exception as e:
         flash(f'Error loading lessons: {str(e)}', 'error')
         return redirect(url_for('pearson.list_courses'))
@@ -98,45 +102,55 @@ def create_course():
     """Create a new course"""
     form = CourseForm()
     if form.validate_on_submit():
-        course = Course(
-            course_title=form.title.data or "",
-            course_code=form.course_code.data or "",
-            instructor=form.instructor.data or "",
-            contact_email=form.contact_email.data or "",
-            level=form.level.data or "",
-            language=form.language.data or "English",
-            delivery_mode=form.delivery_mode.data or "",
-            aim=form.aim.data or "",
-            description=form.description.data or "",
-            objectives=form.objectives.data or ""
+        tech_specs = {
+            'instructor': form.instructor.data or "",
+            'contact_email': form.contact_email.data or "",
+            'level': form.level.data or "",
+            'language': form.language.data or "English",
+            'delivery_mode': form.delivery_mode.data or "",
+            'aim': form.aim.data or "",
+            'description': form.description.data or "",
+            'objectives': form.objectives.data or ""
+        }
+        course = Item(
+            name=form.title.data or "",
+            code=form.course_code.data or "",
+            item_type='course',
+            node_type=NodeType.ACTIVITY,
+            technical_specs=tech_specs
         )
         db.session.add(course)
         db.session.commit()
-        flash(f'Course "{course.course_title}" created successfully!', 'success')
-        return redirect(url_for('pearson.course_detail', course_id=course.course_id))
+        flash(f'Course "{course.name}" created successfully!', 'success')
+        return redirect(url_for('pearson.course_detail', course_id=course.item_id))
     
     if request.method == 'GET':
         return render_template('pearson/course_edit.html', course=None, form=form)
     
     # POST method (Fallback if not using WTForms)
     try:
-        course = Course(
-            course_title=request.form['title'],
-            course_code=request.form['course_code'],
-            instructor=request.form.get('instructor', ''),
-            contact_email=request.form.get('contact_email', ''),
-            level=request.form.get('level', ''),
-            language=request.form.get('language', 'English'),
-            delivery_mode=request.form.get('delivery_mode', ''),
-            aim=request.form.get('aim', ''),
-            description=request.form.get('description', ''),
-            objectives=request.form.get('objectives', '')
+        tech_specs = {
+            'instructor': request.form.get('instructor', ''),
+            'contact_email': request.form.get('contact_email', ''),
+            'level': request.form.get('level', ''),
+            'language': request.form.get('language', 'English'),
+            'delivery_mode': request.form.get('delivery_mode', ''),
+            'aim': request.form.get('aim', ''),
+            'description': request.form.get('description', ''),
+            'objectives': request.form.get('objectives', '')
+        }
+        course = Item(
+            name=request.form['title'],
+            code=request.form['course_code'],
+            item_type='course',
+            node_type=NodeType.ACTIVITY,
+            technical_specs=tech_specs
         )
         
         db.session.add(course)
         db.session.commit()
-        flash(f'Course "{course.course_title}" created successfully!', 'success')
-        return redirect(url_for('pearson.course_detail', course_id=course.course_id))
+        flash(f'Course "{course.name}" created successfully!', 'success')
+        return redirect(url_for('pearson.course_detail', course_id=course.item_id))
         
     except Exception as e:
         db.session.rollback()
@@ -146,7 +160,7 @@ def create_course():
 @pearson_bp.route('/course/<int:course_id>/edit', methods=['GET', 'POST'])
 def edit_course(course_id):
     """Edit an existing course"""
-    course = db.session.query(Course).filter_by(course_id=course_id).first()
+    course = db.session.query(Item).filter_by(item_id=course_id, item_type='course').first()
     
     if not course:
         flash('Course not found', 'error')
@@ -156,20 +170,22 @@ def edit_course(course_id):
         return render_template('pearson/course_edit.html', course=course)
     
     try:
-        course.course_title = request.form['title']
-        course.course_code = request.form['course_code']
-        course.instructor = request.form.get('instructor', '')
-        course.contact_email = request.form.get('contact_email', '')
-        course.level = request.form.get('level', '')
-        course.language = request.form.get('language', 'English')
-        course.delivery_mode = request.form.get('delivery_mode', '')
-        course.aim = request.form.get('aim', '')
-        course.description = request.form.get('description', '')
-        course.objectives = request.form.get('objectives', '')
+        course.name = request.form['title']
+        course.code = request.form['course_code']
+        
+        if not course.technical_specs: course.technical_specs = {}
+        course.technical_specs['instructor'] = request.form.get('instructor', '')
+        course.technical_specs['contact_email'] = request.form.get('contact_email', '')
+        course.technical_specs['level'] = request.form.get('level', '')
+        course.technical_specs['language'] = request.form.get('language', 'English')
+        course.technical_specs['delivery_mode'] = request.form.get('delivery_mode', '')
+        course.technical_specs['aim'] = request.form.get('aim', '')
+        course.technical_specs['description'] = request.form.get('description', '')
+        course.technical_specs['objectives'] = request.form.get('objectives', '')
         
         db.session.commit()
-        flash(f'Course "{course.course_title}" updated successfully!', 'success')
-        return redirect(url_for('pearson.course_detail', course_id=course.course_id))
+        flash(f'Course "{course.name}" updated successfully!', 'success')
+        return redirect(url_for('pearson.course_detail', course_id=course.item_id))
         
     except Exception as e:
         db.session.rollback()
@@ -180,9 +196,9 @@ def edit_course(course_id):
 def delete_course(course_id):
     """Delete a course"""
     try:
-        course = db.session.query(Course).filter_by(course_id=course_id).first()
+        course = db.session.query(Item).filter_by(item_id=course_id, item_type='course').first()
         if course:
-            course_title = course.course_title
+            course_title = course.name
             db.session.delete(course)
             db.session.commit()
             flash(f'Course "{course_title}" deleted successfully!', 'success')
@@ -201,7 +217,7 @@ def delete_course(course_id):
 @pearson_bp.route('/course/<int:course_id>/lesson/create', methods=['GET', 'POST'])
 def create_lesson(course_id):
     """Create a new lesson for a course"""
-    course = db.session.query(Course).filter_by(course_id=course_id).first()
+    course = db.session.query(Item).filter_by(item_id=course_id, item_type='course').first()
     
     if not course:
         flash('Course not found', 'error')
@@ -221,20 +237,30 @@ def create_lesson(course_id):
         duration = 60
         
     try:
-        lesson = Lesson(
-            course_id=course_id,
-            lesson_title=request.form['title'],
-            content=request.form.get('content', ''),
-            duration=duration,
-            order=order,
-            activity_type=request.form.get('activity_type', ''),
-            assignment_description=request.form.get('assignment_description', ''),
-            materials_needed=request.form.get('materials_needed', '')
+        tech_specs = {
+            'duration': duration,
+            'activity_type': request.form.get('activity_type', ''),
+            'assignment_description': request.form.get('assignment_description', ''),
+            'materials_needed': request.form.get('materials_needed', '')
+        }
+        
+        lesson = Item(
+            name=request.form['title'],
+            code=f"LESSON-{order}",
+            item_type='lesson',
+            node_type=NodeType.ACTIVITY,
+            technical_specs=tech_specs
         )
         
         db.session.add(lesson)
+        db.session.flush()
+        
+        # Link lesson to course via BOM composition
+        comp = ItemComposition(parent_item=course, child_item=lesson, sort_order=order, optional_attributes={})
+        db.session.add(comp)
+        
         db.session.commit()
-        flash(f'Lesson "{lesson.lesson_title}" created successfully!', 'success')
+        flash(f'Lesson "{lesson.name}" created successfully!', 'success')
         return redirect(url_for('pearson.course_lessons', course_id=course_id))
         
     except Exception as e:
@@ -245,37 +271,40 @@ def create_lesson(course_id):
 @pearson_bp.route('/lesson/<int:lesson_id>/edit', methods=['GET', 'POST'])
 def edit_lesson(lesson_id):
     """Edit an existing lesson"""
-    lesson = db.session.query(Lesson).filter_by(lesson_id=lesson_id).first()
+    lesson = db.session.query(Item).filter_by(item_id=lesson_id, item_type='lesson').first()
     
     if not lesson:
         flash('Lesson not found', 'error')
         return redirect(url_for('pearson.list_courses'))
-    
-    course = db.session.query(Course).filter_by(course_id=lesson.course_id).first()
+        
+    # Find parent course
+    comp = db.session.query(ItemComposition).filter_by(child_id=lesson_id).first()
+    course = comp.parent_item if comp else None
     
     if request.method == 'GET':
         return render_template('pearson/lesson_edit.html', course=course, lesson=lesson)
     
     try:
         try:
-            lesson.order = int(request.form.get('order', lesson.order))
+            if comp:
+                comp.sort_order = int(request.form.get('order', comp.sort_order))
         except ValueError:
             pass
             
+        lesson.name = request.form['title']
+        
+        if not lesson.technical_specs: lesson.technical_specs = {}
         try:
-            lesson.duration = int(request.form.get('duration', lesson.duration))
+            lesson.technical_specs['duration'] = int(request.form.get('duration', lesson.technical_specs.get('duration', 60)))
         except ValueError:
             pass
-            
-        lesson.lesson_title = request.form['title']
-        lesson.content = request.form.get('content', '')
-        lesson.activity_type = request.form.get('activity_type', '')
-        lesson.assignment_description = request.form.get('assignment_description', '')
-        lesson.materials_needed = request.form.get('materials_needed', '')
+        lesson.technical_specs['activity_type'] = request.form.get('activity_type', '')
+        lesson.technical_specs['assignment_description'] = request.form.get('assignment_description', '')
+        lesson.technical_specs['materials_needed'] = request.form.get('materials_needed', '')
         
         db.session.commit()
-        flash(f'Lesson "{lesson.lesson_title}" updated successfully!', 'success')
-        return redirect(url_for('pearson.course_lessons', course_id=lesson.course_id))
+        flash(f'Lesson "{lesson.name}" updated successfully!', 'success')
+        return redirect(url_for('pearson.course_lessons', course_id=course.item_id if course else 0))
         
     except Exception as e:
         db.session.rollback()
@@ -286,10 +315,11 @@ def edit_lesson(lesson_id):
 def delete_lesson(lesson_id):
     """Delete a lesson"""
     try:
-        lesson = db.session.query(Lesson).filter_by(lesson_id=lesson_id).first()
+        lesson = db.session.query(Item).filter_by(item_id=lesson_id, item_type='lesson').first()
         if lesson:
-            course_id = lesson.course_id
-            lesson_title = lesson.lesson_title
+            comp = db.session.query(ItemComposition).filter_by(child_id=lesson_id).first()
+            course_id = comp.parent_id if comp else 0
+            lesson_title = lesson.name
             db.session.delete(lesson)
             db.session.commit()
             flash(f'Lesson "{lesson_title}" deleted successfully!', 'success')

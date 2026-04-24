@@ -13,32 +13,60 @@
                     <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
                     <input type="text" id="global_search" class="form-control border-start-0" placeholder="Kod veya Tanım yazın (en az 2 harf)..." autocomplete="off">
                 </div>
-                <ul id="search_dropdown" class="list-group position-absolute w-100 shadow-lg mt-1" style="display:none; z-index: 1050; max-height: 350px; overflow-y: auto;">
+            <ul id="search_dropdown" class="list-group position-absolute w-100 shadow-lg mt-1">
                     </ul>
-            </div> <div class="d-flex justify-content-between align-items-center mb-3">
+        </div>
+        <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="fw-bold mb-0"><i class="fas fa-sitemap me-2"></i> Proje Ağacı</h5>
-                <button class="btn btn-sm btn-primary shadow-sm" onclick="openCreateModal(null)">
-                    <i class="fas fa-folder-plus"></i> Kök Ekle
-                </button>
+                <div>
+                    <div class="form-check form-switch d-inline-block me-3 mb-0">
+                        <input class="form-check-input" type="checkbox" id="toggle_archived" onchange="$('#bom_tree').jstree(true).refresh();">
+                        <label class="form-check-label text-muted small fw-bold mt-1" for="toggle_archived" style="cursor: pointer;"><i class="fas fa-archive"></i> Arşivleri Göster</label>
+                    </div>
+                    <button class="btn btn-sm btn-primary shadow-sm" onclick="openCreateModal(null)">
+                        <i class="fas fa-folder-plus"></i> Kök Ekle
+                    </button>
+                    <button class="btn btn-sm btn-success shadow-sm ms-1" onclick="openImportCsvModal()">
+                        <i class="fas fa-file-import"></i> CSV Aktar
+                    </button>
+                </div>
             </div>
-            <div id="bom_tree" class="border rounded p-2 bg-white shadow-sm" style="min-height: 500px; max-height: 700px; overflow: auto;"></div> 
+        <div id="bom_tree" class="border rounded p-2 bg-white shadow-sm"></div> 
         </div>
 
         <div class="col-md-8 py-3">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <h5 class="fw-bold" id="selected_item_title"><i class="fas fa-info-circle text-muted me-2"></i> Lütfen ağaçtan bir öğe seçin</h5>
                 <div id="action-buttons-group">
-                    <button id="btn_add_child" class="btn btn-sm btn-outline-success shadow-sm" style="display:none;" onclick="openCreateModal(this.dataset.itemId)">
+                <button id="btn_add_child" class="btn btn-sm btn-outline-success shadow-sm" onclick="openCreateModal(this.dataset.itemId)">
                         <i class="fas fa-plus"></i> Alt Öğe Ekle
                     </button>
-                    <button id="btn_edit_item" class="btn btn-sm btn-outline-warning ms-2 shadow-sm" style="display:none;" onclick="openEditModal()">
+                <button id="btn_edit_item" class="btn btn-sm btn-outline-warning ms-2 shadow-sm" onclick="openEditModal()">
                         <i class="fas fa-edit"></i> Düzenle
                     </button>
-                    <button id="btn_attachments" class="btn btn-sm btn-outline-secondary ms-2 shadow-sm" style="display:none;" onclick="openAttachmentsModal()">
+                <button id="btn_attachments" class="btn btn-sm btn-outline-secondary ms-2 shadow-sm" onclick="openAttachmentsModal()">
                         <i class="fas fa-paperclip"></i> Ekler
                     </button>
-                    <button id="btn_where_used" class="btn btn-sm btn-outline-info ms-2 shadow-sm" style="display:none;" onclick="showWhereUsed()">
+                <button id="btn_where_used" class="btn btn-sm btn-outline-info ms-2 shadow-sm" onclick="showWhereUsed()">
                         <i class="fas fa-search-location"></i> Kullanım
+                    </button>
+                <button id="btn_print_label" class="btn btn-sm btn-outline-dark ms-2 shadow-sm" onclick="printItemLabel()">
+                        <i class="fas fa-qrcode"></i> Etiket
+                    </button>
+                <button id="btn_export_csv" class="btn btn-sm btn-outline-success ms-2 shadow-sm" onclick="exportBomCsv()">
+                    <i class="fas fa-file-csv"></i> CSV
+                </button>
+                <button id="btn_import_flat_bom" class="btn btn-sm btn-outline-primary ms-2 shadow-sm" onclick="openFlatBomModal()">
+                    <i class="fas fa-file-excel"></i> Excel Aktar
+                </button>
+                    <button id="btn_archive_item" class="btn btn-sm btn-outline-secondary ms-2 shadow-sm" onclick="archiveItem()">
+                        <i class="fas fa-archive"></i> Arşivle
+                    </button>
+                    <button id="btn_unarchive_item" class="btn btn-sm btn-outline-success ms-2 shadow-sm" style="display:none;" onclick="unarchiveItem()">
+                        <i class="fas fa-box-open"></i> Arşivden Çıkar
+                    </button>
+                    <button id="btn_delete_item" class="btn btn-sm btn-outline-danger ms-2 shadow-sm" onclick="softDeleteItem()">
+                        <i class="fas fa-trash"></i> Sil
                     </button>
                 </div>
             </div>
@@ -186,6 +214,62 @@
   </div>
 </div>
 
+<div class="modal fade" id="importCsvModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title fw-bold"><i class="fas fa-file-csv me-2"></i> CSV İçe Aktar</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="importCsvForm">
+            <div class="mb-3">
+                <label class="form-label fw-bold">Öğeler (items.csv) <span class="text-danger">*</span></label>
+                <input class="form-control" type="file" id="csv_items_file" name="items_file" accept=".csv" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-bold">Hiyerarşi (compositions.csv)</label>
+                <input class="form-control" type="file" id="csv_comps_file" name="comps_file" accept=".csv">
+                <small class="text-muted">Opsiyonel: Ağaç bağları için seçin.</small>
+            </div>
+            <div class="form-check form-switch mt-4 p-3 bg-light rounded border">
+                <input class="form-check-input ms-0 me-2" type="checkbox" id="csv_merge" name="merge" value="true" checked>
+                <label class="form-check-label fw-bold ms-2" for="csv_merge">Çakışan Öğeleri Birleştir (Merge)</label>
+            </div>
+        </form>
+      </div>
+      <div class="modal-footer bg-light">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+        <button type="button" class="btn btn-success px-4 fw-bold" id="btnSubmitImport" onclick="submitCsvImport()"><i class="fas fa-upload me-2"></i> İçe Aktar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="importFlatBomModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title fw-bold"><i class="fas fa-file-excel me-2"></i> Excel Parça Listesi Yükle</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="importFlatBomForm">
+            <div class="mb-3">
+                <label class="form-label fw-bold">Excel veya CSV Dosyası <span class="text-danger">*</span></label>
+                <input class="form-control" type="file" id="flat_bom_file" name="file" accept=".csv, .xlsx, .xls" required>
+                <small class="text-muted mt-2 d-block">Sistem <strong>Kod</strong>, <strong>Tanım</strong>, <strong>Miktar</strong> ve <strong>Fiyat</strong> sütunlarını otomatik olarak algılayıp bu klasörün altına ekleyecektir.</small>
+            </div>
+        </form>
+      </div>
+      <div class="modal-footer bg-light">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+        <button type="button" class="btn btn-primary px-4 fw-bold" id="btnSubmitFlatBom" onclick="submitFlatBomImport()"><i class="fas fa-upload me-2"></i> İçe Aktar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/themes/default/style.min.css" />
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/jstree.min.js"></script>
@@ -215,7 +299,8 @@
 
             // DEBOUNCE: Wait 400ms after the user stops typing before hitting the DB
             searchTimeout = setTimeout(() => {
-                fetch(`/emek/api/search_items?q=${encodeURIComponent(query)}`)
+                const showArchived = document.getElementById('toggle_archived').checked ? '1' : '0';
+                fetch(`/emek/api/search_items?q=${encodeURIComponent(query)}&show_archived=${showArchived}`)
                     .then(res => res.json())
                     .then(data => {
                         searchDropdown.innerHTML = '';
@@ -226,10 +311,11 @@
                                 const li = document.createElement('li');
                                 li.className = "list-group-item list-group-item-action d-flex justify-content-between align-items-center";
                                 li.style.cursor = "pointer";
+                                let archiveBadge = item.is_archived ? `<span class="badge bg-warning text-dark ms-2" style="font-size:0.6rem;">Arşiv</span>` : '';
                                 
                                 li.innerHTML = `
                                     <div onclick="locateItemInTree(${item.item_id});" class="flex-grow-1">
-                                        <strong class="text-primary">${item.code}</strong><br>
+                                        <strong class="text-primary">${item.code}</strong> ${archiveBadge}<br>
                                         <small class="text-muted">${item.name}</small>
                                     </div>
                                     <button class="btn btn-sm btn-success ms-3" title="Seçili Ağaç Düğümüne Ekle" onclick="addFromSearch(${item.item_id}); event.stopPropagation();">
@@ -263,7 +349,10 @@
                     'url': '/emek/api/get_tree_data',
                     'dataType': 'json',
                     'data': function (node) {
-                        return { 'id': node.id };
+                        return { 
+                            'id': node.id,
+                            'show_archived': document.getElementById('toggle_archived').checked ? '1' : '0'
+                        };
                     }
                 },
                 'check_callback': true, // Essential for Drag and Drop
@@ -286,6 +375,19 @@
                 alert("Uyarı: Kök dizine taşıma desteklenmemektedir.");
                 $('#bom_tree').jstree(true).refresh();
                 return;
+            }
+
+            const childNode = data.node;
+            const newParentNode = $('#bom_tree').jstree(true).get_node(data.parent);
+            const isChildArchived = childNode.data && childNode.data.is_archived;
+            const isParentArchived = newParentNode.data && newParentNode.data.is_archived;
+            
+            if (isChildArchived && !isParentArchived) {
+                if (!confirm("Arşivlenmiş bir öğeyi aktif bir klasöre taşıyorsunuz. Öğe otomatik olarak arşivden çıkarılarak aktif hale getirilecek. Onaylıyor musunuz?")) {
+                    $('#bom_tree').jstree(true).refresh();
+                    return;
+                }
+                fetch(`/emek/api/unarchive_item/${childDbId}`, { method: 'POST' }).catch(err => console.error(err));
             }
 
             fetch('/emek/api/move_node', {
@@ -311,10 +413,11 @@
     }
 
     // --- TABLE TO TREE DRAG & DROP LOGIC ---
-    function handleTableDragStart(e, childId, oldParentId) {
+    function handleTableDragStart(e, childId, oldParentId, isArchived) {
         e.dataTransfer.setData("application/json", JSON.stringify({
             child_id: childId,
-            old_parent_id: oldParentId
+            old_parent_id: oldParentId,
+            is_archived: isArchived
         }));
         e.dataTransfer.effectAllowed = "move";
     }
@@ -348,6 +451,14 @@
 
                 // Prevent moving it to the exact same parent
                 if (data.old_parent_id == newParentDbId) return; 
+
+                const isChildArchived = data.is_archived;
+                const isParentArchived = targetNode.data && targetNode.data.is_archived;
+                
+                if (isChildArchived && !isParentArchived) {
+                    if (!confirm("Arşivlenmiş bir öğeyi aktif bir klasöre sürüklüyorsunuz. Öğe otomatik olarak arşivden çıkarılacak. Devam edilsin mi?")) return;
+                    fetch(`/emek/api/unarchive_item/${data.child_id}`, { method: 'POST' }).catch(err => console.error(err));
+                }
 
                 if (confirm("Bu öğeyi seçili klasöre/montaja taşımak istediğinize emin misiniz?")) {
                     fetch('/emek/api/move_node', {
@@ -397,12 +508,21 @@
         fetch(`/emek/api/get_item_details/${dbId}`)
             .then(res => res.json())
             .then(details => {
-                let titleIcon = details.is_category ? 'fa-folder-open text-info' : 'fa-box text-warning';
-                document.getElementById('selected_item_title').innerHTML = `<i class="fas ${titleIcon} me-2"></i> ${details.name} <small class="text-muted ms-2">[${details.code}]</small>`;
+                // 1. Dynamic Title & Badges
+                let titleIcon = details.is_category ? 'fa-folder-open text-info' : 
+                               (details.item_type === 'course' ? 'fa-graduation-cap text-primary' : 
+                               (details.item_type === 'lesson' ? 'fa-chalkboard-teacher text-success' : 'fa-box text-warning'));
+                
+                let badgeClass = details.node_type === 'ACTIVITY' ? 'bg-primary' : (details.node_type === 'CATEGORY' ? 'bg-info' : 'bg-success');
+                let nodeTypeBadge = details.item_type ? `<span class="badge ${badgeClass} fs-6 align-middle ms-3 shadow-sm">${details.item_type.toUpperCase()}</span>` : '';
+                
+                let archivedBadge = details.is_archived ? `<span class="badge bg-warning text-dark fs-6 align-middle ms-2 shadow-sm"><i class="fas fa-archive me-1"></i> ARŞİVLENMİŞ</span>` : '';
+
+                document.getElementById('selected_item_title').innerHTML = `<i class="fas ${titleIcon} me-2"></i> <span class="${details.is_archived ? 'text-muted text-decoration-line-through' : ''}">${details.name}</span> <small class="text-muted ms-2">[${details.code}]</small> ${nodeTypeBadge} ${archivedBadge}`;
                 document.getElementById('item_grand_total').innerText = (details.total_cost || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
                 // Show action buttons
-                const btns = ['btn_add_child', 'btn_edit_item', 'btn_attachments', 'btn_where_used'];
+                const btns = ['btn_add_child', 'btn_edit_item', 'btn_attachments', 'btn_where_used', 'btn_print_label', 'btn_export_csv', 'btn_import_flat_bom', 'btn_archive_item', 'btn_delete_item'];
                 btns.forEach(id => {
                     const btn = document.getElementById(id);
                     if (btn) {
@@ -410,16 +530,62 @@
                         btn.dataset.itemId = details.item_id;
                     }
                 });
+                
+                // Toggle Archive / Unarchive buttons dynamically
+                const btnArchive = document.getElementById('btn_archive_item');
+                const btnUnarchive = document.getElementById('btn_unarchive_item');
+                if (details.is_archived) {
+                    if (btnArchive) btnArchive.style.display = 'none';
+                    if (btnUnarchive) {
+                        btnUnarchive.style.display = 'inline-block';
+                        btnUnarchive.dataset.itemId = details.item_id;
+                    }
+                } else {
+                    if (btnArchive) {
+                        btnArchive.style.display = 'inline-block';
+                        btnArchive.dataset.itemId = details.item_id;
+                    }
+                    if (btnUnarchive) btnUnarchive.style.display = 'none';
+                }
 
-                // Specs DNA
+                // 2. Dynamic Properties Panel
                 const specsContainer = document.getElementById('item_specs_container');
                 specsContainer.innerHTML = '';
+                
+                // Route the UI based on Semantic Layer (item_type)
+                if (details.item_type === 'course' || details.item_type === 'lesson') {
+                    let html = `<div class="w-100 p-3 bg-white rounded border border-primary border-opacity-25 mb-3 shadow-sm">
+                                    <h6 class="fw-bold text-primary border-bottom pb-2 mb-3"><i class="fas fa-graduation-cap me-2"></i> Akademik Özellikler</h6>
+                                    <div class="row">`;
+                    let specs = details.technical_specs || {};
+                    if (specs.instructor) html += `<div class="col-md-4 mb-2"><span class="text-muted small d-block">Eğitmen</span><b>${specs.instructor}</b></div>`;
+                    if (specs.duration) html += `<div class="col-md-4 mb-2"><span class="text-muted small d-block">Süre (dk)</span><b>${specs.duration}</b></div>`;
+                    if (specs.level) html += `<div class="col-md-4 mb-2"><span class="text-muted small d-block">Seviye</span><b>${specs.level}</b></div>`;
+                    if (specs.language) html += `<div class="col-md-4 mb-2"><span class="text-muted small d-block">Dil</span><b>${specs.language}</b></div>`;
+                    if (specs.delivery_mode) html += `<div class="col-md-4 mb-2"><span class="text-muted small d-block">Format</span><b>${specs.delivery_mode}</b></div>`;
+                    html += `</div></div>`;
+                    specsContainer.innerHTML = html;
+                } else if (!details.is_category) {
+                    specsContainer.innerHTML = `
+                        <div class="w-100 p-3 bg-white rounded border border-success border-opacity-25 mb-3 shadow-sm">
+                            <h6 class="fw-bold text-success border-bottom pb-2 mb-3"><i class="fas fa-ruler-combined me-2"></i> Fiziksel Boyutlar</h6>
+                            <div class="row text-center">
+                                <div class="col-4 border-end"><span class="text-muted small d-block">Genişlik (X)</span><span class="fw-bold fs-5">${details.dim_x || 0}</span></div>
+                                <div class="col-4 border-end"><span class="text-muted small d-block">Yükseklik (Y)</span><span class="fw-bold fs-5">${details.dim_y || 0}</span></div>
+                                <div class="col-4"><span class="text-muted small d-block">Derinlik (Z)</span><span class="fw-bold fs-5">${details.dim_z || 0}</span></div>
+                            </div>
+                        </div>`;
+                }
+
                 if (details.technical_specs) {
+                    let badgeHtml = '<div class="d-flex flex-wrap gap-2 w-100">';
+                    const skipKeys = ['instructor', 'duration', 'level', 'language', 'delivery_mode', 'aim', 'description', 'objectives', 'activity_type', 'materials_needed', 'assignment_description'];
                     Object.entries(details.technical_specs).forEach(([key, val]) => {
-                        if (val && val !== 'Genel' && val !== 'Diğer') {
-                            specsContainer.innerHTML += `<span class="badge bg-secondary text-white border border-secondary shadow-sm px-3 py-2"><span class="text-light fw-normal me-1">${key}:</span> ${val}</span>`;
+                        if (val && val !== 'Genel' && val !== 'Diğer' && !skipKeys.includes(key)) {
+                            badgeHtml += `<span class="badge bg-light text-dark border shadow-sm px-3 py-2"><span class="text-muted fw-normal me-1">${key}:</span> ${val}</span>`;
                         }
                     });
+                    specsContainer.innerHTML += badgeHtml + '</div>';
                 }
 
                 // BoM Table
@@ -431,12 +597,12 @@
                     details.components.forEach(comp => {
                         let rowTotal = comp.qty * comp.unit_cost;
                         tbody.innerHTML += `
-                            <tr draggable="true" 
-                                ondragstart="handleTableDragStart(event, ${comp.child_id}, ${details.item_id})"
+                            <tr draggable="true" class="${comp.is_archived ? 'opacity-75' : ''}"
+                                ondragstart="handleTableDragStart(event, ${comp.child_id}, ${details.item_id}, ${comp.is_archived})"
                                 ondblclick="locateItemInTree(${comp.child_id})"
                                 style="cursor: pointer;"
                                 title="Ağaçta bulmak için çift tıklayın. Başka bir klasöre taşımak için ağaca sürükleyin.">
-                                <td class="fw-bold">${comp.code}</td>
+                                <td class="fw-bold">${comp.code} ${comp.is_archived ? '<span class="badge bg-warning text-dark ms-1" style="font-size:0.6rem;">Arşiv</span>' : ''}</td>
                                 <td>${comp.name}</td>
                                 <td><span class="badge bg-light text-dark border px-2 py-1">${comp.qty}</span></td>
                                 <td>${comp.unit_cost.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺</td>
@@ -458,15 +624,22 @@
         document.getElementById('create_item_parent_id').value = parentId || '';
         document.getElementById('create_item_code').value = '';
         document.getElementById('create_item_name').value = '';
-        document.getElementById('create_item_is_category').checked = true;
+        document.getElementById('create_item_type').value = 'raw_material';
+        document.getElementById('create_item_is_category').checked = false;
         new bootstrap.Modal(document.getElementById('createItemModal')).show();
     }
 
     function saveNewItem() {
+        const itemType = document.getElementById('create_item_type').value;
+        // Auto-determine Node Type based on selection
+        const nodeType = (itemType === 'course' || itemType === 'lesson') ? 'ACTIVITY' : 'PRODUCT';
+
         const payload = {
             parent_id: document.getElementById('create_item_parent_id').value,
             code: document.getElementById('create_item_code').value,
             name: document.getElementById('create_item_name').value,
+            item_type: itemType,
+            node_type: nodeType,
             is_category: document.getElementById('create_item_is_category').checked
         };
 
@@ -528,6 +701,9 @@
             document.getElementById('edit_item_code').value = data.code;
             document.getElementById('edit_item_name').value = data.name;
             document.getElementById('edit_item_cost').value = data.total_cost || 0;
+            document.getElementById('edit_item_dim_x').value = data.dim_x || 0;
+            document.getElementById('edit_item_dim_y').value = data.dim_y || 0;
+            document.getElementById('edit_item_dim_z').value = data.dim_z || 0;
             document.getElementById('edit_item_is_category').checked = data.is_category;
             new bootstrap.Modal(document.getElementById('editItemModal')).show();
         }).catch(err => console.error("Fetch Edit Details API Error:", err));
@@ -538,6 +714,9 @@
         const payload = {
             code: document.getElementById('edit_item_code').value,
             name: document.getElementById('edit_item_name').value,
+            dim_x: parseFloat(document.getElementById('edit_item_dim_x').value) || 0.0,
+            dim_y: parseFloat(document.getElementById('edit_item_dim_y').value) || 0.0,
+            dim_z: parseFloat(document.getElementById('edit_item_dim_z').value) || 0.0,
             base_cost: document.getElementById('edit_item_cost').value,
             is_category: document.getElementById('edit_item_is_category').checked
         };
@@ -591,6 +770,132 @@
             });
             new bootstrap.Modal(document.getElementById('whereUsedModal')).show();
         }).catch(err => console.error("Where Used API Error:", err));
+    }
+
+    function printItemLabel() {
+        const itemId = document.getElementById('btn_print_label').dataset.itemId;
+        window.open(`/api/inventory/print-label/${itemId}`, '_blank');
+    }
+
+    function exportBomCsv() {
+        const itemId = document.getElementById('btn_export_csv').dataset.itemId;
+        window.location.href = `/emek/api/export_bom_csv/${itemId}`;
+    }
+
+    function softDeleteItem() {
+        const itemId = document.getElementById('btn_delete_item').dataset.itemId;
+        if (!confirm("Bu öğeyi silmek istediğinize emin misiniz? Düğüm yapı ağacından gizlenecektir.")) return;
+        
+        fetch(`/emek/api/delete_item/${itemId}`, { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                $('#bom_tree').jstree(true).refresh();
+                document.getElementById('selected_item_title').innerHTML = '<i class="fas fa-info-circle text-muted me-2"></i> Lütfen ağaçtan bir öğe seçin';
+                document.getElementById('action-buttons-group').style.display = 'none'; 
+                document.getElementById('component_table_body').innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">Öğe başarıyla silindi.</td></tr>';
+            })
+            .catch(err => console.error(err));
+    }
+
+    function archiveItem() {
+        const itemId = document.getElementById('btn_archive_item').dataset.itemId;
+        if (!confirm("Bu öğeyi arşivlemek istediğinize emin misiniz?")) return;
+        
+        fetch(`/emek/api/archive_item/${itemId}`, { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                $('#bom_tree').jstree(true).refresh();
+                document.getElementById('selected_item_title').innerHTML = '<i class="fas fa-info-circle text-muted me-2"></i> Lütfen ağaçtan bir öğe seçin';
+                document.getElementById('action-buttons-group').style.display = 'none';
+                document.getElementById('component_table_body').innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">Öğe arşive kaldırıldı.</td></tr>';
+            })
+            .catch(err => console.error(err));
+    }
+    
+    function unarchiveItem() {
+        const itemId = document.getElementById('btn_unarchive_item').dataset.itemId;
+        
+        fetch(`/emek/api/unarchive_item/${itemId}`, { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                $('#bom_tree').jstree(true).refresh();
+                loadItemDetails(itemId); // Reload to toggle buttons back
+            })
+            .catch(err => console.error(err));
+    }
+
+    // --- CSV IMPORT LOGIC ---
+    function openImportCsvModal() {
+        document.getElementById('importCsvForm').reset();
+        new bootstrap.Modal(document.getElementById('importCsvModal')).show();
+    }
+
+    function submitCsvImport() {
+        const form = document.getElementById('importCsvForm');
+        const formData = new FormData(form);
+
+        if (!document.getElementById('csv_items_file').files.length) {
+            alert("Lütfen en azından 'items.csv' dosyasını seçin.");
+            return;
+        }
+
+        formData.set('merge', document.getElementById('csv_merge').checked);
+
+        const btn = document.getElementById('btnSubmitImport');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Aktarılıyor...';
+        btn.disabled = true;
+
+        fetch('/emek/api/import_csv', { method: 'POST', body: formData })
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) alert("Hata: " + data.error);
+                else {
+                    alert("✅ " + data.message);
+                    bootstrap.Modal.getInstance(document.getElementById('importCsvModal')).hide();
+                    $('#bom_tree').jstree(true).refresh();
+                }
+            })
+            .catch(err => alert("Ağ hatası oluştu."))
+            .finally(() => { btn.innerHTML = originalText; btn.disabled = false; });
+    }
+
+    // --- FLAT EXCEL BOM IMPORT LOGIC ---
+    function openFlatBomModal() {
+        document.getElementById('importFlatBomForm').reset();
+        new bootstrap.Modal(document.getElementById('importFlatBomModal')).show();
+    }
+
+    function submitFlatBomImport() {
+        const parentId = document.getElementById('btn_import_flat_bom').dataset.itemId;
+        const fileInput = document.getElementById('flat_bom_file');
+        
+        if (!fileInput.files.length) {
+            alert("Lütfen bir dosya seçin.");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+
+        const btn = document.getElementById('btnSubmitFlatBom');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Yükleniyor...';
+        btn.disabled = true;
+
+        fetch(`/emek/api/import_flat_bom/${parentId}`, { method: 'POST', body: formData })
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) alert("Hata: " + data.error);
+                else {
+                    alert("✅ " + data.message);
+                    bootstrap.Modal.getInstance(document.getElementById('importFlatBomModal')).hide();
+                    $('#bom_tree').jstree(true).refresh();
+                    setTimeout(() => locateItemInTree(parentId), 800); 
+                }
+            })
+            .catch(err => alert("Ağ hatası oluştu."))
+            .finally(() => { btn.innerHTML = originalText; btn.disabled = false; });
     }
 </script>
 {% endblock %}

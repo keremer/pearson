@@ -1,0 +1,33 @@
+# {{ course_title }} - Course Overview
+
+**Course Code:** {{ course_code }}  
+**Instructor:** {{ instructor }}  
+**Level:** {{ level }}  
+**Total Duration:** {{ total_duration }} minutes  
+**Total Lessons:** {{ total_lessons }}
+
+## Quick Stats
+- **Average Lesson Duration:** {{ average_duration }} minutes
+- **Longest Lesson:** {{ longest_lesson.duration }} minutes ({{ longest_lesson.title }})
+- **Shortest Lesson:** {{ shortest_lesson.duration }} minutes ({{ shortest_lesson.title }})
+
+## Learning Outcomes
+{% for outcome in learning_outcomes %}
+- LO{{ loop.index }}: {{ outcome.outcome_text }}
+{% endfor %}
+
+## Lesson Distribution
+{% for lesson in lessons %}
+### Week {{ lesson.order }}: {{ lesson.title }}
+- **Duration:** {{ lesson.duration }} minutes
+- **Activity:** {{ lesson.activity_type | default('N/A') }}
+- **Materials:** {{ lesson.materials_needed | truncate(80) | default('N/A') }}
+{% endfor %}
+
+## Assessment Breakdown
+{% for assessment in assessment_formats %}
+- {{ assessment.format_type }}: {{ assessment.percentage }}%
+{% endfor %}
+
+---
+*Generated on {{ generated_date }} by crminaec Course Management System*

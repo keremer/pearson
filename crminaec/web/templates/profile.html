@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Profilim - CRMinAEC Portal{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="d-flex align-items-center mb-4">
+        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3 shadow" style="width: 60px; height: 60px; font-size: 1.5rem;">
+            <i class="fas fa-user"></i>
+        </div>
+        <div>
+            <h2 class="mb-0 fw-bold">{{ user.first_name or 'Kullanıcı' }} {{ user.last_name or '' }}</h2>
+            <p class="text-muted mb-0"><i class="fas fa-envelope me-1"></i> {{ user.email }}</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-dark text-white fw-bold">
+                    <i class="fas fa-id-card me-2"></i> Kişisel Bilgiler
+                </div>
+                <div class="card-body bg-light p-4">
+                    <form method="POST" action="{{ url_for('main.profile') }}">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold text-muted small">Ad</label>
+                                <input type="text" name="first_name" class="form-control" value="{{ user.first_name or '' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold text-muted small">Soyad</label>
+                                <input type="text" name="last_name" class="form-control" value="{{ user.last_name or '' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold text-muted small">Telefon</label>
+                                <input type="text" name="phone" class="form-control" value="{{ user.phone or '' }}" placeholder="05XX XXX XX XX">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold text-muted small">E-posta (Değiştirilemez)</label>
+                                <input type="email" class="form-control text-muted" value="{{ user.email }}" disabled readonly>
+                            </div>
+                            <div class="col-12 mb-4">
+                                <label class="form-label fw-bold text-muted small">Adres</label>
+                                <textarea name="address" class="form-control" rows="3">{{ user.address or '' }}</textarea>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        <h6 class="fw-bold text-dark mt-4 mb-3"><i class="fas fa-lock me-2 text-warning"></i> Şifre Değiştir (İsteğe Bağlı)</h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold text-muted small">Yeni Şifre</label>
+                                <input type="password" name="new_password" class="form-control" placeholder="Boş bırakırsanız değişmez">
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <label class="form-label fw-bold text-muted small">Yeni Şifre (Tekrar)</label>
+                                <input type="password" name="confirm_password" class="form-control" placeholder="Şifrenizi doğrulayın">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary px-4 fw-bold shadow-sm"><i class="fas fa-save me-2"></i> Değişiklikleri Kaydet</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

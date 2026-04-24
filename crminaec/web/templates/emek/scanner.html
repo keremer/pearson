@@ -1,0 +1,312 @@
+{% extends "base.html" %} <!-- Assuming you have a standard layout -->
+
+{% block head %}
+    {{ super() }}
+    <!-- Link the PWA Manifest -->
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+{% endblock %}
+
+{% block title %}Warehouse Scanner{% endblock %}
+
+{% block content %}
+<div class="container mt-4 pb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0"><i class="fas fa-barcode"></i> Barkod Okuyucu</h2>
+            <p class="text-muted mb-0">Stok giriş/çıkış işlemleri için tarayın.</p>
+        </div>
+        <div class="text-end">
+            <span id="network-status" class="badge bg-success fs-6"><i class="fas fa-wifi"></i> Online</span>
+            <div id="offline-queue-badge" class="mt-1" style="display:none;">
+                <span class="badge bg-warning text-dark"><i class="fas fa-database"></i> <span id="queue-count">0</span> Bekleyen</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Camera Viewport -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body p-2">
+            <div id="reader"></div>
+        </div>
+    </div>
+
+    <!-- Hidden Item Actions Card (Shows after successful scan) -->
+    <div id="scan-result-card" class="card shadow-lg border-primary">
+        <div class="card-header bg-primary text-white" id="scan-header">
+            <h5 class="mb-0" id="item-name">Loading...</h5>
+            <small id="item-code" class="text-white-50"></small>
+        </div>
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3" id="stock-info-row">
+                <span class="text-muted">Current Stock:</span>
+                <span class="badge bg-info fs-5"><span id="current-stock"></span> <span id="uom"></span></span>
+            </div>
+            <hr>
+            
+            <form id="movement-form">
+                <input type="hidden" id="item-id">
+                <input type="hidden" id="scanned-code">
+                
+                <div class="mb-3">
+                    <label for="movement-type" class="form-label fw-bold">Movement Type</label>
+                    <select class="form-select form-select-lg" id="movement-type" required>
+                        <option value="IN" class="text-success">📥 IN (Receive to Warehouse)</option>
+                        <option value="OUT" class="text-danger">📤 OUT (Dispatch to Project)</option>
+                        <option value="RETURN" class="text-warning">🔙 RETURN (From Field)</option>
+                        <option value="ADJUSTMENT" class="text-secondary">⚖️ ADJUSTMENT (Audit Correction)</option>
+                    </select>
+                </div>
+                
+                <div class="mb-4">
+                    <label for="quantity" class="form-label fw-bold">Quantity</label>
+                    <input type="number" step="0.01" class="form-control form-control-lg" id="quantity" required placeholder="Enter amount...">
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary btn-lg"><i class="fas fa-save"></i> Save Movement</button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="resumeScanning()">Cancel & Scan Another</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Ledger History Table -->
+    <div class="card shadow-sm mt-4">
+        <div class="card-header bg-dark text-white">
+            <h6 class="mb-0"><i class="fas fa-history"></i> Recent Movements</h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-striped mb-0 text-center ledger-table">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Time</th>
+                            <th>Item</th>
+                            <th>Type</th>
+                            <th>Qty</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ledger-history-body">
+                        {% for mov in recent_movements %}
+                        <tr>
+                            <td class="text-muted">{{ mov.timestamp.strftime('%H:%M') if mov.timestamp else '' }}</td>
+                            <td class="fw-bold text-start">{{ mov.item.name | truncate(20) }}</td>
+                            <td>
+                                <span class="badge {% if mov.movement_type.name == 'IN' %}bg-success{% elif mov.movement_type.name == 'OUT' %}bg-danger{% elif mov.movement_type.name == 'RETURN' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                    {{ mov.movement_type.name[:3] | upper }}
+                                </span>
+                            </td>
+                            <td class="fw-bold">{{ mov.quantity }}</td>
+                        </tr>
+                        {% else %}
+                        <tr id="empty-ledger-row">
+                            <td colspan="4" class="text-muted py-3">No recent movements recorded.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Include html5-qrcode library from CDN -->
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
+<script>
+    let html5QrcodeScanner;
+    const OFFLINE_QUEUE_KEY = 'emek_inventory_queue';
+    let isOfflineMode = !navigator.onLine;
+
+    // --- 1. NETWORK STATE MANAGEMENT ---
+    function updateNetworkStatus() {
+        isOfflineMode = !navigator.onLine;
+        const badge = document.getElementById('network-status');
+        if (isOfflineMode) {
+            badge.className = 'badge bg-danger fs-6';
+            badge.innerHTML = '<i class="fas fa-wifi-slash"></i> Offline (Çevrimdışı)';
+        } else {
+            badge.className = 'badge bg-success fs-6';
+            badge.innerHTML = '<i class="fas fa-wifi"></i> Online';
+            syncOfflineQueue(); // Auto-sync when connection restores!
+        }
+    }
+
+    window.addEventListener('online', updateNetworkStatus);
+    window.addEventListener('offline', updateNetworkStatus);
+    
+    function updateQueueUI() {
+        const queue = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
+        document.getElementById('queue-count').innerText = queue.length;
+        document.getElementById('offline-queue-badge').style.display = queue.length > 0 ? 'block' : 'none';
+    }
+
+    function playBeep() {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.frequency.value = 880; // Frequency in Hz (A5 pitch)
+            gain.gain.value = 0.1;     // Volume (0.0 to 1.0)
+            osc.start();
+            setTimeout(() => osc.stop(), 150); // Beep duration: 150ms
+        } catch (e) {
+            console.warn("Audio not supported or blocked by browser policy.", e);
+        }
+    }
+
+    function onScanSuccess(decodedText, decodedResult) {
+        // 1. Pause scanner to prevent duplicate firing
+        html5QrcodeScanner.pause();
+
+        // 2. Lookup the item against the ERP database
+        fetch(`/api/inventory/scan/${encodeURIComponent(decodedText)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert("❌ " + data.error);
+                    html5QrcodeScanner.resume();
+                } else {
+                    // Populate UI
+                    document.getElementById('item-id').value = data.item_id;
+                    document.getElementById('scanned-code').value = decodedText;
+                    document.getElementById('item-name').innerText = data.name;
+                    document.getElementById('item-code').innerText = data.code;
+                    document.getElementById('current-stock').innerText = data.current_stock;
+                    document.getElementById('uom').innerText = data.uom;
+
+                    document.getElementById('scan-result-card').style.display = 'block';
+                    window.scrollTo(0, document.body.scrollHeight);
+                }
+            })
+            .catch(err => {
+                // If fetch fails due to sudden network drop, switch to offline mode and retry visually
+                console.warn("Fetch failed, switching to offline mode.", err);
+                updateNetworkStatus();
+                onScanSuccess(decodedText, decodedResult); 
+            });
+    }
+
+    function resumeScanning() {
+        document.getElementById('scan-result-card').style.display = 'none';
+        document.getElementById('movement-form').reset();
+        html5QrcodeScanner.resume();
+    }
+
+    // Initialize the Scanner UI
+    html5QrcodeScanner = new Html5QrcodeScanner(
+        "reader", 
+        { fps: 10, qrbox: {width: 250, height: 250}, aspectRatio: 1.0 }, 
+        /* verbose= */ false
+    );
+    html5QrcodeScanner.render(onScanSuccess);
+
+    // Handle Stock Ledger Form Submission
+    document.getElementById('movement-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const payload = {
+            item_id: document.getElementById('item-id').value,
+            scanned_code: document.getElementById('scanned-code').value,
+            movement_type: document.getElementById('movement-type').value,
+            quantity: document.getElementById('quantity').value
+        };
+
+        // --- ROUTE TO OFFLINE QUEUE IF DISCONNECTED ---
+        if (isOfflineMode) {
+            let queue = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
+            queue.push(payload);
+            localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
+            alert("⚠️ İnternet bağlantısı yok. İşlem cihaza kaydedildi!");
+            updateQueueUI();
+            resumeScanning();
+            return;
+        }
+
+        fetch('/api/inventory/movement', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) {
+                alert("❌ " + data.error);
+            } else {
+                alert("✅ " + data.message + "\nNew Total Stock: " + data.new_stock_quantity);
+                
+                // Dynamically prepend to the Ledger History Table
+                const tbody = document.getElementById('ledger-history-body');
+                const emptyRow = document.getElementById('empty-ledger-row');
+                if (emptyRow) emptyRow.remove();
+
+                let badgeClass = 'bg-secondary';
+                let typeText = data.movement.type;
+                if (typeText === 'IN') badgeClass = 'bg-success';
+                else if (typeText === 'OUT') badgeClass = 'bg-danger';
+                else if (typeText === 'RETURN') badgeClass = 'bg-warning text-dark';
+
+                let itemName = data.movement.item_name;
+                if (itemName.length > 20) itemName = itemName.substring(0, 17) + '...';
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="text-muted">${data.movement.time}</td>
+                    <td class="fw-bold text-start">${itemName}</td>
+                    <td><span class="badge ${badgeClass}">${typeText.substring(0,3)}</span></td>
+                    <td class="fw-bold">${data.movement.quantity}</td>
+                `;
+                tbody.insertBefore(tr, tbody.firstChild);
+
+                // Enforce a maximum of 5 visible rows
+                while (tbody.children.length > 5) {
+                    tbody.removeChild(tbody.lastChild);
+                }
+
+                resumeScanning();
+            }
+        })
+        .catch(err => {
+            alert("⚠️ Failed to record stock movement. Check connection.");
+        });
+    });
+
+    // --- 2. AUTO-SYNC LOGIC ---
+    function syncOfflineQueue() {
+        const queue = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]');
+        if (queue.length === 0) return;
+
+        fetch('/api/inventory/sync', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(queue)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                localStorage.removeItem(OFFLINE_QUEUE_KEY);
+                updateQueueUI();
+                alert(`✅ Bağlantı kuruldu! ${data.synced_count} çevrimdışı işlem sunucuya aktarıldı.`);
+                location.reload(); // Refresh the ledger history
+            }
+        })
+        .catch(err => console.error("Auto-sync failed, will retry later.", err));
+    }
+
+    // --- 3. REGISTER PWA SERVICE WORKER ---
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/service-worker.js')
+                .then(reg => console.log('✅ Service Worker registered with scope:', reg.scope))
+                .catch(err => console.error('❌ Service Worker registration failed:', err));
+        });
+    }
+
+    // Init UI on load
+    updateNetworkStatus();
+    updateQueueUI();
+</script>
+{% endblock %}

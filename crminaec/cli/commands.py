@@ -7,13 +7,15 @@ import csv
 import json
 import os
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-from datetime import datetime
 
 # Import the core application and unified models
 from crminaec import create_app
-from crminaec.core.models import db, Course, Lesson
+from crminaec.core.models import db
+from crminaec.platforms.emek.models import Item, ItemComposition
+
 
 class CLICommands:
     def __init__(self, database_url: str = ""
@@ -59,12 +61,12 @@ class CLICommands:
         try:
             with self.app.app_context():
                 if batch:
-                    courses = db.session.query(Course).all()
+                    courses = db.session.scalars(db.select(Item).filter_by(item_type='course')).all()
                     results = []
                     
                     for course in courses:
                         if self.verbose:
-                            print(f"📚 Processing course: {course.course_title} (ID: {course.course_id})")
+                            print(f"📚 Processing course: {course.name} (ID: {course.item_id})")
                         
                         result = self._generate_course_materials(course, formats, templates)
                         results.append(result)
@@ -74,7 +76,7 @@ class CLICommands:
                     return successful > 0
                     
                 elif course_id:
-                    course = db.session.query(Course).filter_by(course_id=course_id).first()
+                    course = db.session.scalar(db.select(Item).filter_by(item_id=course_id, item_type='course'))
                     if not course:
                         print(f"❌ Course with ID {course_id} not found!")
                         return False
@@ -99,38 +101,41 @@ class CLICommands:
         try:
             with self.app.app_context():
                 if what in ['courses', 'all']:
-                    courses = db.session.query(Course).all()
+                    courses = db.session.scalars(db.select(Item).filter_by(item_type='course')).all()
                     print("\n📚 COURSES:")
                     print("-" * 60)
                     for course in courses:
-                        # Use our new mapped fields (course.lessons list)
-                        lesson_count = len(course.lessons)
-                        print(f"ID: {course.course_id} | {course.course_title}")
-                        print(f"   Code: {course.course_code} | Instructor: {course.instructor}")
+                        lesson_count = len([c for c in course.children_links if c.child_item.item_type == 'lesson'])
+                        specs = course.technical_specs or {}
+                        print(f"ID: {course.item_id} | {course.name}")
+                        print(f"   Code: {course.code} | Instructor: {specs.get('instructor', 'N/A')}")
                         print(f"   Lessons: {lesson_count}")
-                        if detailed and course.description:
-                            print(f"   Description: {course.description[:100]}...")
+                        if detailed and specs.get('description'):
+                            desc = specs['description']
+                            print(f"   Description: {desc[:100]}...")
                         print()
                 
                 if what in ['lessons', 'all'] and course_id:
-                    course = db.session.query(Course).filter_by(course_id=course_id).first()
+                    course = db.session.scalar(db.select(Item).filter_by(item_id=course_id, item_type='course'))
                     
                     if not course:
                         print(f"❌ Course {course_id} not found.")
                         return False
 
-                    # SQLAlchemy already orders lessons via the model definition
-                    lessons = course.lessons 
-                    course_title = course.course_title
+                    comps = db.session.scalars(db.select(ItemComposition).filter_by(parent_id=course.item_id).order_by(ItemComposition.sort_order)).all()
+                    lessons = [(c.child_item, c.sort_order) for c in comps if c.child_item.item_type == 'lesson']
+                    course_title = course.name
                     
                     print(f"\n📖 LESSONS for {course_title}:")
                     print("-" * 60)
-                    for lesson in lessons:
-                        duration_str = f"{lesson.duration} min" if lesson.duration else "N/A"
-                        print(f"ID: {lesson.lesson_id} | Lesson {lesson.order}: {lesson.lesson_title}")
+                    for lesson, order in lessons:
+                        specs = lesson.technical_specs or {}
+                        duration_str = f"{specs.get('duration', 60)} min"
+                        print(f"ID: {lesson.item_id} | Lesson {order}: {lesson.name}")
                         print(f"   Duration: {duration_str}")
-                        if detailed and lesson.content:
-                            preview = lesson.content[:100] + '...' if len(lesson.content) > 100 else lesson.content
+                        if detailed and specs.get('content'):
+                            content = specs['content']
+                            preview = content[:100] + '...' if len(content) > 100 else content
                             print(f"   Content: {preview}")
                         print()
                         
@@ -151,45 +156,44 @@ class CLICommands:
         """Export course data to various formats"""
         try:
             with self.app.app_context():
-                course = db.session.query(Course).filter_by(course_id=course_id).first()
+                course = db.session.scalar(db.select(Item).filter_by(item_id=course_id, item_type='course'))
                 
                 if not course:
                     print(f"❌ Course with ID {course_id} not found!")
                     return False
                 
-                # Fetch lessons utilizing the sorted relationship mapping
-                lessons = course.lessons
+                comps = db.session.scalars(db.select(ItemComposition).filter_by(parent_id=course.item_id).order_by(ItemComposition.sort_order)).all()
+                lessons = [(c.child_item, c.sort_order) for c in comps if c.child_item.item_type == 'lesson']
                 
+                specs = course.technical_specs or {}
                 # Build export data using the new DataClass attributes
                 export_data = {
                     'course': {
-                        'id': course.course_id,
-                        'title': course.course_title,
-                        'code': course.course_code or '',
-                        'description': course.description or '',
-                        'instructor': course.instructor or '',
-                        'created_date': course.created_date.isoformat() if course.created_date else None
+                        'id': course.item_id,
+                        'title': course.name,
+                        'code': course.code or '',
+                        'description': specs.get('description', ''),
+                        'instructor': specs.get('instructor', '')
                     },
                     'lessons': [
                         {
-                            'id': lesson.lesson_id,
-                            'order': lesson.order,
-                            'title': lesson.lesson_title,
-                            'content': lesson.content or '',
-                            'duration': lesson.duration,
-                            'created_date': lesson.created_date.isoformat() if lesson.created_date else None
+                            'id': lesson.item_id,
+                            'order': order,
+                            'title': lesson.name,
+                            'content': (lesson.technical_specs or {}).get('content', ''),
+                            'duration': (lesson.technical_specs or {}).get('duration', 60)
                         }
-                        for lesson in lessons
+                        for lesson, order in lessons
                     ],
                     'metadata': {
                         'exported_at': datetime.now().isoformat(),
                         'total_lessons': len(lessons),
-                        'total_duration': sum(lesson.duration or 0 for lesson in lessons)
+                        'total_duration': sum((l.technical_specs or {}).get('duration', 60) for l, _ in lessons)
                     }
                 }
                 
                 if not output:
-                    course_code = course.course_code or f"course_{course_id}"
+                    course_code = course.code or f"course_{course_id}"
                     safe_course_code = "".join(str(c) for c in course_code if str(c).isalnum() or c in ('-', '_'))
                     # Path resolution for output dir
                     output = str(Path(self.output_dir) / f"course_export_{safe_course_code}.{format}")
@@ -202,11 +206,11 @@ class CLICommands:
                     with open(output, 'w', newline='', encoding='utf-8') as f:
                         writer = csv.writer(f)
                         writer.writerow(['Order', 'Title', 'Duration', 'Content Preview'])
-                        for lesson in lessons:
-                            content_str = str(lesson.content) if lesson.content else ''
+                        for lesson, order in lessons:
+                            content_str = str((lesson.technical_specs or {}).get('content', ''))
                             content_preview = content_str[:100] + '...' if len(content_str) > 100 else content_str
                             writer.writerow([
-                                lesson.order, lesson.lesson_title, lesson.duration or '', content_preview
+                                order, lesson.name, (lesson.technical_specs or {}).get('duration', ''), content_preview
                             ])
                 
                 elif format == 'excel':
@@ -214,12 +218,12 @@ class CLICommands:
                         import pandas as pd
                         df = pd.DataFrame([
                             {
-                                'Order': lesson.order,
-                                'Title': lesson.lesson_title,
-                                'Duration': lesson.duration or '',
-                                'Content': lesson.content or ''
+                                'Order': order,
+                                'Title': lesson.name,
+                                'Duration': (lesson.technical_specs or {}).get('duration', ''),
+                                'Content': (lesson.technical_specs or {}).get('content', '')
                             }
-                            for lesson in lessons
+                            for lesson, order in lessons
                         ])
                         df.to_excel(output, index=False)
                     except ImportError:
@@ -228,16 +232,16 @@ class CLICommands:
                 
                 elif format == 'md':
                     with open(output, 'w', encoding='utf-8') as f:
-                        f.write(f"# {course.course_title}\n\n")
-                        f.write(f"**Code**: {course.course_code}\n\n")
-                        f.write(f"**Instructor**: {course.instructor}\n\n")
-                        f.write(f"**Description**: {course.description}\n\n")
+                        f.write(f"# {course.name}\n\n")
+                        f.write(f"**Code**: {course.code}\n\n")
+                        f.write(f"**Instructor**: {specs.get('instructor', 'N/A')}\n\n")
+                        f.write(f"**Description**: {specs.get('description', '')}\n\n")
                         f.write("## Lessons\n\n")
-                        for lesson in lessons:
-                            f.write(f"### {lesson.order}. {lesson.lesson_title}\n\n")
-                            f.write(f"Duration: {lesson.duration or 'N/A'} minutes\n\n")
-                            if lesson.content:
-                                f.write(f"{lesson.content}\n\n")
+                        for lesson, order in lessons:
+                            f.write(f"### {order}. {lesson.name}\n\n")
+                            f.write(f"Duration: {(lesson.technical_specs or {}).get('duration', 'N/A')} minutes\n\n")
+                            if (lesson.technical_specs or {}).get('content'):
+                                f.write(f"{(lesson.technical_specs or {}).get('content')}\n\n")
                 
                 print(f"✅ Exported course data to: {output}")
                 return True
@@ -254,7 +258,7 @@ class CLICommands:
         """Generate materials for a single course"""
         if not self._has_exporters: return False
         try:
-            print(f"📝 Generating materials for: {course.course_title}")
+            print(f"📝 Generating materials for: {course.name}")
             return True
         except Exception as e:
             print(f"❌ Error generating course materials: {e}")
@@ -264,12 +268,12 @@ class CLICommands:
         """Generate materials for a specific lesson"""
         if not self._has_exporters: return False
         try:
-            lesson = db.session.query(Lesson).filter_by(lesson_id=lesson_id, course_id=course.course_id).first()
-            if not lesson:
-                print(f"❌ Lesson {lesson_id} not found in {course.course_title}!")
+            comp = db.session.scalar(db.select(ItemComposition).filter_by(child_id=lesson_id, parent_id=course.item_id))
+            if not comp:
+                print(f"❌ Lesson {lesson_id} not found in {course.name}!")
                 return False
             
-            print(f"📝 Generating materials for lesson: {lesson.lesson_title}")
+            print(f"📝 Generating materials for lesson: {comp.child_item.name}")
             return True
         except Exception as e:
             print(f"❌ Error generating lesson materials: {e}")

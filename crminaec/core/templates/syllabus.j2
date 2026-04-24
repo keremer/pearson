@@ -1,0 +1,41 @@
+# {{ course_title }}
+
+**Course Code:** {{ course_code | default('TBD') }}  
+**Instructor:** {{ instructor | default('TBD') }}  
+**Contact:** {{ contact_email | default('TBD') }}  
+**Level:** {{ level | default('N/A') }}  
+**Language:** {{ language | default('English') }}  
+**Delivery Mode:** {{ delivery_mode | default('N/A') }}  
+**Generated:** {{ generated_date }}
+
+## Course Aim
+{{ course_aim }}
+
+## Course Description
+{{ course_description }}
+
+## Learning Outcomes
+{% for outcome in learning_outcomes %}
+- **LO{{ loop.index }}:** {{ outcome.outcome_text }}
+{% endfor %}
+
+## Course Outline
+
+| Week | Lesson Title | Duration | Activity Type | Materials Needed |
+|------|--------------|----------|---------------|------------------|
+{% for lesson in lessons %}
+| {{ lesson.order }} | {{ lesson.title }} | {{ lesson.duration }} minutes | {{ lesson.activity_type | default('N/A') }} | {{ lesson.materials_needed | truncate(30) | default('N/A') }} |
+{% endfor %}
+
+## Assessment Formats
+{% for assessment in assessment_formats %}
+- **{{ assessment.format_type }}:** {{ assessment.percentage }}% - {{ assessment.description }}
+{% endfor %}
+
+## Tools & Resources
+{% for tool in tools %}
+- **{{ tool.tool_name }}:** {{ tool.purpose }} ({{ tool.license_info | default('License info not specified') }})
+{% endfor %}
+
+---
+*Generated automatically by crminaec Course Management System*

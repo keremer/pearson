@@ -53,7 +53,7 @@
         </div>
 
         <div class="col-md-6">
-            <div class="card shadow-sm border-0 h-100">
+            <div class="card shadow-sm border-0 mb-4">
                 <div class="card-header bg-dark text-white fw-bold">
                     <i class="fas fa-palette me-2"></i> Genel Tasarım ve Renkler
                 </div>
@@ -72,16 +72,84 @@
                         <input type="text" class="form-control" id="body_color" name="body_color" value="{{ order.preferences.body_color or '' }}">
                     </div>
                     <div class="mb-3">
-                        <label for="plinth_detail" class="form-label fw-bold small text-muted">Baza Yüksekliği ve Rengi</label>
-                        <input type="text" class="form-control" id="plinth_detail" name="plinth_detail" value="{{ order.preferences.plinth_detail or '' }}" placeholder="Örn: 12cm Kapak Renginde">
-                    </div>
-                    <div class="mb-3">
                         <label for="handle_code" class="form-label fw-bold small text-muted">Kulp Kodu / Modeli</label>
                         <input type="text" class="form-control" id="handle_code" name="handle_code" value="{{ order.preferences.handle_code or '' }}">
                     </div>
                     <div class="mb-3">
-                        <label for="glass_color" class="form-label fw-bold small text-muted">Cam Rengi ve Tipi</label>
-                        <input type="text" class="form-control" id="glass_color" name="glass_color" value="{{ order.preferences.glass_color or '' }}">
+                        <label for="cabinet_grouping_notes" class="form-label fw-bold small text-muted">Bölgesel Renk / Model Notları</label>
+                        <textarea class="form-control" id="cabinet_grouping_notes" name="cabinet_grouping_notes" rows="2" placeholder="Örn: Alt kapaklar Mat Vizon, üst kapaklar Ahşap Dokulu vb.">{{ order.preferences.cabinet_grouping_notes or '' }}</textarea>
+                        <div class="form-text small">Farklı bölgeler için özel seçimler varsa belirtin.</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-secondary text-white fw-bold">
+                    <i class="fas fa-ruler-horizontal me-2"></i> Baza Bandı Özellikleri
+                </div>
+                <div class="card-body bg-light">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="plinth_height" class="form-label fw-bold small text-muted">Yükseklik</label>
+                            <select class="form-select" id="plinth_height" name="plinth_height">
+                                <option value="">Seçiniz...</option>
+                                <option value="12cm" {% if order.preferences.plinth_height == '12cm' %}selected{% endif %}>12 cm</option>
+                                <option value="15cm" {% if order.preferences.plinth_height == '15cm' %}selected{% endif %}>15 cm</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="plinth_material" class="form-label fw-bold small text-muted">Materyal</label>
+                            <select class="form-select" id="plinth_material" name="plinth_material">
+                                <option value="">Seçiniz...</option>
+                                <option value="Ahşap" {% if order.preferences.plinth_material == 'Ahşap' %}selected{% endif %}>Ahşap</option>
+                                <option value="PVC" {% if order.preferences.plinth_material == 'PVC' %}selected{% endif %}>PVC</option>
+                                <option value="Alüminyum" {% if order.preferences.plinth_material == 'Alüminyum' %}selected{% endif %}>Alüminyum</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="plinth_color" class="form-label fw-bold small text-muted">Renk / Yüzey</label>
+                            <select class="form-select" id="plinth_color" name="plinth_color">
+                                <option value="">Önce Materyal Seçin</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-info text-dark fw-bold">
+                    <i class="fas fa-border-style me-2"></i> Camlı Kapak Detayları
+                </div>
+                <div class="card-body bg-light">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="glazed_door_model" class="form-label fw-bold small text-muted">Model</label>
+                            <select class="form-select" id="glazed_door_model" name="glazed_door_model">
+                                <option value="">Seçiniz / Yok</option>
+                                <option value="Pierina" {% if order.preferences.glazed_door_model == 'Pierina' %}selected{% endif %}>Pierina (MDF)</option>
+                                <option value="Galba" {% if order.preferences.glazed_door_model == 'Galba' %}selected{% endif %}>Galba (MDF)</option>
+                                <option value="Nomas" {% if order.preferences.glazed_door_model == 'Nomas' %}selected{% endif %}>Nomas (MDF)</option>
+                                <option value="Lyca" {% if order.preferences.glazed_door_model == 'Lyca' %}selected{% endif %}>Lyca (Alüminyum)</option>
+                                <option value="Myra" {% if order.preferences.glazed_door_model == 'Myra' %}selected{% endif %}>Myra (Alüminyum)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="glazed_door_frame_color" class="form-label fw-bold small text-muted">Çerçeve Rengi</label>
+                            <select class="form-select" id="glazed_door_frame_color" name="glazed_door_frame_color">
+                                <option value="">Önce Model Seçin</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="glazing_type" class="form-label fw-bold small text-muted">Cam Tipi</label>
+                            <select class="form-select" id="glazing_type" name="glazing_type">
+                                <option value="">Seçiniz...</option>
+                                <option value="Düz Cam" {% if order.preferences.glazing_type == 'Düz Cam' %}selected{% endif %}>Düz Cam</option>
+                                <option value="Füme Cam" {% if order.preferences.glazing_type == 'Füme Cam' %}selected{% endif %}>Füme Cam</option>
+                                <option value="Efes2 Cam" {% if order.preferences.glazing_type == 'Efes2 Cam' %}selected{% endif %}>Efes2 Cam</option>
+                                <option value="Baklava Desenli Cam" {% if order.preferences.glazing_type == 'Baklava Desenli Cam' %}selected{% endif %}>Baklava Desenli Cam</option>
+                                <option value="Nervürlü Cam" {% if order.preferences.glazing_type == 'Nervürlü Cam' %}selected{% endif %}>Nervürlü Cam</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -89,7 +157,7 @@
 
         <div class="col-md-6">
             <div class="card shadow-sm border-0 mb-4">
-                <div class="card-header bg-secondary text-white fw-bold">
+                <div class="card-header bg-warning text-dark fw-bold">
                     <i class="fas fa-cogs me-2"></i> Aksesuar ve Mekanizmalar
                 </div>
                 <div class="card-body">
@@ -108,18 +176,116 @@
                 </div>
             </div>
 
-            <div class="card shadow-sm border-0">
+            <div class="card shadow-sm border-0 mb-4">
                 <div class="card-header bg-info text-dark fw-bold">
                     <i class="fas fa-lightbulb me-2"></i> Aydınlatma Seçenekleri
                 </div>
                 <div class="card-body">
-                    <div class="form-check form-switch mb-3">
-                        <input class="form-check-input fs-5" type="checkbox" id="led_strip" name="led_strip" {% if order.preferences.led_strip %}checked{% endif %}>
-                        <label class="form-check-label fw-bold mt-1 ms-2" for="led_strip">Tezgah Altı Şerit LED Aydınlatma</label>
+                    
+                    <h6 class="fw-bold text-primary mb-3 border-bottom pb-2">Aydınlatma Tipi</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                    <div class="form-check form-switch mb-2">
+                        <input class="form-check-input" type="checkbox" id="light_cab_spot" name="light_cab_spot" {% if order.preferences.light_cab_spot %}checked{% endif %}>
+                        <label class="form-check-label fw-bold ms-1" for="light_cab_spot">Dolap İçi Spot Aydınlatma</label>
                     </div>
-                    <div class="form-check form-switch">
-                        <input class="form-check-input fs-5" type="checkbox" id="spotlight" name="spotlight" {% if order.preferences.spotlight %}checked{% endif %}>
-                        <label class="form-check-label fw-bold mt-1 ms-2" for="spotlight">Dolap İçi / Tezgah Arası Spot</label>
+                    <div class="mb-3 ps-4">
+                        <label for="light_cab_led" class="form-label fw-bold small text-muted mb-1">Dolap İçi Gömme LED</label>
+                        <select class="form-select form-select-sm" id="light_cab_led" name="light_cab_led">
+                            <option value="">Yok</option>
+                            <option value="Tek Yan" {% if order.preferences.light_cab_led == 'Tek Yan' %}selected{% endif %}>Tek Yan LED</option>
+                            <option value="Çift Yan" {% if order.preferences.light_cab_led == 'Çift Yan' %}selected{% endif %}>Çift Yan LED</option>
+                        </select>
+                    </div>
+                    <div class="form-check form-switch mb-2">
+                        <input class="form-check-input" type="checkbox" id="light_counter_spot" name="light_counter_spot" {% if order.preferences.light_counter_spot %}checked{% endif %}>
+                        <label class="form-check-label fw-bold ms-1" for="light_counter_spot">Tezgah Arası Spot Aydınlatma</label>
+                    </div>
+                    <div class="form-check form-switch mb-2">
+                        <input class="form-check-input" type="checkbox" id="light_counter_led" name="light_counter_led" {% if order.preferences.light_counter_led %}checked{% endif %}>
+                        <label class="form-check-label fw-bold ms-1" for="light_counter_led">Tezgah Arası Şerit LED Aydınlatma</label>
+                    </div>
+                    <div class="form-check form-switch mb-2">
+                        <input class="form-check-input" type="checkbox" id="light_bt_led" name="light_bt_led" {% if order.preferences.light_bt_led %}checked{% endif %}>
+                        <label class="form-check-label fw-bold ms-1" for="light_bt_led">Bluetooth Şerit LED Aydınlatma</label>
+                    </div>
+                    <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" id="light_bt_led" name="light_bt_led" {% if order.preferences.light_bt_led %}checked{% endif %}>
+                                <label class="form-check-label fw-bold ms-1" for="light_bt_led">Bluetooth Şerit LED</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h6 class="fw-bold text-primary mt-4 mb-3 border-bottom pb-2">Aydınlatma Kumandası / Sensör</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" id="sensor_dimmer" name="sensor_dimmer" {% if order.preferences.sensor_dimmer %}checked{% endif %}>
+                                <label class="form-check-label fw-bold ms-1" for="sensor_dimmer">Dimerli Sensör</label>
+                            </div>
+                    <div class="form-check form-switch mb-2">
+                        <input class="form-check-input" type="checkbox" id="sensor_door" name="sensor_door" {% if order.preferences.sensor_door %}checked{% endif %}>
+                        <label class="form-check-label fw-bold ms-1" for="sensor_door">Kapak Sensörü</label>
+                    </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" id="light_control_wall" name="light_control_wall" {% if order.preferences.light_control_wall %}checked{% endif %}>
+                                <label class="form-check-label fw-bold ms-1" for="light_control_wall">Duvardan Manuel Kumanda</label>
+                            </div>
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" id="light_control_switch" name="light_control_switch" {% if order.preferences.light_control_switch %}checked{% endif %}>
+                                <label class="form-check-label fw-bold ms-1" for="light_control_switch">Şik Şak Anahtarlı Kumanda</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0 border-primary">
+                <div class="card-header bg-primary text-white fw-bold">
+                    <i class="fas fa-clipboard-check me-2"></i> Tasarımcı Kontrol Listesi (Cihazlar)
+                </div>
+                <div class="card-body bg-light">
+                    <div class="mb-3">
+                        <label for="appliance_refrigerator" class="form-label fw-bold small text-muted">Buzdolabı Bilgisi (Tip ve Genişlik)</label>
+                        <input type="text" class="form-control" list="fridgeOpts" id="appliance_refrigerator" name="appliance_refrigerator" value="{{ order.preferences.appliance_refrigerator or '' }}" placeholder="Örn: Solo - 70cm" required>
+                        <datalist id="fridgeOpts">
+                            <option value="Ankastre (Gömme)">
+                            <option value="Solo - 60cm">
+                            <option value="Solo - 70cm">
+                            <option value="Solo - 80cm">
+                            <option value="Tezgah Altı">
+                        </datalist>
+                    </div>
+                    <div class="mb-3">
+                        <label for="appliance_dishwasher" class="form-label fw-bold small text-muted">Bulaşık Makinesi</label>
+                        <select class="form-select" id="appliance_dishwasher" name="appliance_dishwasher" required>
+                            <option value="">Seçiniz...</option>
+                            <option value="Ankastre - 60cm" {% if order.preferences.appliance_dishwasher == 'Ankastre - 60cm' %}selected{% endif %}>Ankastre - 60cm</option>
+                            <option value="Ankastre - 40cm" {% if order.preferences.appliance_dishwasher == 'Ankastre - 40cm' %}selected{% endif %}>Ankastre - 40cm</option>
+                            <option value="Solo - 60cm" {% if order.preferences.appliance_dishwasher == 'Solo - 60cm' %}selected{% endif %}>Solo - 60cm</option>
+                            <option value="Solo - 40cm" {% if order.preferences.appliance_dishwasher == 'Solo - 40cm' %}selected{% endif %}>Solo - 40cm</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="appliance_washing_machine" class="form-label fw-bold small text-muted">Çamaşır Makinesi Planlaması</label>
+                        <select class="form-select" id="appliance_washing_machine" name="appliance_washing_machine" required>
+                            <option value="">Seçiniz...</option>
+                            <option value="Yok / Mutfak Dışı" {% if order.preferences.appliance_washing_machine == 'Yok / Mutfak Dışı' %}selected{% endif %}>Yok / Mutfak Dışı</option>
+                            <option value="Var - Kapaksız Bırakılacak" {% if order.preferences.appliance_washing_machine == 'Var - Kapaksız Bırakılacak' %}selected{% endif %}>Var - Kapaksız Bırakılacak</option>
+                            <option value="Var - Kapaklı (70cm Özel Modül)" {% if order.preferences.appliance_washing_machine == 'Var - Kapaklı (70cm Özel Modül)' %}selected{% endif %}>Var - Kapaklı (70cm Özel Modül Kullanıldı)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="appliance_oven_mw" class="form-label fw-bold small text-muted">Fırın / Mikrodalga Yerleşimi</label>
+                        <select class="form-select" id="appliance_oven_mw" name="appliance_oven_mw" required>
+                            <option value="">Seçiniz...</option>
+                            <option value="Sadece Tezgah Altı Fırın" {% if order.preferences.appliance_oven_mw == 'Sadece Tezgah Altı Fırın' %}selected{% endif %}>Sadece Tezgah Altı Fırın</option>
+                            <option value="Boy Dolabı (Fırın + Mikrodalga)" {% if order.preferences.appliance_oven_mw == 'Boy Dolabı (Fırın + Mikrodalga)' %}selected{% endif %}>Boy Dolabı (Fırın + Mikrodalga)</option>
+                            <option value="Boy Dolabı (Sadece Fırın)" {% if order.preferences.appliance_oven_mw == 'Boy Dolabı (Sadece Fırın)' %}selected{% endif %}>Boy Dolabı (Sadece Fırın)</option>
+                            <option value="Yok" {% if order.preferences.appliance_oven_mw == 'Yok' %}selected{% endif %}>Yok</option>
+                        </select>
                     </div>
                 </div>
             </div>
@@ -133,4 +299,54 @@
         
     </div>
 </form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Dynamic Plinth Colors
+    const plinthMat = document.getElementById('plinth_material');
+    const plinthCol = document.getElementById('plinth_color');
+    const currPlinthCol = "{{ order.preferences.plinth_color or '' }}";
+    const plinthOptions = {
+        'Ahşap': ['Kapak Rengi ile Aynı'],
+        'PVC': ['Alüminyum Görünümlü', 'Paslanmaz Çelik Görünümlü', 'Siyah'],
+        'Alüminyum': ['Mat Eloksal', 'Paslanmaz Çelik Görünümlü']
+    };
+
+    function updatePlinthColors() {
+        const mat = plinthMat.value;
+        plinthCol.innerHTML = '<option value="">Seçiniz...</option>';
+        if (plinthOptions[mat]) {
+            plinthOptions[mat].forEach(c => {
+                plinthCol.innerHTML += `<option value="${c}" ${c === currPlinthCol ? 'selected' : ''}>${c}</option>`;
+            });
+        }
+    }
+    plinthMat.addEventListener('change', updatePlinthColors);
+    updatePlinthColors();
+
+    // Dynamic Glazed Door Colors
+    const glazedMod = document.getElementById('glazed_door_model');
+    const glazedCol = document.getElementById('glazed_door_frame_color');
+    const currGlazedCol = "{{ order.preferences.glazed_door_frame_color or '' }}";
+    const glazedOptions = {
+        'Pierina': ['Kapak Rengi ile Aynı (MDF)'],
+        'Galba': ['Kapak Rengi ile Aynı (MDF)'],
+        'Nomas': ['Kapak Rengi ile Aynı (MDF)'],
+        'Lyca': ['Mat Eloksal', 'Paslanmaz', 'Bronz', 'Prinç (Gold Eloksal)', 'Siyah'],
+        'Myra': ['Mat Eloksal', 'Paslanmaz', 'Bronz', 'Prinç (Gold Eloksal)', 'Siyah']
+    };
+
+    function updateGlazedColors() {
+        const mod = glazedMod.value;
+        glazedCol.innerHTML = '<option value="">Seçiniz...</option>';
+        if (glazedOptions[mod]) {
+            glazedOptions[mod].forEach(c => {
+                glazedCol.innerHTML += `<option value="${c}" ${c === currGlazedCol ? 'selected' : ''}>${c}</option>`;
+            });
+        }
+    }
+    glazedMod.addEventListener('change', updateGlazedColors);
+    updateGlazedColors();
+});
+</script>
 {% endblock %}

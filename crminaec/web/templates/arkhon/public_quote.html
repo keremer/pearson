@@ -83,10 +83,16 @@
                         <li class="list-group-item d-flex justify-content-between align-items-center bg-light">
                             <span class="text-muted">Gövde Rengi</span>
                             <span class="fw-bold">{{ order.preferences.body_color or '-' }}</span>
+                            {% if order.preferences.cabinet_grouping_notes %}
+                                <div class="mt-2 small text-muted w-100"><em>Not: {{ order.preferences.cabinet_grouping_notes }}</em></div>
+                            {% endif %}
                         </li>
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             <span class="text-muted">Baza Detayı</span>
-                            <span class="fw-bold">{{ order.preferences.plinth_detail or '-' }}</span>
+                            <span class="fw-bold text-end">
+                                {{ order.preferences.plinth_height or '' }} {{ order.preferences.plinth_material or '' }}<br>
+                                <small class="text-muted">{{ order.preferences.plinth_color or '' }}</small>
+                            </span>
                         </li>
                     </ul>
                 </div>
@@ -97,16 +103,18 @@
                             <span class="fw-bold">{{ order.preferences.handle_code or '-' }}</span>
                         </li>
                         <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <span class="text-muted">Cam Rengi / Tipi</span>
-                            <span class="fw-bold">{{ order.preferences.glass_color or '-' }}</span>
+                            <span class="text-muted">Camlı Kapak Detayı</span>
+                            <span class="fw-bold text-end">
+                                {% if order.preferences.glazed_door_model %}
+                                    {{ order.preferences.glazed_door_model }} <small>({{ order.preferences.glazed_door_frame_color }})</small><br>
+                                    <small class="text-muted">{{ order.preferences.glazing_type }}</small>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </span>
                         </li>
                         <li class="list-group-item d-flex justify-content-between align-items-center bg-light">
-                            <span class="text-muted">Aydınlatma</span>
-                            <span class="fw-bold">
-                                {% if order.preferences.led_strip %}Şerit LED {% endif %}
-                                {% if order.preferences.led_strip and order.preferences.spotlight %} + {% endif %}
-                                {% if order.preferences.spotlight %}Spot{% endif %}
-                                {% if not order.preferences.led_strip and not order.preferences.spotlight %}Yok{% endif %}
+                            <span class="text-muted">Aydınlatma / Kumanda</span>
                             <span class="fw-bold text-end" style="max-width: 60%; font-size: 0.85em;">
                                 {% set lights = [] %}
                                 {% if order.preferences.light_cab_spot %}{% set _ = lights.append('Dolap İçi Spot') %}{% endif %}
@@ -114,8 +122,10 @@
                                 {% if order.preferences.light_counter_spot %}{% set _ = lights.append('Tezgah Arası Spot') %}{% endif %}
                                 {% if order.preferences.light_counter_led %}{% set _ = lights.append('Tezgah Arası Şerit LED') %}{% endif %}
                                 {% if order.preferences.light_bt_led %}{% set _ = lights.append('Bluetooth Şerit LED') %}{% endif %}
-                                {% if order.preferences.sensor_dimmer %}{% set _ = lights.append('Dimerli Sensör') %}{% endif %}
-                                {% if order.preferences.sensor_door %}{% set _ = lights.append('Kapak Sensörü') %}{% endif %}
+                                {% if order.preferences.sensor_dimmer %}{% set _ = lights.append('[Dimerli Sensör]') %}{% endif %}
+                                {% if order.preferences.sensor_door %}{% set _ = lights.append('[Kapak Sensörü]') %}{% endif %}
+                                {% if order.preferences.light_control_wall %}{% set _ = lights.append('[Duvardan Manuel Kumanda]') %}{% endif %}
+                                {% if order.preferences.light_control_switch %}{% set _ = lights.append('[Şik Şak Anahtar]') %}{% endif %}
                                 {{ lights | join(', ') if lights else 'Yok' }}
                             </span>
                         </li>

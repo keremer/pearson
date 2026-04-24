@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block title %}
-    {% if course %}Edit {{ course.course_title }}{% else %}Create New Course{% endif %}
+    {% if course %}Edit {{ course.name }}{% else %}Create New Course{% endif %}
 {% endblock %}
 
 {% block content %}
@@ -19,65 +19,67 @@
                     <div class="row">
                         <div class="col-md-8 mb-3">
                             <label for="title" class="form-label fw-bold">Course Title *</label>
-                            <input type="text" class="form-control" id="title" name="title" value="{{ course.course_title if course else '' }}" required placeholder="e.g., Intro to Design">
+                            <input type="text" class="form-control" id="title" name="title" value="{{ course.name if course else '' }}" required placeholder="e.g., Intro to Design">
                         </div>
                         <div class="col-md-4 mb-3">
                             <label for="course_code" class="form-label fw-bold">Course Code *</label>
-                            <input type="text" class="form-control" id="course_code" name="course_code" value="{{ course.course_code if course else '' }}" required placeholder="e.g., DES101">
+                            <input type="text" class="form-control" id="course_code" name="course_code" value="{{ course.code if course else '' }}" required placeholder="e.g., DES101">
                         </div>
                     </div>
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="instructor" class="form-label">Instructor</label>
-                            <input type="text" class="form-control" id="instructor" name="instructor" value="{{ course.instructor if course else '' }}">
+                            <input type="text" class="form-control" id="instructor" name="instructor" value="{{ course.technical_specs.instructor if course and course.technical_specs else '' }}">
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="contact_email" class="form-label">Contact Email</label>
-                            <input type="email" class="form-control" id="contact_email" name="contact_email" value="{{ course.contact_email if course else '' }}">
+                            <input type="email" class="form-control" id="contact_email" name="contact_email" value="{{ course.technical_specs.contact_email if course and course.technical_specs else '' }}">
                         </div>
                     </div>
 
                     <div class="row">
                         <div class="col-md-4 mb-3">
+                            {% set level = course.technical_specs.level if course and course.technical_specs else '' %}
                             <label for="level" class="form-label">Level</label>
                             <select class="form-select" id="level" name="level">
                                 <option value="">Select Level</option>
-                                <option value="Beginner" {% if course and course.level == 'Beginner' %}selected{% endif %}>Beginner</option>
-                                <option value="Intermediate" {% if course and course.level == 'Intermediate' %}selected{% endif %}>Intermediate</option>
-                                <option value="Advanced" {% if course and course.level == 'Advanced' %}selected{% endif %}>Advanced</option>
-                                <option value="HND Art & Design" {% if course and course.level == 'HND Art & Design' %}selected{% endif %}>HND Art & Design</option>
+                                <option value="Beginner" {% if level == 'Beginner' %}selected{% endif %}>Beginner</option>
+                                <option value="Intermediate" {% if level == 'Intermediate' %}selected{% endif %}>Intermediate</option>
+                                <option value="Advanced" {% if level == 'Advanced' %}selected{% endif %}>Advanced</option>
+                                <option value="HND Art & Design" {% if level == 'HND Art & Design' %}selected{% endif %}>HND Art & Design</option>
                             </select>
                         </div>
                         <div class="col-md-4 mb-3">
                             <label for="language" class="form-label">Language</label>
-                            <input type="text" class="form-control" id="language" name="language" value="{{ course.language if course else 'English' }}">
+                            <input type="text" class="form-control" id="language" name="language" value="{{ course.technical_specs.language if course and course.technical_specs else 'English' }}">
                         </div>
                         <div class="col-md-4 mb-3">
+                            {% set delivery = course.technical_specs.delivery_mode if course and course.technical_specs else '' %}
                             <label for="delivery_mode" class="form-label">Delivery Mode</label>
                             <select class="form-select" id="delivery_mode" name="delivery_mode">
                                 <option value="">Select Mode</option>
-                                <option value="Online" {% if course and course.delivery_mode == 'Online' %}selected{% endif %}>Online</option>
-                                <option value="In-person" {% if course and course.delivery_mode == 'In-person' %}selected{% endif %}>In-person</option>
-                                <option value="Hybrid" {% if course and course.delivery_mode == 'Hybrid' %}selected{% endif %}>Hybrid</option>
-                                <option value="Blended" {% if course and course.delivery_mode == 'Blended' %}selected{% endif %}>Blended</option>
+                                <option value="Online" {% if delivery == 'Online' %}selected{% endif %}>Online</option>
+                                <option value="In-person" {% if delivery == 'In-person' %}selected{% endif %}>In-person</option>
+                                <option value="Hybrid" {% if delivery == 'Hybrid' %}selected{% endif %}>Hybrid</option>
+                                <option value="Blended" {% if delivery == 'Blended' %}selected{% endif %}>Blended</option>
                             </select>
                         </div>
                     </div>
 
                     <div class="mb-3">
                         <label for="aim" class="form-label">Course Aim</label>
-                        <textarea class="form-control" id="aim" name="aim" rows="2">{{ course.aim if course else '' }}</textarea>
+                        <textarea class="form-control" id="aim" name="aim" rows="2">{{ course.technical_specs.aim if course and course.technical_specs else '' }}</textarea>
                     </div>
 
                     <div class="mb-3">
                         <label for="description" class="form-label">Description</label>
-                        <textarea class="form-control" id="description" name="description" rows="3">{{ course.description if course else '' }}</textarea>
+                        <textarea class="form-control" id="description" name="description" rows="3">{{ course.technical_specs.description if course and course.technical_specs else '' }}</textarea>
                     </div>
 
                     <div class="mb-4">
                         <label for="objectives" class="form-label">Learning Objectives</label>
-                        <textarea class="form-control" id="objectives" name="objectives" rows="3">{{ course.objectives if course else '' }}</textarea>
+                        <textarea class="form-control" id="objectives" name="objectives" rows="3">{{ course.technical_specs.objectives if course and course.technical_specs else '' }}</textarea>
                     </div>
 
                     <div class="d-grid gap-2">

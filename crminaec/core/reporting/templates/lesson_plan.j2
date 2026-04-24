@@ -1,10 +1,11 @@
-# Lesson {{ order | default(1) }}: {{ title | default('Untitled Lesson') }}
+# Lesson {{ order | default(1) }}: {{ name | default(title | default('Untitled Lesson')) }}
 
-**Course:** {{ course_title | default('Unknown Course') }}  
+**Course:** {{ course_name | default(course_title | default('Unknown Course')) }}  
 **Week:** {{ order | default(1) }}  
-**Duration:** {{ duration | default(60) }} minutes  
-**Activity Type:** {{ activity_type | default('N/A') }}  
-**Date:** {{ date | default('TBD') }}
+**Duration:** {{ technical_specs.duration if technical_specs else duration | default(60) }} minutes  
+**Activity Type:** {{ technical_specs.activity_type if technical_specs else activity_type | default('N/A') }}
+**Date:** {{ technical_specs.date if technical_specs else date | default('TBD') }}  
+**Time:** {{ technical_specs.time if technical_specs else 'TBD' }}
 
 ## Learning Objectives
 {% if objectives and objectives | length > 0 %}
@@ -16,11 +17,11 @@
 {% endif %}
 
 ## Lesson Content
-{{ content | default('No content available for this lesson.') }}
+{{ technical_specs.content if technical_specs else content | default('No content available for this lesson.') }}
 
-{% if assignment_description and assignment_description | trim %}
+{% if technical_specs and technical_specs.assignment_description and technical_specs.assignment_description | trim %}
 ## Assignment
-{{ assignment_description }}
+{{ technical_specs.assignment_description }}
 {% endif %}
 
 {% if activities and activities | length > 0 %}
@@ -61,9 +62,9 @@
 {% endfor %}
 {% endif %}
 
-{% if materials_needed and materials_needed | trim %}
+{% if technical_specs and technical_specs.materials_needed and technical_specs.materials_needed | trim %}
 ## Materials Needed
-{{ materials_needed }}
+{{ technical_specs.materials_needed }}
 {% endif %}
 
 {% if resources and resources | length > 0 %}

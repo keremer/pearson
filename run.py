@@ -61,6 +61,36 @@ def web(host: str, port: int, debug: bool):
 # 🗄️ DATABASE MANAGEMENT
 # =====================================================================
 
+@cli.group()
+def db():
+    """Database migration commands (Alembic wrapper)."""
+    pass
+
+@db.command()
+def init():
+    """Initializes the migrations directory."""
+    click.echo("🚀 Initializing database migrations...")
+    os.system('flask --app crminaec db init')
+
+@db.command()
+@click.option('-m', '--message', required=True, help='Migration message.')
+def migrate(message):
+    """Generates a new migration file."""
+    click.echo(f"📝 Generating migration: {message}")
+    os.system(f'flask --app crminaec db migrate -m "{message}"')
+
+@db.command()
+def upgrade():
+    """Applies the latest migration to the database."""
+    click.echo("⏫ Applying database migrations...")
+    os.system('flask --app crminaec db upgrade')
+
+@db.command()
+def downgrade():
+    """Reverts the last migration."""
+    click.echo("⏬ Reverting last migration...")
+    os.system('flask --app crminaec db downgrade')
+
 @cli.command()
 @click.option('--reset', is_flag=True, help='Reset database before setup')
 @click.option('--sample-data', is_flag=True, help='Add sample data')
@@ -85,7 +115,7 @@ def setup(reset: bool, sample_data: bool):
 
 @cli.command()
 @click.argument('model_name', type=click.Choice([
-    'party', 'order', 'item', 'composition', 'course', 'lesson', 'price_record'
+    'party', 'order', 'item', 'composition', 'price_record'
 ]))
 @click.option('--count', type=int, default=5, help='Number of items to show')
 def inspect(model_name: str, count: int):
@@ -94,8 +124,7 @@ def inspect(model_name: str, count: int):
 
     from sqlalchemy import inspect as sa_inspect
 
-    from crminaec.core.models import (Course, Lesson, Order, Party,
-                                      PriceRecord, db)
+    from crminaec.core.models import Order, Party, PriceRecord, db
     from crminaec.platforms.emek import models as emek_models
 
     app = create_app()
@@ -104,8 +133,6 @@ def inspect(model_name: str, count: int):
     model_map: dict[str, Any] = {
         'party': Party, 
         'order': Order, 
-        'course': Course, 
-        'lesson': Lesson,
         'price_record': PriceRecord,
         'item': emek_models.Item,
         'composition': emek_models.ItemComposition
@@ -133,8 +160,8 @@ def inspect(model_name: str, count: int):
             for col in columns:
                 click.echo(f"  - {col['name']}: {col['type']}")
             
-            # 4. Query using the narrowed model_class
-            items = db.session.query(model_class).limit(count).all()
+            # 4. Query using the narrowed model_class (SQLAlchemy 2.0)
+            items = db.session.scalars(db.select(model_class).limit(count)).all()
             
             click.echo(f"\n📝 Sample Data (first {count}):")
             if items:
@@ -191,18 +218,23 @@ def importdata(data_dir, merge):
         click.echo("🌱 Checking and injecting structural hierarchy...")
 
         def create_node(code: str, name: str, parent: Optional[Item] = None) -> Item:
-            folder = db.session.query(Item).filter_by(code=code).first()
+            folder = db.session.scalar(db.select(Item).filter_by(code=code))
             if not folder:
-                folder = Item(code=code, name=name, is_category=True, base_cost=0.0)
+                folder = Item(**{'code': code, 'name': name, 'is_category': True, 'base_cost': 0.0})
                 db.session.add(folder)
                 db.session.flush()
             
             if parent:
-                link = db.session.query(ItemComposition).filter_by(
+                link = db.session.scalar(db.select(ItemComposition).filter_by(
                     parent_id=parent.item_id, child_id=folder.item_id
-                ).first()
+                ))
                 if not link:
-                    db.session.add(ItemComposition(parent_item=parent, child_item=folder, quantity=1.0))
+                    db.session.add(ItemComposition(**{
+                        'parent_item': parent, 
+                        'child_item': folder, 
+                        'quantity': 1.0, 
+                        'optional_attributes': {}
+                    }))
                     db.session.flush()
                     
             return folder
@@ -247,7 +279,7 @@ def importdata(data_dir, merge):
 
         # --- DEDUPLICATION CACHE & MAPPING ---
         # Cache existing items to speed up lookups (Code -> ID, Name -> ID)
-        existing_items = db.session.query(Item.item_id, Item.code, Item.name).all()
+        existing_items = db.session.execute(db.select(Item.item_id, Item.code, Item.name)).all()
         code_to_id = {item.code: item.item_id for item in existing_items}
         name_to_id = {item.name: item.item_id for item in existing_items}
         
@@ -258,99 +290,166 @@ def importdata(data_dir, merge):
         mode_str = "MERGING" if merge else "RENAMING"
         click.echo(f"📥 Scanning {len(df_items)} items... (Mode: {mode_str} Duplicates)")
         
-        for _, row in df_items.iterrows():
-            csv_id = int(row['item_id'])
-            raw_code = str(row['code'])
-            raw_name = str(row['name'])
-            
-            # 1. Skip if the exact ID already exists (e.g. re-running the script)
-            if db.session.get(Item, csv_id):
+        try:
+            for _, row in df_items.iterrows():
+                csv_id = int(row['item_id'])
+                # CIQ VALIDATION: Enforce strict formatting on import
+                raw_code = str(row['code']).strip().upper()
+                raw_name = str(row['name']).strip()
+                
+                # 1. Skip if the exact ID already exists (e.g. re-running the script)
+                if db.session.get(Item, csv_id):
+                    id_translation_map[csv_id] = csv_id
+                    continue
+
+                # 2. Check for Duplicates
+                is_duplicate = raw_code in code_to_id or raw_name in name_to_id
+
+                if is_duplicate:
+                    if merge:
+                        # MERGE MODE: Map the CSV ID to the already existing DB ID
+                        matched_id = code_to_id.get(raw_code) or name_to_id.get(raw_name)
+                        id_translation_map[csv_id] = matched_id
+                        continue  # Skip creating a new item
+                    else:
+                        # RENAME MODE: Append the ID to make it unique
+                        if raw_code in code_to_id:
+                            raw_code = f"{raw_code}.{csv_id}"
+                        if raw_name in name_to_id:
+                            raw_name = f"{raw_name}.{csv_id}"
+
+                # 3. Create the Item
+                p_source_str = str(row.get('price_source', 'MANUAL')).upper()
+                p_source = getattr(PriceSource, p_source_str, PriceSource.MANUAL)
+
+                new_item = Item(**{
+                    'code': raw_code,
+                    'name': raw_name,
+                    'brand': str(row.get('brand', 'Generic')).strip() or 'Generic',
+                    'is_category': str(row['is_category']).lower() == 'true',
+                    'product_group': str(row.get('product_group', '')).strip() or None,
+                    'product_type': str(row.get('product_type', '')).strip() or None,
+                    'uom': str(row.get('uom', 'adet')).strip().lower() or 'adet',
+                    'dim_x': float(row.get('dim_x', 0.0) or 0.0),
+                    'dim_y': float(row.get('dim_y', 0.0) or 0.0),
+                    'dim_z': float(row.get('dim_z', 0.0) or 0.0),
+                    'base_cost': float(row.get('base_cost', 0.0) or 0.0),
+                    'technical_specs': parse_json(row.get('technical_specs')),
+                    'price_source': p_source,
+                    'reliability_score': int(row.get('reliability_score', 100) or 100)
+                })
+                
+                new_item.item_id = csv_id 
+                db.session.add(new_item)
+                
+                # Update cache for the remainder of the loop
+                code_to_id[raw_code] = csv_id
+                name_to_id[raw_name] = csv_id
                 id_translation_map[csv_id] = csv_id
-                continue
 
-            # 2. Check for Duplicates
-            is_duplicate = raw_code in code_to_id or raw_name in name_to_id
+            # Flush to validate item constraints without permanently committing yet
+            db.session.flush()
+            click.echo("✅ Items staged successfully. Moving to Compositions...")
 
-            if is_duplicate:
-                if merge:
-                    # MERGE MODE: Map the CSV ID to the already existing DB ID
-                    matched_id = code_to_id.get(raw_code) or name_to_id.get(raw_name)
-                    id_translation_map[csv_id] = matched_id
-                    continue  # Skip creating a new item
-                else:
-                    # RENAME MODE: Append the ID to make it unique
-                    if raw_code in code_to_id:
-                        raw_code = f"{raw_code}.{csv_id}"
-                    if raw_name in name_to_id:
-                        raw_name = f"{raw_name}.{csv_id}"
-
-            # 3. Create the Item
-            p_source_str = str(row.get('price_source', 'MANUAL')).upper()
-            p_source = getattr(PriceSource, p_source_str, PriceSource.MANUAL)
-
-            new_item = Item(
-                code=raw_code,
-                name=raw_name,
-                brand=str(row.get('brand', 'Generic')) or 'Generic',
-                is_category=str(row['is_category']).lower() == 'true',
-                product_group=str(row.get('product_group', '')) or None,
-                product_type=str(row.get('product_type', '')) or None,
-                uom=str(row.get('uom', 'adet')) or 'adet',
-                dim_x=float(row.get('dim_x', 0.0) or 0.0),
-                dim_y=float(row.get('dim_y', 0.0) or 0.0),
-                dim_z=float(row.get('dim_z', 0.0) or 0.0),
-                base_cost=float(row.get('base_cost', 0.0) or 0.0),
-                technical_specs=parse_json(row.get('technical_specs')),
-                price_source=p_source,
-                reliability_score=int(row.get('reliability_score', 100) or 100)
-            )
+            # IMPORT COMPOSITIONS
+            click.echo(f"🔗 Scanning {len(df_comps)} BoM relationships...")
             
-            new_item.item_id = csv_id 
-            db.session.add(new_item)
+            for _, row in df_comps.iterrows():
+                # 👇 CRITICAL: Re-route IDs through the Translation Map
+                p_id = id_translation_map.get(int(row['parent_id']))
+                c_id = id_translation_map.get(int(row['child_id']))
+
+                # Failsafe if an item was excluded entirely
+                if not p_id or not c_id:
+                    continue
+
+                qty = float(row.get('quantity', 1.0) or 1.0)
+                s_order = int(row.get('sort_order', 0) or 0)
+                opt_attrs = parse_json(row.get('optional_attributes'))
+
+                existing_link = db.session.scalar(db.select(ItemComposition).filter_by(parent_id=p_id, child_id=c_id))
+                if existing_link:
+                    continue
+
+                parent_obj = db.session.get(Item, p_id)
+                child_obj = db.session.get(Item, c_id)
+
+                if parent_obj and child_obj:
+                    new_link = ItemComposition(**{
+                        'parent_item': parent_obj,
+                        'child_item': child_obj,
+                        'quantity': qty,
+                        'sort_order': s_order,
+                        'optional_attributes': opt_attrs
+                    })
+                    db.session.add(new_link)
             
-            # Update cache for the remainder of the loop
-            code_to_id[raw_code] = csv_id
-            name_to_id[raw_name] = csv_id
-            id_translation_map[csv_id] = csv_id
+            # ATOMIC COMMIT: Everything succeeds, or nothing does.
+            db.session.commit()
+            click.echo("🎉 Atomic Import complete! All data successfully committed.")
+            
+        except IntegrityError as e:
+            db.session.rollback()
+            click.echo(f"❌ Database Integrity Error during import: {e.orig}")
+            click.echo("⚠️ Transaction rolled back. No partial data was saved.")
+            
+        except Exception as e:
+            db.session.rollback()
+            click.echo(f"❌ Unexpected Error during import: {str(e)}")
+            click.echo("⚠️ Transaction rolled back. No partial data was saved.")
 
-        db.session.commit()
-        click.echo("✅ Items successfully saved to database.")
+@cli.command('exportdata')
+@click.argument('output_dir', default='.', type=click.Path())
+def exportdata(output_dir):
+    """Fail-safe export of all EMEK hierarchy (Items & Compositions) to CSV"""
+    import json
 
-        # IMPORT COMPOSITIONS
-        click.echo(f"🔗 Scanning {len(df_comps)} BoM relationships...")
+    import pandas as pd
+
+    from crminaec.core.models import db
+    from crminaec.platforms.emek.models import Item, ItemComposition
+    
+    app = create_app()
+    with app.app_context():
+        os.makedirs(output_dir, exist_ok=True)
         
-        for _, row in df_comps.iterrows():
-            # 👇 CRITICAL: Re-route IDs through the Translation Map
-            p_id = id_translation_map.get(int(row['parent_id']))
-            c_id = id_translation_map.get(int(row['child_id']))
-
-            # Failsafe if an item was excluded entirely
-            if not p_id or not c_id:
-                continue
-
-            qty = float(row.get('quantity', 1.0) or 1.0)
-            s_order = int(row.get('sort_order', 0) or 0)
-            opt_attrs = parse_json(row.get('optional_attributes'))
-
-            existing_link = db.session.query(ItemComposition).filter_by(parent_id=p_id, child_id=c_id).first()
-            if existing_link:
-                continue
-
-            parent_obj = db.session.get(Item, p_id)
-            child_obj = db.session.get(Item, c_id)
-
-            if parent_obj and child_obj:
-                new_link = ItemComposition(
-                    parent_item=parent_obj,
-                    child_item=child_obj,
-                    quantity=qty,
-                    sort_order=s_order,
-                    optional_attributes=opt_attrs
-                )
-                db.session.add(new_link)
+        click.echo("📦 Exporting Items...")
+        items = db.session.scalars(db.select(Item)).all()
+        items_data = []
+        for i in items:
+            items_data.append({
+                'item_id': i.item_id,
+                'code': i.code,
+                'name': i.name,
+                'is_category': getattr(i, 'is_category', False),
+                'item_type': i.item_type,
+                'node_type': i.node_type.name if i.node_type else '',
+                'dim_x': i.dim_x,
+                'dim_y': i.dim_y,
+                'dim_z': i.dim_z,
+                'base_cost': float(i.base_cost or 0.0),
+                'technical_specs': json.dumps(i.technical_specs) if i.technical_specs else ''
+            })
+        pd.DataFrame(items_data).to_csv(os.path.join(output_dir, 'items.csv'), index=False)
         
-        db.session.commit()
-        click.echo("🎉 Import complete!")
+        click.echo("🔗 Exporting Compositions...")
+        comps = db.session.scalars(db.select(ItemComposition)).all()
+        comps_data = []
+        for c in comps:
+            comps_data.append({
+                'parent_id': c.parent_id,
+                'child_id': c.child_id,
+                'quantity': float(c.quantity or 1.0),
+                'sort_order': c.sort_order,
+                'optional_attributes': json.dumps(c.optional_attributes) if c.optional_attributes else ''
+            })
+        pd.DataFrame(comps_data).to_csv(os.path.join(output_dir, 'compositions.csv'), index=False)
+        
+        click.echo(f"✅ Fail-safe export complete! Files saved to {os.path.abspath(output_dir)}")
+
+from crminaec.cli.report_commands import report
+
+cli.add_command(report)
 
 if __name__ == '__main__':
     cli()
@@ -427,4 +526,3 @@ def export(course_id: int, export_format: str, output: Optional[str]):
         click.echo(f"✅ Data exported successfully in {export_format} format!")
     else:
         sys.exit(1)
-

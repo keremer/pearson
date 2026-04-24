@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Print Label - {{ item.code }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+        .label {
+            width: 50mm; /* Standard label printer size */
+            height: 50mm;
+            background: white;
+            padding: 4mm;
+            box-sizing: border-box;
+            text-align: center;
+            border: 1px dashed #ccc; /* Border visible on screen, hidden on print */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .item-code { font-size: 14px; font-weight: bold; margin-bottom: 2px; }
+        .item-name { font-size: 10px; margin-bottom: 6px; max-height: 24px; overflow: hidden; }
+        
+        @media print {
+            body { background-color: white; align-items: flex-start; height: auto; }
+            .label { border: none; margin: 0; padding: 2mm; page-break-inside: avoid; }
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+    <div class="label">
+        <div class="item-code">{{ item.code }}</div>
+        <div class="item-name">{{ item.name | truncate(45) }}</div>
+        <div id="qrcode"></div>
+    </div>
+    <script>
+        new QRCode(document.getElementById("qrcode"), {
+            text: "{{ item.qr_code }}",
+            width: 100,
+            height: 100,
+            colorDark : "#000000",
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.H
+        });
+        window.onload = () => setTimeout(() => window.print(), 500); // Auto-trigger print
+    </script>
+</body>
+</html>

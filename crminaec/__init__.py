@@ -7,6 +7,7 @@ from authlib.integrations.flask_client import OAuth
 from flask import Flask, render_template
 from flask_login import LoginManager
 from flask_mail import Mail
+from flask_migrate import Migrate
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 # Use the dynamic config loader
@@ -30,6 +31,7 @@ class AutoSchemeMiddleware:
 login_manager = LoginManager()
 oauth = OAuth()
 mail=Mail()
+migrate = Migrate()
 
 
 class AppFactory:
@@ -59,6 +61,7 @@ class AppFactory:
             app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{db_path}"
 
         db.init_app(app)
+        migrate.init_app(app, db, render_as_batch=True)
         mail.init_app(app)
 
         # ==========================================
@@ -100,13 +103,6 @@ class AppFactory:
         app.register_blueprint(arkhon_bp, url_prefix='/arkhon')
         app.register_blueprint(emek_bp, url_prefix='/emek')
         
-        # 3. Initialize API & Webhook Routes
-        from crminaec.api.courses import init_course_routes
-        from crminaec.api.webhooks import init_webhook_routes
-        
-        init_course_routes(app)
-        init_webhook_routes(app)
-
         return app
 
     @staticmethod

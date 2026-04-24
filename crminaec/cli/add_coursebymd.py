@@ -6,13 +6,14 @@ Aligned with crminaec Data-First Architecture
 
 import re
 import sys
+import uuid
 from pathlib import Path
 from typing import Any, Dict, List
 
 # Import the unified app factory and database models
 from crminaec import create_app
-from crminaec.core.models import (AssessmentFormat, Course, LearningOutcome,
-                                  Lesson, Tool, db)
+from crminaec.core.models import db
+from crminaec.platforms.emek.models import Item, ItemComposition, NodeType
 
 
 class EnhancedCourseInjector:
@@ -23,36 +24,58 @@ class EnhancedCourseInjector:
     
     def parse_comprehensive_syllabus(self, md_content: str) -> Dict[str, Any]:
         """Parse all aspects of the comprehensive syllabus"""
+        # --- AI COPY-PASTE ARTIFACT CLEANUP ---
+        # Unescape any non-alphanumeric character (e.g. \#, \**, \|) globally
+        md_content = re.sub(r'\\([^\w\s])', r'\1', md_content)
+        
+        # Normalize line endings to prevent \r from breaking regex anchors
+        md_content = md_content.replace('\r', '')
+        
         data = {}
         
-        # Basic course information
-        data['title'] = self._extract_value(r'# ([^\n]+)', md_content, "Default Course – Syllabus")
-        data['course_code'] = self._extract_value(r'\*\*Course Code\*\*:\s*([^\n]+)', md_content, "DC-01")
-        data['level'] = self._extract_value(r'\*\*Level\*\*:\s*([^\n]+)', md_content, "HND Art & Design")
-        data['instructor'] = self._extract_value(r'\*\*Instructor\*\*:\s*([^\n]+)', md_content, "Dr. Kerem ERCOSKUN")
-        data['language'] = self._extract_value(r'\*\*Language\*\*:\s*([^\n]+)', md_content, "English")
-        data['delivery_mode'] = self._extract_value(r'\*\*Delivery\*\*:\s*([^\n]+)', md_content, "Weekly seminars, workshops, portfolio sessions")
-        data['aim'] = self._extract_value(r'## Course Aim\s*\n([^\n]+)', md_content, "Covent Garden College's courses aims to equip students with the essential skills and knowledge required to navigate and excel in the creative industries.")
+        # Course info (Highly permissive regex for AI variations)
+        data['title'] = self._extract_value(r'#\s*([^\n]+)', md_content, "Default Course – Syllabus")
+        
+        fallback_code = f"CRS-{uuid.uuid4().hex[:6].upper()}"
+        data['course_code'] = self._extract_value(r'\*\*Course Code[\*:]*\s*([^\n]+)', md_content, fallback_code)
+        data['level'] = self._extract_value(r'\*\*Level[\*:]*\s*([^\n]+)', md_content, "HND Art & Design")
+        data['credits'] = self._extract_value(r'\*\*Credits[\*:]*\s*([^\n]+)', md_content, "TBD")
+        data['schedule'] = self._extract_value(r'\*\*Course Schedule[\*:]*\s*([^\n]+)', md_content, "TBD")
+        data['total_hours'] = self._extract_value(r'\*\*Total Hours.*?[\*:]*\s*([^\n]+)', md_content, "TBD")
+        data['prerequisites'] = self._extract_value(r'\*\*Prerequisite.*?[\*:]*\s*([^\n]+)', md_content, "None")
+        data['instructor'] = self._extract_value(r'\*\*Instructor[\*:]*\s*([^\n]+)', md_content, "Dr. Kerem ERCOSKUN")
+        data['instructor_contact'] = self._extract_value(r'\*\*Instructor Contact[\*:]*\s*([^\n]+)', md_content, "contact@institution.edu")
+        data['language'] = self._extract_value(r'\*\*Language[\*:]*\s*([^\n]+)', md_content, "English")
+        data['delivery_mode'] = self._extract_value(r'\*\*Delivery[\*:]*\s*([^\n]+)', md_content, "Blended")
+        data['description'] = self._extract_section(r'## Course Description and Objectives', md_content)
         
         # Learning Outcomes
-        lo_pattern = r'- \*\*(LO\d+)\**:\s*([^\n]+)'
+        lo_pattern = r'-\s*\*\*(LO\d+)[\*:]*\s*([^\n]+)'
         data['learning_outcomes'] = [
             {'code': match[0], 'description': match[1].strip()}
             for match in re.findall(lo_pattern, md_content)
         ]
         
         # Weekly Structure
-        weekly_pattern = r'\| (\d+) \| ([^|]+) \| ([^|]+) \| ([^|]+) \|'
+        weekly_pattern = r'\|\s*(?:Week\s*)?(\d+)\s*\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|'
         data['weeks'] = [
             {
                 'week': int(match[0]),
                 'topic': match[1].strip(),
                 'activity': match[2].strip(),
-                'assignment': match[3].strip()
+                'date': match[3].strip(),
+                'time': match[4].strip(),
+                'assignment': match[5].strip()
             }
-            for match in re.findall(weekly_pattern, md_content)
+            for match in re.findall(weekly_pattern, self._extract_section(r'## Weekly Structure', md_content.replace('and Course Schedule', '')))
         ]
         
+        # New Academic Sections
+        data['teaching_approach'] = self._extract_section(r'## Course Format and Teaching Approach', md_content)
+        data['grading_criteria'] = self._extract_section(r'## Assessment and Grading Criteria', md_content)
+        data['course_policies'] = self._extract_section(r'## Course Policies', md_content)
+        data['support_resources'] = self._extract_section(r'## Student Support Resources', md_content)
+
         # Assessment Formats
         assessment_pattern = r'- ([^\n]+)'
         assessment_section = re.search(r'## Assessment Formats\s*\n((?:- [^\n]+\n?)+)', md_content)
@@ -76,10 +99,15 @@ class EnhancedCourseInjector:
         match = re.search(pattern, content)
         return match.group(1).strip() if match else default
     
+    def _extract_section(self, header_pattern: str, md_content: str) -> str:
+        """Extracts everything between a specific header and the next ## header or end of file."""
+        match = re.search(fr'{header_pattern}\s*\n(.*?)(?=\n## |\Z)', md_content, re.DOTALL | re.IGNORECASE)
+        return match.group(1).strip() if match else ""
+
     def _parse_tools_section(self, md_content: str) -> List[Dict[str, str]]:
         tools = []
         
-        hardware_section = re.search(r'Minimum computer specs:\s*((?:\s+- [^\n]+\n?)+)', md_content)
+        hardware_section = re.search(r'Minimum computer specs:[\s\n]*(?:-\s*)?([^\n]+)', md_content)
         if hardware_section:
             tools.append({
                 'category': 'Hardware',
@@ -137,94 +165,89 @@ class EnhancedCourseInjector:
         try:
             with open(md_file_path, 'r', encoding='utf-8') as f:
                 md_content = f.read()
-            
+                
             print("📖 Parsing comprehensive syllabus...")
             course_data = self.parse_comprehensive_syllabus(md_content)
             
             # Wrap database operations in the Flask app context
             with self.app.app_context():
                 
-                # 1. Create Main Course (Using new Dataclass fields)
-                course = Course(
-                    course_title=course_data['title'],
-                    course_code=course_data['course_code'],
-                    instructor=course_data['instructor'],
-                    contact_email="keremercoskun@coventgarden.college",
-                    level=course_data['level'],
-                    language=course_data['language'],
-                    delivery_mode=course_data['delivery_mode'],
-                    aim=course_data['aim'],
-                    description=self._build_comprehensive_description(course_data)
-                )
+                # 1. Create Main Course as an Item
+                tech_specs = {
+                    'instructor': course_data['instructor'],
+                    'contact_email': course_data['instructor_contact'],
+                    'level': course_data['level'],
+                    'credits': course_data['credits'],
+                    'schedule': course_data['schedule'],
+                    'total_hours': course_data['total_hours'],
+                    'prerequisites': course_data['prerequisites'],
+                    'language': course_data['language'],
+                    'delivery_mode': course_data['delivery_mode'],                    'description': course_data['description'],
+                    'teaching_approach': course_data['teaching_approach'],
+                    'grading_criteria': course_data['grading_criteria'],
+                    'course_policies': course_data['course_policies'],
+                    'support_resources': course_data['support_resources'],
+                    'objectives': ", ".join([lo['description'] for lo in course_data['learning_outcomes']]),
+                    'learning_outcomes': course_data['learning_outcomes'],
+                    'assessment_formats': course_data['assessment_formats'],
+                    'tools': course_data['tools']
+                }
                 
-                db.session.add(course)
-                db.session.flush() # Generate the course_id
-                print(f"✅ Created course: {course.course_title} (ID: {course.course_id})")
-                
-                # 2. Create Learning Outcomes
-                learning_outcomes = {}
-                for lo_data in course_data['learning_outcomes']:
-                    # Note: We append the code to the description since our unified model
-                    # combined them into a single 'outcome_text' field
-                    lo = LearningOutcome(
-                        course_id=course.course_id,
-                        outcome_text=f"{lo_data['code']}: {lo_data['description']}"
+                # Idempotent Upsert: Update if exists to prevent IntegrityError crashes
+                course = db.session.query(Item).filter_by(code=course_data['course_code']).first()
+                if not course:
+                    course = Item(
+                        name=course_data['title'],
+                        code=course_data['course_code'],
+                        item_type='course',
+                        node_type=NodeType.ACTIVITY,
+                        technical_specs=tech_specs
                     )
-                    db.session.add(lo)
-                    db.session.flush()
-                    learning_outcomes[lo_data['code']] = lo
-                    print(f"  🎯 Created learning outcome: {lo_data['code']}")
-                
-                # 3. Create Assessment Formats
-                for assessment_data in course_data['assessment_formats']:
-                    assessment = AssessmentFormat(
-                        course_id=course.course_id,
-                        format_type=assessment_data['type'],
-                        description=assessment_data['requirements']
-                    )
-                    db.session.add(assessment)
-                    print(f"  📋 Created assessment format: {assessment.format_type}")
-                
-                # 4. Create Tools
-                for tool_data in course_data['tools']:
-                    tool = Tool(
-                        course_id=course.course_id,
-                        tool_name=tool_data['name'],
-                        purpose=tool_data['description']
-                    )
-                    db.session.add(tool)
-                    print(f"  🛠️  Created tool: {tool.tool_name}")
-                
-                # 5. Create Lessons with Outcome Mappings
-                for week_data in course_data['weeks']:
-                    lesson = Lesson(
-                        course_id=course.course_id,
-                        lesson_title=f"Week {week_data['week']}: {week_data['topic']}",
-                        content=self._build_lesson_content(week_data, course_data),
-                        duration=self._estimate_duration(week_data['activity']),
-                        order=week_data['week'],
-                        activity_type=week_data['activity'],
-                        assignment_description=week_data['assignment'],
-                        materials_needed=self._get_lesson_materials(week_data)
-                    )
+                    db.session.add(course)
+                else:
+                    course.name = course_data['title']
+                    course.technical_specs = tech_specs
+                    db.session.query(ItemComposition).filter_by(parent_id=course.item_id).delete()
                     
-                    # Link learning outcomes (Many-to-Many via the association table)
+                db.session.flush() 
+                print(f"✅ Synced course: {course.name} (ID: {course.item_id})")
+                
+                # 2. Create Lessons with Outcome Mappings
+                for week_data in course_data['weeks']:
                     addressed_outcomes = self.map_learning_outcomes_to_lessons(week_data)
-                    for lo_code in addressed_outcomes:
-                        if lo_code in learning_outcomes:
-                            # SQLAlchemy 2.0 appends to the relationship list directly
-                            lesson.learning_outcomes.append(learning_outcomes[lo_code])
+                    lesson_tech_specs = {
+                        'duration': self._estimate_duration(week_data['activity']),
+                        'activity_type': week_data['activity'],
+                        'date': week_data['date'],
+                        'time': week_data['time'],
+                        'assignment_description': week_data['assignment'],
+                        'materials_needed': self._get_lesson_materials(week_data),
+                        'content': self._build_lesson_content(week_data),
+                        'objectives': ", ".join(addressed_outcomes)
+                    }
+                    
+                    lesson = Item(
+                        name=f"Week {week_data['week']}: {week_data['topic']}",
+                        code=f"{course.code}-W{week_data['week']}",
+                        item_type='lesson',
+                        node_type=NodeType.ACTIVITY,
+                        technical_specs=lesson_tech_specs
+                    )
                             
                     db.session.add(lesson)
-                    print(f"  📝 Created lesson: {lesson.lesson_title}")
+                    db.session.flush()
+                    
+                    comp = ItemComposition(parent_item=course, child_item=lesson, sort_order=week_data['week'], optional_attributes={})
+                    db.session.add(comp)
+                    print(f"  📝 Created lesson: {lesson.name}")
                 
                 # Commit all changes
                 db.session.commit()
                 
                 print(f"\n🎉 Successfully injected comprehensive course!")
-                print(f"📊 Course: {course.course_title}")
-                print(f"🔗 Code: {course.course_code}")
-                print(f"🎯 Learning Outcomes: {len(learning_outcomes)}")
+                print(f"📊 Course: {course.name}")
+                print(f"🔗 Code: {course.code}")
+                print(f"🎯 Learning Outcomes: {len(course_data['learning_outcomes'])}")
                 print(f"📋 Assessment Formats: {len(course_data['assessment_formats'])}")
                 print(f"🛠️  Tools: {len(course_data['tools'])}")
                 print(f"📚 Lessons: {len(course_data['weeks'])}")
@@ -235,20 +258,8 @@ class EnhancedCourseInjector:
             print(f"❌ Error injecting course: {e}")
             return False
             
-    def _build_comprehensive_description(self, course_data: Dict[str, Any]) -> str:
-        parts = [
-            f"Level: {course_data['level']}", f"Language: {course_data['language']}",
-            f"Delivery: {course_data['delivery_mode']}", "",
-            f"Aim: {course_data['aim']}", "",
-            "Learning Outcomes:",
-            *[f"- {lo['code']}: {lo['description']}" for lo in course_data['learning_outcomes']],
-            "", "Assessment Formats:",
-            *[f"- {af['requirements']}" for af in course_data['assessment_formats']]
-        ]
-        return '\n'.join(parts)
-    
-    def _build_lesson_content(self, week_data: Dict[str, Any], course_data: Dict[str, Any]) -> str:
-        return f"""Week {week_data['week']}: {week_data['topic']}\n\nActivity Type:\n{week_data['activity']}\n\nAssignment:\n{week_data['assignment']}\n\nLearning Context:\nThis session focuses on {week_data['topic'].lower()} through {week_data['activity'].lower()}.\nStudents will complete: {week_data['assignment']}\n\nConnected to course learning outcomes in professional development."""
+    def _build_lesson_content(self, week_data: Dict[str, Any]) -> str:
+        return f"Week {week_data['week']}: {week_data['topic']}\n\nActivity Type:\n{week_data['activity']}\n\nAssignment:\n{week_data['assignment']}\n\nSchedule:\nDate: {week_data['date']}\nTime: {week_data['time']}"
 
     def _estimate_duration(self, activity: str) -> int:
         activity_lower = activity.lower()

@@ -1,18 +1,19 @@
-# {{ course_title | default('Untitled Course') }}
+# {{ name | default(course_title | default('Untitled Course')) }}
 
-**Course Code:** {{ course_code | default('TBD') }}  
-**Instructor:** {{ instructor | default('TBD') }}  
-**Contact:** {{ contact_email | default('TBD') }}  
-**Level:** {{ level | default('N/A') }}  
-**Language:** {{ language | default('English') }}  
-**Delivery Mode:** {{ delivery_mode | default('N/A') }}  
-**Generated:** {{ generated_date }}
+**Course Code:** {{ code | default(course_code | default('TBD')) }}  
+**Instructor:** {{ technical_specs.instructor if technical_specs else instructor | default('TBD') }}  
+**Instructor Contact:** {{ technical_specs.contact_email if technical_specs else contact_email | default('TBD') }}  
+**Level:** {{ technical_specs.level if technical_specs else level | default('N/A') }}  
+**Credits:** {{ technical_specs.credits if technical_specs else 'TBD' }}  
+**Course Schedule:** {{ technical_specs.schedule if technical_specs else 'TBD' }}  
+**Total Hours (ECTS):** {{ technical_specs.total_hours if technical_specs else 'TBD' }}  
+**Prerequisites:** {{ technical_specs.prerequisites if technical_specs else 'None' }}  
+**Language:** {{ technical_specs.language if technical_specs else language | default('English') }}  
+**Delivery Mode:** {{ technical_specs.delivery_mode if technical_specs else delivery_mode | default('N/A') }}  
 
-## Course Aim
-{{ course_aim | default('No course aim specified.') }}
-
-## Course Description
-{{ course_description | default('No course description available.') }}
+## Course Description and Objectives
+{{ technical_specs.description if technical_specs else course_description | default('No course description available.') }}
+{{ technical_specs.aim if technical_specs else '' }}
 
 {% if learning_outcomes and learning_outcomes | length > 0 %}
 ## Learning Outcomes
@@ -22,19 +23,19 @@ Upon successful completion of this course, students will be able to:
 {% endfor %}
 {% endif %}
 
-{% if objectives and objectives | length > 0 %}
+{% if technical_specs and technical_specs.objectives and technical_specs.objectives | length > 0 %}
 ## Learning Objectives
-{% for objective in objectives %}
-- {{ objective | trim }}
-{% endfor %}
+- {{ technical_specs.objectives | trim }}
 {% endif %}
 
-## Course Outline
+## Course Format and Teaching Approach
+{{ technical_specs.teaching_approach if technical_specs else '' }}
 
-| Week | Lesson Title | Duration | Activity Type | Key Topics |
-|------|--------------|----------|---------------|------------|
+## Weekly Structure and Course Schedule
+| Week | Topic | Activity | Date | Time | Assignment |
+|------|-------|----------|------|------|------------|
 {% for lesson in lessons %}
-| {{ lesson.order | default(loop.index) }} | {{ lesson.title | default('Untitled Lesson') }} | {{ lesson.duration | default(60) }} minutes | {{ lesson.activity_type | default('N/A') }} | {{ lesson.content | default('No content') | truncate(60) }} |
+| {{ loop.index }} | {{ lesson.name | default(lesson.title | default('Untitled Lesson')) }} | {{ lesson.technical_specs.activity_type if lesson.technical_specs else 'N/A' }} | {{ lesson.technical_specs.date if lesson.technical_specs else 'TBD' }} | {{ lesson.technical_specs.time if lesson.technical_specs else 'TBD' }} | {{ lesson.technical_specs.assignment_description if lesson.technical_specs else 'None' | truncate(60) }} |
 {% endfor %}
 
 ## Assessment Overview
@@ -49,17 +50,19 @@ Upon successful completion of this course, students will be able to:
 {% endfor %}
 {% endif %}
 
+## Assessment and Grading Criteria
+{{ technical_specs.grading_criteria if technical_specs else 'N/A' }}
+
+## Course Policies
+{{ technical_specs.course_policies if technical_specs else 'N/A' }}
+
+## Student Support Resources
+{{ technical_specs.support_resources if technical_specs else 'N/A' }}
+
 {% if tools and tools | length > 0 %}
 ## Tools & Resources
 {% for tool in tools %}
 - **{{ tool.category | default('Tool') }} - {{ tool.name | default('Unnamed') }}:** {{ tool.specifications | default(tool.description | default('No specifications provided')) }}
-{% endfor %}
-{% endif %}
-
-{% if prerequisites and prerequisites | length > 0 %}
-## Prerequisites
-{% for prereq in prerequisites %}
-- {{ prereq }}
 {% endfor %}
 {% endif %}
 

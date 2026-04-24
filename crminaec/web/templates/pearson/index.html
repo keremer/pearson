@@ -5,7 +5,8 @@
 {% block content %}
 <div class="row">
     <div class="col-12">
-        <h1 class="display-4 mb-4"><i class="fas fa-tachometer-alt"></i> Pearson Dashboard</h1>
+        <h1 class="display-4 mb-1"><i class="fas fa-graduation-cap text-primary me-3"></i>Pearson Course Management</h1>
+        <p class="lead text-muted mb-4">Academic Dashboard & Syllabus Automation</p>
     </div>
 </div>
 
@@ -55,13 +56,12 @@
                 {% if courses %}
                     <div class="list-group">
                         {% for course in courses[:5] %}
-                        <a href="{{ url_for('pearson.course_detail', course_id=course.course_id) }}" class="list-group-item list-group-item-action">
+                        <a href="{{ url_for('pearson.course_detail', course_id=course.item_id) }}" class="list-group-item list-group-item-action">
                             <div class="d-flex w-100 justify-content-between">
-                                <h6 class="mb-1">{{ course.course_title }}</h6>
-                                <small>{{ course.created_date.strftime('%Y-%m-%d') if course.created_date else '' }}</small>
+                                <h6 class="mb-1">{{ course.name }}</h6>
                             </div>
-                            <p class="mb-1 text-muted">{{ course.course_code }} • {{ course.instructor }}</p>
-                            <small class="text-muted">{{ course.lessons|length }} lessons</small>
+                            <p class="mb-1 text-muted">{{ course.code }} • {{ course.technical_specs.instructor if course.technical_specs and course.technical_specs.instructor else 'No instructor' }}</p>
+                            <small class="text-muted">{{ course.children_links|length }} lessons</small>
                         </a>
                         {% endfor %}
                     </div>

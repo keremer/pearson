@@ -21,10 +21,12 @@ def login():
         password = request.form.get('password')
         
         # Query the CRM Party
-        party = db.session.query(Party).filter_by(email=email).first()
+        party = db.session.scalar(db.select(Party).filter_by(email=email))
         
         # Check if they exist AND if they have a linked portal account with a valid password
         if party and party.account and password and party.account.check_password(password):
+            party.account.last_login = datetime.datetime.now(datetime.timezone.utc)
+            db.session.commit()
             # Assuming your Party class implements Flask-Login's UserMixin
             login_user(party)
             return redirect(url_for('main.index'))
@@ -56,7 +58,7 @@ def google_callback():
         return redirect(url_for('auth.login'))
 
     email = user_info.get('email')
-    party = db.session.query(Party).filter_by(email=email).first()
+    party = db.session.scalar(db.select(Party).filter_by(email=email))
 
     # If the email isn't in our database yet, create BOTH records
     if not party:
@@ -75,11 +77,12 @@ def google_callback():
         import secrets
         new_account = UserAccount(**{
             'party_id': party.party_id,
+            'party': party,
             'role': "guest",
             'is_confirmed': True,
-            'confirmed_on': datetime.datetime.utcnow(),
+            'confirmed_on': datetime.datetime.now(datetime.timezone.utc),
             'kvkk_approved': True,
-            'kvkk_approval_date': datetime.datetime.utcnow(),
+            'kvkk_approval_date': datetime.datetime.now(datetime.timezone.utc),
             'kvkk_approval_ip': request.remote_addr or '0.0.0.0'
         })
         new_account.set_password(secrets.token_urlsafe(32))
@@ -92,16 +95,21 @@ def google_callback():
         import secrets
         new_account = UserAccount(**{
             'party_id': party.party_id,
+            'party': party,
             'role': "guest",
             'is_confirmed': True,
-            'confirmed_on': datetime.datetime.utcnow(),
+            'confirmed_on': datetime.datetime.now(datetime.timezone.utc),
             'kvkk_approved': True,
-            'kvkk_approval_date': datetime.datetime.utcnow(),
+            'kvkk_approval_date': datetime.datetime.now(datetime.timezone.utc),
             'kvkk_approval_ip': request.remote_addr or '0.0.0.0'
         })
         new_account.set_password(secrets.token_urlsafe(32))
         party.account = new_account
         db.session.add(new_account)
+        db.session.commit()
+
+    if party.account:
+        party.account.last_login = datetime.datetime.now(datetime.timezone.utc)
         db.session.commit()
 
     login_user(party)
@@ -132,7 +140,7 @@ def register():
             return redirect(url_for('auth.register'))
             
         # 2. Query the PARTY table (because that is where the email lives)
-        existing_party = db.session.query(Party).filter_by(email=email).first()
+        existing_party = db.session.scalar(db.select(Party).filter_by(email=email))
         
         if existing_party:
             # Check if this CRM contact already claimed a portal account
@@ -158,8 +166,9 @@ def register():
         # 3. Create the UserAccount using the party_id
         new_user = UserAccount(**{
             'party_id': party.party_id,
+            'party': party,
             'kvkk_approved': True,
-            'kvkk_approval_date': datetime.datetime.utcnow(),
+            'kvkk_approval_date': datetime.datetime.now(datetime.timezone.utc),
             'kvkk_approval_ip': request.remote_addr or '0.0.0.0',
             'role': 'customer'
         })
@@ -193,7 +202,7 @@ def confirm_email(token):
         return redirect(url_for('auth.login'))
         
     # Query the Party first, then access the linked account
-    party = db.session.query(Party).filter_by(email=email).first()
+    party = db.session.scalar(db.select(Party).filter_by(email=email))
     if not party:
         raise NotFound("Party not found")
     user_account = party.account
@@ -206,7 +215,7 @@ def confirm_email(token):
         flash('Hesabınız zaten onaylanmış. Lütfen giriş yapın.', 'info')
     else:
         user_account.is_confirmed = True
-        user_account.confirmed_on = datetime.datetime.utcnow()
+        user_account.confirmed_on = datetime.datetime.now(datetime.timezone.utc)
         db.session.commit()
         flash('E-posta adresiniz başarıyla onaylandı. Sisteme giriş yapabilirsiniz.', 'success')
         

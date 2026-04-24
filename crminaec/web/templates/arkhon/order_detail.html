@@ -9,8 +9,16 @@
         <div>
             <h2 class="mb-0"><i class="fas fa-clipboard-list text-success me-2"></i> Sipariş #{{ order.order_number }}</h2>
             <p class="text-muted mt-1 mb-0">Toplam Ürün: <strong>{{ items|length }}</strong> | İçe Aktarılma: {{ order.date.strftime('%Y-%m-%d') if order.date else 'Bilinmiyor' }}</p>
+            {% if order.is_deleted %}
+            <span class="badge bg-danger mt-2"><i class="fas fa-trash-alt me-1"></i> Bu sipariş silindi (Arşivde)</span>
+            {% endif %}
+            {% if order.is_archived %}
+            <span class="badge bg-warning text-dark mt-2"><i class="fas fa-archive me-1"></i> Bu sipariş arşivlendi</span>
+            {% endif %}
         </div>
         <div>
+            {% if order.status != 'lead' and not order.is_deleted %}
+            {% if current_user.account.role in ['admin', 'power_user'] %}
             <button type="button" class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#addCatalogModal" title="Cihaz veya Tezgah Ekle" aria-label="Cihaz veya Tezgah Ekle">
                 <i class="fas fa-plus me-2" aria-hidden="true"></i> Cihaz / Tezgah Ekle
             </button>
@@ -22,14 +30,193 @@
             <a href="{{ url_for('arkhon.build_quote', order_id=order.order_id) }}" class="btn btn-success shadow-sm" title="Teklif Oluştur" aria-label="Teklif Oluştur">
                 <i class="fas fa-file-invoice-dollar me-2" aria-hidden="true"></i> Teklif Oluştur
             </a>
+            {% endif %}
+            {% endif %}
+
+            {% if current_user.account.role in ['admin', 'power_user'] and not order.is_deleted %}
+            <button type="button" class="btn btn-success shadow-sm me-2" data-bs-toggle="modal" data-bs-target="#importKelebekModal" title="Kelebek HTML İçe Aktar" aria-label="Kelebek HTML İçe Aktar">
+                <i class="fas fa-file-code me-2" aria-hidden="true"></i> Kelebek HTML Aktar
+            </button>
+            {% endif %}
 
             <a href="{{ url_for('arkhon.index') }}" class="btn btn-outline-secondary me-2" title="Dashboard'a Dön" aria-label="Dashboard'a Dön">
                 <i class="fas fa-arrow-left"></i> Dashboard
             </a>
-            <form action="{{ url_for('arkhon.delete_order', order_id=order.order_id) }}" method="POST" class="d-inline" onsubmit="return confirm('Bu siparişi ve tüm içeriğini silmek istediğinize emin misiniz?');">
-                <button type="submit" class="btn btn-danger" title="Siparişi Sil" aria-label="Siparişi Sil">
-                    <i class="fas fa-trash-alt"></i> Siparişi Sil
-                </button>
+            {% if current_user.account.role in ['admin', 'power_user'] %}
+                {% if order.is_archived %}
+                <form action="{{ url_for('arkhon.unarchive_order', order_id=order.order_id) }}" method="POST" class="d-inline">
+                    <button type="submit" class="btn btn-secondary" title="Arşivden Çıkar" aria-label="Arşivden Çıkar">
+                        <i class="fas fa-box-open"></i> Arşivden Çıkar
+                    </button>
+                </form>
+                {% else %}
+                <form action="{{ url_for('arkhon.archive_order', order_id=order.order_id) }}" method="POST" class="d-inline">
+                    <button type="submit" class="btn btn-warning" title="Arşive Kaldır" aria-label="Arşive Kaldır">
+                        <i class="fas fa-archive"></i> Arşivle
+                    </button>
+                </form>
+                {% endif %}
+
+                {% if order.is_deleted %}
+                <form action="{{ url_for('arkhon.restore_order', order_id=order.order_id) }}" method="POST" class="d-inline" onsubmit="return confirm('Bu siparişi geri yüklemek istediğinize emin misiniz?');">
+                    <button type="submit" class="btn btn-success" title="Siparişi Geri Yükle" aria-label="Siparişi Geri Yükle">
+                        <i class="fas fa-trash-restore"></i> Geri Yükle
+                    </button>
+                </form>
+                {% if current_user.account.role == 'admin' %}
+                <form action="{{ url_for('arkhon.hard_delete_order', order_id=order.order_id) }}" method="POST" class="d-inline" onsubmit="return confirm('DİKKAT: Bu işlem geri alınamaz! Kalıcı olarak silmek istediğinize emin misiniz?');">
+                    <button type="submit" class="btn btn-dark" title="Kalıcı Sil" aria-label="Kalıcı Sil">
+                        <i class="fas fa-skull-crossbones"></i> Kalıcı Sil
+                    </button>
+                </form>
+                {% endif %}
+                {% else %}
+                <form action="{{ url_for('arkhon.delete_order', order_id=order.order_id) }}" method="POST" class="d-inline" onsubmit="return confirm('Bu siparişi silinenler kutusuna taşımak istediğinize emin misiniz?');">
+                    <button type="submit" class="btn btn-danger" title="Siparişi Sil" aria-label="Siparişi Sil">
+                        <i class="fas fa-trash-alt"></i> Siparişi Sil
+                    </button>
+                </form>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 🏢 BUSINESS FLOW SECTION -->
+    <div class="row mb-4 mt-4">
+        <div class="col-md-6 mb-3 mb-md-0">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-info text-dark fw-bold">
+                    <i class="fas fa-briefcase me-2"></i> İş Akışı & Müşteri Bilgileri
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <p class="mb-1"><strong>Müşteri:</strong> 
+                                {% if order.party %}
+                                <a href="{{ url_for('arkhon.customer_detail', party_id=order.party.party_id) }}" class="text-decoration-none fw-bold text-primary" title="Müşteri Profilini Görüntüle">
+                                    {{ order.party.first_name or 'Bilinmiyor' }} {{ order.party.last_name or '' }} <i class="fas fa-external-link-alt small ms-1"></i>
+                                </a>
+                                {% else %}
+                                <span class="text-muted">Bilinmiyor</span>
+                                {% endif %}
+                            </p>
+                            <p class="mb-1"><strong>Telefon:</strong> {{ order.party.phone or '-' }} | <strong>E-posta:</strong> {{ order.party.email }}</p>
+                        </div>
+                        {% if current_user.account.role in ['admin', 'power_user'] %}
+                        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#assignCustomerModal" title="Müşteriyi Değiştir/Seç">
+                            <i class="fas fa-user-edit"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+                    <p class="mb-1"><strong>İlgi Alanı:</strong> <span class="badge bg-secondary">{{ order.project_type }}</span></p>
+                    <p class="mb-3"><strong>Ölçü Randevusu:</strong> <span class="text-primary fw-bold">{{ order.measurement_date.strftime('%d.%m.%Y %H:%M') if order.measurement_date else 'Planlanmadı' }}</span></p>
+                    <hr>
+                    <div class="d-flex gap-2">
+                        {% if current_user.account.role in ['admin', 'power_user'] %}
+                        <form method="POST" action="{{ url_for('arkhon.send_kvkk_link', order_id=order.order_id) }}">
+                            <button type="submit" class="btn btn-sm btn-outline-primary"><i class="fas fa-link me-1"></i> KVKK Kayıt Linki Gönder</button>
+                        </form>
+                        
+                        {% if order.party and order.party.phone %}
+                            {% set phone_clean = order.party.phone | string | replace(' ', '') | replace('(', '') | replace(')', '') | replace('-', '') | replace('+', '') %}
+                            {% if phone_clean.startswith('0') %}
+                                {% set wa_phone = '90' ~ phone_clean[1:] %}
+                            {% elif phone_clean|length == 10 %}
+                                {% set wa_phone = '90' ~ phone_clean %}
+                            {% else %}
+                                {% set wa_phone = phone_clean %}
+                            {% endif %}
+                            {% set wa_text = "Merhaba " ~ (order.party.first_name or '') ~ ", Arkhon Mimarlık portalına kayıt olmak ve KVKK aydınlatma metnini onaylamak için aşağıdaki bağlantıya tıklayabilirsiniz:%0A" ~ url_for('auth.register', _external=True) %}
+                            <a href="https://wa.me/{{ wa_phone }}?text={{ wa_text }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-success" title="WhatsApp ile KVKK Linki Gönder">
+                                <i class="fab fa-whatsapp me-1"></i> WA ile Gönder
+                            </a>
+                        {% endif %}
+
+                        <form method="POST" action="{{ url_for('arkhon.log_info_docs', order_id=order.order_id) }}">
+                            {% if order.info_docs_sent %}
+                                <button type="button" class="btn btn-sm btn-success" disabled><i class="fas fa-check-double me-1"></i> Bilgilendirme İletildi</button>
+                            {% else %}
+                                <button type="submit" class="btn btn-sm btn-outline-warning text-dark"><i class="fas fa-file-pdf me-1"></i> Prosedürleri İletildi İşaretle</button>
+                            {% endif %}
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-secondary text-white fw-bold">
+                    <i class="fas fa-paperclip me-2"></i> Dosyalar ve Ölçümler
+                </div>
+                <div class="card-body">
+                    {% if current_user.account.role in ['admin', 'power_user'] %}
+                    <form action="{{ url_for('arkhon.upload_order_attachment', order_id=order.order_id) }}" method="POST" enctype="multipart/form-data" class="mb-3 d-flex gap-2">
+                        <select name="context" class="form-select form-select-sm w-auto">
+                            <option value="Measurement">Ölçü/Röleve</option>
+                            <option value="Inspirational">İlham Görseli</option>
+                            <option value="Contract">Sözleşme</option>
+                            <option value="Other">Diğer</option>
+                        </select>
+                        <input type="file" name="file" class="form-control form-control-sm" required>
+                        <button type="submit" class="btn btn-sm btn-dark px-3 fw-bold">Yükle</button>
+                    </form>
+                    {% endif %}
+                    <ul class="list-group list-group-flush mt-2">
+                        {% for att in order.attachments %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
+                            <span><i class="fas fa-{{ 'image text-success' if att.file_type == 'image' else 'file-pdf text-danger' }} me-2"></i> {{ att.semantic_filename }}</span>
+                            <a href="{{ att.file_path }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary">Görüntüle</a>
+                        </li>
+                        {% else %}
+                        <p class="text-muted small mb-0">Henüz dosya yüklenmemiş.</p>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if order.status != 'lead' %}
+
+    <!-- 🚚 MILESTONES SECTION -->
+    <div class="card shadow-sm border-0 mb-4 mt-2">
+        <div class="card-header bg-dark text-white fw-bold">
+            <i class="fas fa-truck-loading me-2"></i> Montaj ve Teslimat Takvimi
+        </div>
+        <div class="card-body bg-light">
+            <form method="POST" action="{{ url_for('arkhon.update_milestones', order_id=order.order_id) }}">
+                <div class="row g-3">
+                    <div class="col-md-4 col-lg-3">
+                        <label class="form-label small fw-bold text-muted mb-1">Fabrika/Depo Teslim</label>
+                        <input type="datetime-local" class="form-control form-control-sm" name="factory_delivery_date" value="{{ order.factory_delivery_date.strftime('%Y-%m-%dT%H:%M') if order.factory_delivery_date else '' }}" {% if current_user.account.role not in ['admin', 'power_user'] %}disabled{% endif %}>
+                    </div>
+                    <div class="col-md-4 col-lg-3">
+                        <label class="form-label small fw-bold text-muted mb-1">Montaj Randevusu</label>
+                        <input type="datetime-local" class="form-control form-control-sm" name="installation_appointment_date" value="{{ order.installation_appointment_date.strftime('%Y-%m-%dT%H:%M') if order.installation_appointment_date else '' }}" {% if current_user.account.role not in ['admin', 'power_user'] %}disabled{% endif %}>
+                    </div>
+                    <div class="col-md-4 col-lg-3">
+                        <label class="form-label small fw-bold text-muted mb-1">Mutfak Montajı</label>
+                        <input type="datetime-local" class="form-control form-control-sm" name="kitchen_installation_date" value="{{ order.kitchen_installation_date.strftime('%Y-%m-%dT%H:%M') if order.kitchen_installation_date else '' }}" {% if current_user.account.role not in ['admin', 'power_user'] %}disabled{% endif %}>
+                    </div>
+                    <div class="col-md-4 col-lg-3">
+                        <label class="form-label small fw-bold text-muted mb-1">Tezgah Montajı</label>
+                        <input type="datetime-local" class="form-control form-control-sm" name="countertop_installation_date" value="{{ order.countertop_installation_date.strftime('%Y-%m-%dT%H:%M') if order.countertop_installation_date else '' }}" {% if current_user.account.role not in ['admin', 'power_user'] %}disabled{% endif %}>
+                    </div>
+                    <div class="col-md-4 col-lg-4">
+                        <label class="form-label small fw-bold text-muted mb-1">Cihaz Montajı</label>
+                        <input type="datetime-local" class="form-control form-control-sm" name="appliance_installation_date" value="{{ order.appliance_installation_date.strftime('%Y-%m-%dT%H:%M') if order.appliance_installation_date else '' }}" {% if current_user.account.role not in ['admin', 'power_user'] %}disabled{% endif %}>
+                    </div>
+                    <div class="col-md-4 col-lg-4">
+                        <label class="form-label small fw-bold text-muted mb-1">Proje Teslimi</label>
+                        <input type="datetime-local" class="form-control form-control-sm" name="handover_date" value="{{ order.handover_date.strftime('%Y-%m-%dT%H:%M') if order.handover_date else '' }}" {% if current_user.account.role not in ['admin', 'power_user'] %}disabled{% endif %}>
+                    </div>
+                    {% if current_user.account.role in ['admin', 'power_user'] %}
+                    <div class="col-md-12 col-lg-4 d-flex align-items-end">
+                        <button type="submit" class="btn btn-sm btn-primary w-100 fw-bold"><i class="fas fa-save me-1"></i> Takvimi Güncelle</button>
+                    </div>
+                    {% endif %}
+                </div>
             </form>
         </div>
     </div>
@@ -58,16 +245,19 @@
                     </div>
                     
                     <div class="d-flex gap-1">
+                        {% if current_user.account.role in ['admin', 'power_user'] %}
                         <form method="POST" action="{{ url_for('arkhon.archive_quote', quote_id=quote.quote_id) }}" class="m-0" onsubmit="return confirm('Bu teklifi arşive kaldırmak istediğinize emin misiniz?');">
                             <button type="submit" class="btn btn-sm btn-outline-secondary" title="Arşive Kaldır" aria-label="Arşive Kaldır">
                                 <i class="fas fa-archive"></i>
                             </button>
                         </form>
+                        {% endif %}
 
                         <a href="{{ url_for('arkhon.order_preferences', order_id=order.order_id) }}" class="btn btn-sm btn-outline-secondary" title="Sipariş Tercihleri" aria-label="Sipariş Tercihleri">
                             <i class="fas fa-clipboard-list"></i>
                         </a>
 
+                        {% if current_user.account.role in ['admin', 'power_user'] %}
                         <a href="{{ url_for('arkhon.build_quote', order_id=order.order_id, edit=quote.quote_id) }}" class="btn btn-sm btn-outline-primary" title="Bu Teklifi Düzenle" aria-label="Bu Teklifi Düzenle">
                             <i class="fas fa-edit"></i>
                         </a>
@@ -81,6 +271,7 @@
                                 <i class="fab fa-google-drive"></i>
                             </button>
                         </form>
+                        {% endif %}
 
                         <a href="{{ url_for('arkhon.public_quote', access_token=quote.access_token) }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-dark" title="Müşteri Portalını Aç" aria-label="Müşteri Portalını Aç">
                             <i class="fas fa-external-link-alt"></i>
@@ -90,11 +281,13 @@
                             <i class="fas fa-link"></i>
                         </button>
                         
+                        {% if current_user.account.role in ['admin', 'power_user'] %}
                         <form method="POST" action="{{ url_for('arkhon.email_quote', quote_id=quote.quote_id) }}" class="m-0" onsubmit="return confirm('Teklif bağlantısı müşteriye e-posta olarak gönderilecek. Devam edilsin mi?');">
                             <button type="submit" class="btn btn-sm btn-outline-danger" title="E-posta ile Gönder" aria-label="E-posta ile Gönder">
                                 <i class="fas fa-envelope"></i>
                             </button>
                         </form>
+                        {% endif %}
 
                         {% if order.party and order.party.phone %}
                             {% set phone_clean = order.party.phone | string | replace(' ', '') | replace('(', '') | replace(')', '') | replace('-', '') | replace('+', '') %}
@@ -133,12 +326,14 @@
                                 <a href="{{ url_for('arkhon.order_preferences', order_id=order.order_id) }}" class="btn btn-sm btn-outline-secondary" title="Sipariş Tercihleri" aria-label="Sipariş Tercihleri">
                                     <i class="fas fa-clipboard-list"></i>
                                 </a>
+                                {% if current_user.account.role in ['admin', 'power_user'] %}
                                 <a href="{{ url_for('arkhon.build_quote', order_id=order.order_id, edit=quote.quote_id) }}" class="btn btn-sm btn-outline-primary" title="Bu Teklifi Düzenle" aria-label="Bu Teklifi Düzenle">
                                     <i class="fas fa-edit"></i>
                                 </a>
                                 <a href="{{ url_for('arkhon.build_quote', order_id=order.order_id, source=quote.quote_id) }}" class="btn btn-sm btn-outline-info" title="Bu Teklifi Kopyala (Yeni Versiyon)" aria-label="Bu Teklifi Kopyala (Yeni Versiyon)">
                                     <i class="fas fa-copy"></i>
                                 </a>
+                                {% endif %}
                                 
                                 <button type="button" class="btn btn-sm btn-outline-secondary" onclick="copyToClipboard(`{{ url_for('arkhon.public_quote', access_token=quote.access_token, _external=True) }}`, this)" title="Bağlantıyı Kopyala" aria-label="Bağlantıyı Kopyala">
                                     <i class="fas fa-link"></i>
@@ -224,6 +419,7 @@
             </div>
         </div>
     </div>
+    {% endif %}
 </div>
 
 <div class="modal fade" id="addCatalogModal" tabindex="-1" aria-labelledby="addCatalogModalLabel" aria-hidden="true">
@@ -286,7 +482,83 @@
     </div>
 </div>
 
+<div class="modal fade" id="importKelebekModal" tabindex="-1" aria-labelledby="importKelebekModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title fw-bold" id="importKelebekModalLabel"><i class="fas fa-file-code me-2" aria-hidden="true"></i> Kelebek HTML İçe Aktar</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Kapat" title="Kapat"></button>
+            </div>
+            <form method="POST" action="{{ url_for('arkhon.import_kelebek_for_order', order_id=order.order_id) }}" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="kelebek_file" class="form-label fw-bold">HTML Çıktısı (.html)</label>
+                        <input class="form-control" type="file" id="kelebek_file" name="file" accept=".html" required>
+                        <div class="form-text mt-2 text-muted">
+                            <i class="fas fa-info-circle me-1"></i> Bu işlem, HTML dosyasındaki ürünleri bu talebe ekler ve projeyi aktif aşamaya geçirir.
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" title="İptal" aria-label="İptal">İptal</button>
+                    <button type="submit" class="btn btn-success fw-bold" title="İçe Aktar ve Çözümle" aria-label="İçe Aktar ve Çözümle"><i class="fas fa-upload me-2" aria-hidden="true"></i> İçe Aktar ve Çözümle</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="assignCustomerModal" tabindex="-1" aria-labelledby="assignCustomerModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold" id="assignCustomerModalLabel"><i class="fas fa-user-edit me-2" aria-hidden="true"></i> Müşteri Seç / Değiştir</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Kapat" title="Kapat"></button>
+            </div>
+            <form method="POST" action="{{ url_for('arkhon.assign_customer', order_id=order.order_id) }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="party_id" class="form-label fw-bold">Kayıtlı Müşteriler</label>
+                        <select class="form-select" id="party_id" name="party_id" required>
+                            <option value="" disabled selected>Bir müşteri arayın (İsim, E-posta, Telefon)...</option>
+                            {% for party in parties %}
+                                <option value="{{ party.party_id }}" {% if order.party_id == party.party_id %}selected{% endif %}>
+                                    {{ party.first_name or '' }} {{ party.last_name or '' }} | {{ party.email }} | {{ party.phone or 'Tel Yok' }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-primary fw-bold"><i class="fas fa-save me-2"></i> Müşteriyi Ata</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Select2 Requirements -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
 <script>
+$(document).ready(function() {
+    $('#party_id').select2({
+        theme: 'bootstrap-5',
+        dropdownParent: $('#assignCustomerModal'),
+        placeholder: 'Müşteri arayın (İsim, E-posta, Telefon)...',
+        width: '100%',
+        language: {
+            noResults: function() {
+                return "Eşleşen müşteri bulunamadı.";
+            }
+        }
+    });
+});
+
 function copyToClipboard(text, btn) {
     navigator.clipboard.writeText(text).then(function() {
         const originalHtml = btn.innerHTML;

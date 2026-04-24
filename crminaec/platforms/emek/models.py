@@ -5,9 +5,11 @@ import os
 import re
 import unicodedata
 import uuid
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
-from sqlalchemy import JSON, Boolean, Enum, Float, ForeignKey, Integer, String
+from sqlalchemy import (JSON, Boolean, DateTime, Enum, Float, ForeignKey,
+                        Integer, String, Text)
 from sqlalchemy.orm import (Mapped, MappedAsDataclass, mapped_column,
                             relationship)
 
@@ -36,10 +38,17 @@ class StandardType(enum.Enum):
     COBIE_V3 = "COBie v3"
 
 
+class MovementType(enum.Enum):
+    IN = "IN"           # Product entering stock (e.g., delivered from factory)
+    OUT = "OUT"         # Product leaving stock (e.g., loaded onto installation truck)
+    ADJUSTMENT = "ADJ"  # Manual stock correction
+    RETURN = "RETURN"   # Returned product from the field
+
+
 # ==============================================================================
 # 1. ITEM CROSS REFERENCE (The Semantic Layer)
 # ==============================================================================
-class ItemCrossReference(db.Model, MappedAsDataclass):
+class ItemCrossReference(db.Model):
     __tablename__ = 'emek_item_cross_references'
     
     id: Mapped[int] = mapped_column(primary_key=True, init=False)
@@ -58,7 +67,7 @@ class ItemCrossReference(db.Model, MappedAsDataclass):
 # ==============================================================================
 # 2. ITEM (The Universal Node)
 # ==============================================================================
-class Item(db.Model, MappedAsDataclass):
+class Item(db.Model):
     """The universal recursive object: Can be a raw screw, a cabinet, or a whole kitchen."""
     __tablename__ = 'emek_items'
 
@@ -86,6 +95,14 @@ class Item(db.Model, MappedAsDataclass):
     dim_x: Mapped[float] = mapped_column(Float, default=0.0) # Width
     dim_y: Mapped[float] = mapped_column(Float, default=0.0) # Height
     dim_z: Mapped[float] = mapped_column(Float, default=0.0) # Depth
+
+    # --- STOCK & INVENTORY TRACKING ---
+    barcode: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, unique=True, default=None)
+    qr_code: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, unique=True, default=None)
+    stock_quantity: Mapped[float] = mapped_column(Float, default=0.0)
+    
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_archived: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # 'raw_material', 'assembly', 'service', 'project'
     item_type: Mapped[str] = mapped_column(String(50), default="raw_material") 
@@ -124,6 +141,14 @@ class Item(db.Model, MappedAsDataclass):
     # 3. PDM ATTACHMENTS
     attachments: Mapped[List["ItemAttachment"]] = relationship(
         "ItemAttachment",
+        back_populates="item",
+        cascade="all, delete-orphan",
+        default_factory=list
+    )
+    
+    # 4. INVENTORY LOGS (Barcode/QR Tracking)
+    stock_movements: Mapped[List["StockMovement"]] = relationship(
+        "StockMovement",
         back_populates="item",
         cascade="all, delete-orphan",
         default_factory=list
@@ -180,18 +205,18 @@ class Item(db.Model, MappedAsDataclass):
                 return
 
         # If brand new link
-        new_link = ItemComposition(
-            parent_item=self, 
-            child_item=child_item, 
-            quantity=float(qty)
-        )
+        new_link = ItemComposition(**{
+            'parent_item': self, 
+            'child_item': child_item, 
+            'quantity': float(qty)
+        })
         self.children_links.append(new_link)
 
 
 # ==============================================================================
 # 3. ITEM COMPOSITION (BOM Link) Model
 # ==============================================================================
-class ItemComposition(db.Model, MappedAsDataclass):
+class ItemComposition(db.Model):
     """The Association Object for the Bill of Materials (BOM) hierarchy."""
     __tablename__ = 'emek_item_compositions'
 
@@ -211,7 +236,7 @@ class ItemComposition(db.Model, MappedAsDataclass):
 # ==============================================================================
 # 4. Define ItemAttachment (The PDM Vault)
 # ==============================================================================
-class ItemAttachment(db.Model, MappedAsDataclass):
+class ItemAttachment(db.Model):
     """Stores files/images linked to an Item with semantic renaming."""
     __tablename__ = 'emek_item_attachments'
 
@@ -225,3 +250,27 @@ class ItemAttachment(db.Model, MappedAsDataclass):
 
     # Relationship back to Item
     item: Mapped["Item"] = relationship("Item", back_populates="attachments", init=False)
+
+
+# ==============================================================================
+# 5. INVENTORY TRACKING (Barcodes & QR Codes Ledger)
+# ==============================================================================
+class StockMovement(db.Model):
+    """Ledger for all IN/OUT inventory transactions triggered by barcode/QR scans."""
+    __tablename__ = 'emek_stock_movements'
+
+    movement_id: Mapped[int] = mapped_column(primary_key=True, init=False)
+    item_id: Mapped[int] = mapped_column(ForeignKey('emek_items.item_id', ondelete="CASCADE"), init=False)
+    
+    movement_type: Mapped[MovementType] = mapped_column(Enum(MovementType), default=MovementType.IN)
+    quantity: Mapped[float] = mapped_column(Float, default=0.0)
+    
+    # Scanning & Traceability
+    scanned_code: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, default=None) # The exact barcode/QR read
+    reference_document: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, default=None) # Waybill, Order ID, etc.
+    
+    timestamp: Mapped[datetime] = mapped_column(DateTime, default_factory=lambda: datetime.now(timezone.utc))
+    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default=None)
+
+    # Relationship
+    item: Mapped["Item"] = relationship("Item", back_populates="stock_movements", init=False)

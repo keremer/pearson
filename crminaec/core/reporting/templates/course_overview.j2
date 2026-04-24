@@ -1,33 +1,31 @@
-# {{ course_title }} - Course Overview
+# {{ name | default(course_title) }} - Course Overview
 
-**Course Code:** {{ course_code | default('N/A') }}  
-**Instructor:** {{ instructor | default('N/A') }}  
+**Course Code:** {{ code | default(course_code | default('N/A')) }}  
+**Instructor:** {{ technical_specs.instructor if technical_specs else instructor | default('N/A') }}  
 **Total Duration:** {{ total_duration }} minutes  
 **Total Lessons:** {{ total_lessons }}
 
 ## Quick Stats
 - **Average Lesson Duration:** {{ average_duration }} minutes
-- **Longest Lesson:** {{ longest_lesson.duration | default(0) }} minutes ({{ longest_lesson.title | default('N/A') }})
-- **Shortest Lesson:** {{ shortest_lesson.duration | default(0) }} minutes ({{ shortest_lesson.title | default('N/A') }})
+- **Longest Lesson:** {{ longest_lesson.technical_specs.duration if longest_lesson.technical_specs else longest_lesson.duration | default(0) }} minutes ({{ longest_lesson.name | default(longest_lesson.title | default('N/A')) }})
+- **Shortest Lesson:** {{ shortest_lesson.technical_specs.duration if shortest_lesson.technical_specs else shortest_lesson.duration | default(0) }} minutes ({{ shortest_lesson.name | default(shortest_lesson.title | default('N/A')) }})
 
 ## Lesson Distribution
 {% for lesson in lessons %}
-### Week {{ lesson.order }}: {{ lesson.title | default('Untitled Lesson') }}
-- **Duration:** {{ lesson.duration | default(0) }} minutes
-- **Topics:** {{ lesson.content | default('No content') | truncate(100) }}
-{% if lesson.objectives and lesson.objectives | length > 0 %}
+### Week {{ loop.index }}: {{ lesson.name | default(lesson.title | default('Untitled Lesson')) }}
+- **Duration:** {{ lesson.technical_specs.duration if lesson.technical_specs else lesson.duration | default(0) }} minutes
+- **Topics:** {{ lesson.technical_specs.content if lesson.technical_specs else lesson.content | default('No content') | truncate(100) }}
+{% if lesson.technical_specs and lesson.technical_specs.objectives %}
 - **Key Objectives:** 
-  {% for objective in lesson.objectives %}
-    - {{ objective | trim }}
-  {% endfor %}
+    - {{ lesson.technical_specs.objectives | trim }}
 {% endif %}
 {% endfor %}
 
 ## Timeline
 {% set cumulative_time = 0 %}
 {% for lesson in lessons %}
-{% set cumulative_time = cumulative_time + (lesson.duration | default(0)) %}
-- **Week {{ lesson.order }}:** {{ cumulative_time }} minutes cumulative
+{% set cumulative_time = cumulative_time + (lesson.technical_specs.duration if lesson.technical_specs else lesson.duration | default(0))|int %}
+- **Week {{ loop.index }}:** {{ cumulative_time }} minutes cumulative
 {% endfor %}
 
 ---

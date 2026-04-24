@@ -1,0 +1,24 @@
+# Lesson {{ order }}: {{ title }}
+
+**Course:** {{ course_title }}  
+**Week:** {{ order }}  
+**Duration:** {{ duration }} minutes  
+**Activity Type:** {{ activity_type | default('N/A') }}  
+**Date:** {{ date | default('TBD') }}
+
+## Learning Outcomes Addressed
+{% for outcome in learning_outcomes %}
+- LO{{ loop.index }}: {{ outcome.outcome_text }}
+{% endfor %}
+
+## Lesson Content
+{{ content }}
+
+## Assignment
+{{ assignment_description }}
+
+## Materials Needed
+{{ materials_needed }}
+
+---
+*Generated automatically by crminaec Course Management System*

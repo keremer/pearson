@@ -8,7 +8,7 @@ from __future__ import annotations
 import json
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union, cast
 
@@ -237,7 +237,7 @@ class GoogleDocsClient(BaseInteropClient):
                     'created_time': drive_metadata.get('createdTime'),
                     'modified_time': drive_metadata.get('modifiedTime'),
                     'web_view_link': drive_metadata.get('webViewLink'),
-                    'retrieved_at': datetime.utcnow().isoformat(),
+                    'retrieved_at': datetime.now(timezone.utc).isoformat(),
                     'authenticated_user': self.user_email,
                     'file_size': drive_metadata.get('size'),
                     'owners': drive_metadata.get('owners', [])

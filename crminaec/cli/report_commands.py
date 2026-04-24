@@ -8,9 +8,10 @@ from typing import List, Optional, cast
 import click
 from sqlalchemy.orm import Session
 
-from crminaec.core.models import Course, db
+from crminaec.core.models import db
 from crminaec.core.reporting import (CourseDataBuilder, MultiExporter,
                                      TemplateManager)
+from crminaec.platforms.emek.models import Item, ItemComposition
 
 
 @click.group()
@@ -20,7 +21,7 @@ def report():
 
 
 @report.command()
-@click.option('--course-id', required=True, type=int, help='Course ID')
+@click.option('--course-id', '-c', '--cid', required=True, type=int, help='Course ID')
 @click.option('--format', '-f', 'formats', multiple=True, 
               default=['pdf'], show_default=True,
               type=click.Choice(['pdf', 'html', 'markdown', 'all']),
@@ -44,14 +45,14 @@ def generate(ctx, course_id: int, formats: List[str],
         app = create_app()
 
     with app.app_context():
-        # Get course using the new SQLAlchemy 2.0 syntax via our global 'db'
-        course = db.session.get(Course, course_id)
+        # Get course using the Universal Item schema
+        course = db.session.query(Item).filter_by(item_id=course_id, item_type='course').first()
         if not course:
             click.echo(f"❌ Course with ID {course_id} not found", err=True)
             return
         
-        # Updated to use course_title
-        click.echo(f"📊 Generating reports for: {course.course_title} ({course.course_code})")
+        # Updated to use name and code
+        click.echo(f"📊 Generating reports for: {course.name} ({course.code})")
         
         # Initialize reporting components
         template_manager = TemplateManager()
@@ -76,7 +77,7 @@ def generate(ctx, course_id: int, formats: List[str],
             # Render content based on report type
             if report_type == 'syllabus':
                 content = template_manager.render_syllabus(course_data)
-                base_name = f"{course.course_code}_syllabus"
+                base_name = f"{course.code}_syllabus"
                 
                 # Export report
                 files = exporter.export_content(content, base_name, list(formats))
@@ -84,7 +85,7 @@ def generate(ctx, course_id: int, formats: List[str],
                 
             elif report_type == 'overview':
                 content = template_manager.render_course_overview(course_data)
-                base_name = f"{course.course_code}_overview"
+                base_name = f"{course.code}_overview"
                 
                 # Export report
                 files = exporter.export_content(content, base_name, list(formats))
@@ -92,10 +93,12 @@ def generate(ctx, course_id: int, formats: List[str],
                 
             elif report_type == 'lesson_plan':
                 # Generate individual lesson plans using the sorted course.lessons array
-                for lesson in course.lessons:
+                comps = db.session.query(ItemComposition).filter_by(parent_id=course.item_id).order_by(ItemComposition.sort_order).all()
+                lessons = [(c.child_item, c.sort_order) for c in comps if c.child_item.item_type == 'lesson']
+                for lesson, order in lessons:
                     lesson_data = data_builder.build_lesson_data(lesson, course)
                     content = template_manager.render_lesson_plan(lesson_data)
-                    base_name = f"{course.course_code}_lesson_{lesson.order:02d}"
+                    base_name = f"{course.code}_lesson_{order:02d}"
                     
                     # Export lesson plan
                     files = exporter.export_content(content, base_name, list(formats))

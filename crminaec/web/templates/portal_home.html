@@ -1,21 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>crminaec | Unified Management Portal</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
-</head>
-<body class="portal-home-body">
-    <nav class="navbar navbar-dark bg-dark mb-5">
-        <div class="container">
-            <span class="navbar-brand mb-0 h1"><i class="fas fa-layer-group me-2" aria-hidden="true"></i>crminaec Portal</span>
-        </div>
-    </nav>
+{% extends "base.html" %}
 
-    <div class="container">
+{% block title %}CRMinAEC | Unified Management Portal{% endblock %}
+
+{% block content %}
+    <div class="container mt-3">
         <div class="text-center mb-5">
             <h1 class="display-5 fw-bold">Select a Platform</h1>
             <p class="lead text-muted">Unified Management for Architecture, Engineering, and Education</p>
@@ -23,6 +11,7 @@
 
         <div class="row g-4 justify-content-center">
             
+            {% if current_user.is_authenticated and current_user.account and current_user.account.role in ['admin', 'power_user', 'instructor'] %}
             <div class="col-md-4">
                 <a href="{{ url_for('pearson.index') }}" class="text-decoration-none text-dark" title="Launch Pearson Platform" aria-label="Launch Pearson Platform">
                     <div class="card platform-card shadow-sm h-100 border-0">
@@ -37,6 +26,7 @@
                     </div>
                 </a>
             </div>
+            {% endif %}
 
             <div class="col-md-4">
                 <a href="{{ url_for('arkhon.index') }}" class="text-decoration-none text-dark" title="Launch Arkhon Platform" aria-label="Launch Arkhon Platform">
@@ -53,6 +43,7 @@
                 </a>
             </div>
 
+            {% if current_user.is_authenticated and current_user.account and current_user.account.role in ['admin', 'power_user'] %}
             <div class="col-md-4">
                 <a href="{{ url_for('emek.bom_editor') }}" class="text-decoration-none text-dark" title="Launch Emek Platform" aria-label="Launch Emek Platform">
                     <div class="card platform-card shadow-sm h-100 border-0">
@@ -67,6 +58,7 @@
                     </div>
                 </a>
             </div>
+            {% endif %}
 
             {% if current_user.is_authenticated and current_user.account and current_user.account.role == 'admin' %}
             <div class="col-md-4">
@@ -87,5 +79,4 @@
 
         </div>
     </div>
-</body>
-</html>
+{% endblock %}

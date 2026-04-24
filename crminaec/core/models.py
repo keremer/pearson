@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Any, Dict, List, Optional, cast
 
@@ -13,7 +13,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 
 # --- THE SINGLE INITIALIZATION POINT ---
-class Base(MappedAsDataclass, DeclarativeBase):
+class Base(MappedAsDataclass, DeclarativeBase, kw_only=True):
     pass
 
 db = SQLAlchemy(model_class=Base)
@@ -46,6 +46,7 @@ class UserAccount(db.Model):
     confirmed_on: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=None)
     kvkk_approval_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=None)
     kvkk_approval_ip: Mapped[Optional[str]] = mapped_column(String(45), default=None)
+    last_login: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), default=None)
 
     # Note: The manual __init__ was DELETED. MappedAsDataclass handles it automatically!
 
@@ -77,6 +78,10 @@ class Party(db.Model, UserMixin):
     address: Mapped[Optional[str]] = mapped_column(Text, default=None)
     city: Mapped[Optional[str]] = mapped_column(String(50), default=None)
     district: Mapped[Optional[str]] = mapped_column(String(50), default=None)
+    
+    # Soft Delete & Archiving
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_archived: Mapped[bool] = mapped_column(Boolean, default=False)
 
     # 🔗 RELATIONS
     orders: Mapped[List["Order"]] = relationship("Order", back_populates="party", default_factory=list)
@@ -94,7 +99,7 @@ class Party(db.Model, UserMixin):
 # 💰 THE ERP PRICING ENGINE (New)
 # ================================================================
 
-class PriceRecord(db.Model, MappedAsDataclass):
+class PriceRecord(db.Model):
     """
     Standalone Pricing Entity.
     Can be a simple Kelebek import or a highly surgical EMEK cost breakdown.
@@ -111,7 +116,7 @@ class PriceRecord(db.Model, MappedAsDataclass):
     price_type: Mapped[str] = mapped_column(String(50), default="cost") # 'cost', 'sell', 'procurement'
     
     # Temporal Validity (When is it valid?)
-    valid_from: Mapped[datetime] = mapped_column(DateTime, default_factory=datetime.utcnow)
+    valid_from: Mapped[datetime] = mapped_column(DateTime, default_factory=lambda: datetime.now(timezone.utc))
     valid_to: Mapped[Optional[datetime]] = mapped_column(DateTime, default=None)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     
@@ -140,7 +145,7 @@ class PriceRecord(db.Model, MappedAsDataclass):
 # 👥 ARKHON PLATFORM (Arkhon)
 # ================================================================
 
-class ProjectTypology(db.Model, MappedAsDataclass):
+class ProjectTypology(db.Model):
     """Handles B2B Multi-Unit Projects (e.g., T1 = 16 Units, T2 = 9 Units)"""
     __tablename__ = 'project_typologies'
 
@@ -156,7 +161,7 @@ class ProjectTypology(db.Model, MappedAsDataclass):
     order: Mapped["Order"] = relationship("Order", back_populates="typologies", init=False)
 
 
-class CatalogProduct(db.Model, MappedAsDataclass):
+class CatalogProduct(db.Model):
     """
     Standard products database (Appliances, Countertops, Sinks).
     """
@@ -172,7 +177,7 @@ class CatalogProduct(db.Model, MappedAsDataclass):
     image_url: Mapped[Optional[str]] = mapped_column(String(255), default=None)  
 
 
-class Order(db.Model, MappedAsDataclass):
+class Order(db.Model):
     __tablename__ = 'orders'
 
     order_id: Mapped[int] = mapped_column(primary_key=True, init=False)
@@ -182,8 +187,24 @@ class Order(db.Model, MappedAsDataclass):
     offer_number: Mapped[Optional[str]] = mapped_column(String(20), default=None)
     total_amount: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), default=None)
     status: Mapped[str] = mapped_column(String(20), default='draft')
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_archived: Mapped[bool] = mapped_column(Boolean, default=False)
     payment_plan: Mapped[Optional[str]] = mapped_column(Text, default=None)
-    date: Mapped[datetime] = mapped_column(DateTime, default_factory=datetime.utcnow)
+    date: Mapped[datetime] = mapped_column(DateTime, default_factory=lambda: datetime.now(timezone.utc))
+    
+    # Lead / Pre-Sales Fields
+    project_type: Mapped[str] = mapped_column(String(50), default='Kitchen') # Kitchen, Home Solutions, Architectural
+    measurement_date: Mapped[Optional[datetime]] = mapped_column(DateTime, default=None)
+    info_docs_sent: Mapped[bool] = mapped_column(Boolean, default=False)
+    info_docs_sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime, default=None)
+    
+    # Installation & After-Sales Milestones
+    factory_delivery_date: Mapped[Optional[datetime]] = mapped_column(DateTime, default=None) # Expected arrival from Kelebek
+    installation_appointment_date: Mapped[Optional[datetime]] = mapped_column(DateTime, default=None)
+    kitchen_installation_date: Mapped[Optional[datetime]] = mapped_column(DateTime, default=None)
+    countertop_installation_date: Mapped[Optional[datetime]] = mapped_column(DateTime, default=None)
+    appliance_installation_date: Mapped[Optional[datetime]] = mapped_column(DateTime, default=None)
+    handover_date: Mapped[Optional[datetime]] = mapped_column(DateTime, default=None)
 
     # RELATIONS: Core Order Hub
     party: Mapped[Optional["Party"]] = relationship("Party", back_populates="orders", default=None)
@@ -191,16 +212,58 @@ class Order(db.Model, MappedAsDataclass):
     items: Mapped[List["OrderItem"]] = relationship("OrderItem", back_populates="order", default_factory=list, cascade="all, delete-orphan")
     quotes: Mapped[List["Quote"]] = relationship("Quote", back_populates="order", default_factory=list, cascade="all, delete-orphan")
     preferences: Mapped[Optional["ProjectPreference"]] = relationship("ProjectPreference", back_populates="order", default=None, init=False, cascade="all, delete-orphan")
+    attachments: Mapped[List["OrderAttachment"]] = relationship("OrderAttachment", back_populates="order", default_factory=list, cascade="all, delete-orphan")
+    issues: Mapped[List["CustomerIssue"]] = relationship("CustomerIssue", back_populates="order", default_factory=list, cascade="all, delete-orphan")
 
 
-class OrderItem(db.Model, MappedAsDataclass):
+class CustomerIssue(db.Model):
+    """Müşteri Şikayetleri ve Satış Sonrası Destek (After-Sales Support)."""
+    __tablename__ = 'customer_issues'
+
+    issue_id: Mapped[int] = mapped_column(primary_key=True, init=False)
+    order_id: Mapped[int] = mapped_column(ForeignKey('orders.order_id', ondelete="CASCADE"), init=False)
+
+    title: Mapped[str] = mapped_column(String(200))
+    description: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(50), default='Açık') # Açık, İncelemede, Çözüldü
+    priority: Mapped[str] = mapped_column(String(20), default='Normal') # Düşük, Normal, Acil (Low, Normal, Urgent)
+    
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_archived: Mapped[bool] = mapped_column(Boolean, default=False)
+    
+    reported_date: Mapped[datetime] = mapped_column(DateTime, default_factory=lambda: datetime.now(timezone.utc))
+    investigation_date: Mapped[Optional[datetime]] = mapped_column(DateTime, default=None)
+    solution_date: Mapped[Optional[datetime]] = mapped_column(DateTime, default=None)
+    resolution_notes: Mapped[Optional[str]] = mapped_column(Text, default=None)
+
+    # RELATIONS:
+    order: Mapped["Order"] = relationship("Order", back_populates="issues", init=False)
+
+class OrderAttachment(db.Model):
+    """Stores files like measurements, signed contracts with semantic renaming."""
+    __tablename__ = 'order_attachments'
+
+    attachment_id: Mapped[int] = mapped_column(primary_key=True, init=False)
+    order_id: Mapped[int] = mapped_column(ForeignKey('orders.order_id', ondelete="CASCADE"), init=False)
+
+    original_filename: Mapped[str] = mapped_column(String(255))
+    semantic_filename: Mapped[str] = mapped_column(String(255), unique=True)
+    file_path: Mapped[str] = mapped_column(String(500))
+    file_type: Mapped[str] = mapped_column(String(50)) # image or document
+    context: Mapped[str] = mapped_column(String(50), default='Measurement')
+    upload_date: Mapped[datetime] = mapped_column(DateTime, default_factory=lambda: datetime.now(timezone.utc))
+
+    # RELATIONS:
+    order: Mapped["Order"] = relationship("Order", back_populates="attachments", init=False)
+
+class OrderItem(db.Model):
     """
     Arkhon Order Item Model (Kelebek Furniture Spec & EMEK Construction Items)
     """
     __tablename__ = 'order_items'
 
     item_id: Mapped[int] = mapped_column(primary_key=True, init=False)
-    order_id: Mapped[int] = mapped_column(ForeignKey('orders.order_id'), init=False)
+    order_id: Mapped[int] = mapped_column(ForeignKey('orders.order_id', ondelete="CASCADE"), init=False)
     typology_id: Mapped[Optional[int]] = mapped_column(ForeignKey('project_typologies.typology_id', ondelete="SET NULL"), default=None)
     
     # THE ERP PRICING LINK (Replaces raw 'fiyat')
@@ -242,12 +305,12 @@ class OrderItem(db.Model, MappedAsDataclass):
     price_record: Mapped[Optional["PriceRecord"]] = relationship("PriceRecord", back_populates="order_items", init=False, default=None)
 
 
-class Quote(db.Model, MappedAsDataclass):
+class Quote(db.Model):
     """Tracks Quote versions, ProSAP pricing, and legally binding customer approvals."""
     __tablename__ = 'quotes'
 
     quote_id: Mapped[int] = mapped_column(primary_key=True, init=False)
-    order_id: Mapped[int] = mapped_column(ForeignKey('orders.order_id'), init=False)
+    order_id: Mapped[int] = mapped_column(ForeignKey('orders.order_id', ondelete="CASCADE"), init=False)
     version: Mapped[int] = mapped_column(Integer, default=1)
     quote_category: Mapped[str] = mapped_column(String(50), default='Furniture')
     
@@ -281,7 +344,7 @@ class Quote(db.Model, MappedAsDataclass):
     )
 
 
-class ProjectPreference(db.Model, MappedAsDataclass):
+class ProjectPreference(db.Model):
     """Müşteri ve Sipariş Takip Formu (Preferences Chart)."""
     __tablename__ = 'project_preferences'
 
@@ -291,22 +354,46 @@ class ProjectPreference(db.Model, MappedAsDataclass):
     model_name: Mapped[Optional[str]] = mapped_column(String(100), default=None) 
     front_color: Mapped[Optional[str]] = mapped_column(String(100), default=None) 
     body_color: Mapped[Optional[str]] = mapped_column(String(100), default=None) 
-    plinth_detail: Mapped[Optional[str]] = mapped_column(String(100), default=None) 
     handle_code: Mapped[Optional[str]] = mapped_column(String(50), default=None) 
-    glass_color: Mapped[Optional[str]] = mapped_column(String(50), default=None) 
+    cabinet_grouping_notes: Mapped[Optional[str]] = mapped_column(Text, default=None) 
 
-    led_strip: Mapped[bool] = mapped_column(Boolean, default=False)
-    spotlight: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Baza (Plinth) Specifics
+    plinth_height: Mapped[Optional[str]] = mapped_column(String(20), default=None)
+    plinth_material: Mapped[Optional[str]] = mapped_column(String(50), default=None)
+    plinth_color: Mapped[Optional[str]] = mapped_column(String(100), default=None)
 
+    # Glazed Doors Specifics
+    glazed_door_model: Mapped[Optional[str]] = mapped_column(String(50), default=None)
+    glazed_door_frame_color: Mapped[Optional[str]] = mapped_column(String(100), default=None)
+    glazing_type: Mapped[Optional[str]] = mapped_column(String(100), default=None)
+
+    # Lighting & Sensors
+    light_cab_spot: Mapped[bool] = mapped_column(Boolean, default=False)
+    light_cab_led: Mapped[Optional[str]] = mapped_column(String(50), default=None) # Yok, Tek Yan, Çift Yan
+    light_counter_spot: Mapped[bool] = mapped_column(Boolean, default=False)
+    light_counter_led: Mapped[bool] = mapped_column(Boolean, default=False)
+    light_bt_led: Mapped[bool] = mapped_column(Boolean, default=False)
+    sensor_dimmer: Mapped[bool] = mapped_column(Boolean, default=False)
+    sensor_door: Mapped[bool] = mapped_column(Boolean, default=False)
+    light_control_wall: Mapped[bool] = mapped_column(Boolean, default=False)
+    light_control_switch: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    # Accessories
     cutlery_tray: Mapped[Optional[str]] = mapped_column(String(255), default=None) 
     trash_bin: Mapped[Optional[str]] = mapped_column(String(255), default=None) 
     mechanisms: Mapped[Optional[str]] = mapped_column(Text, default=None) 
     
+    # Designer Checklist (Appliances)
+    appliance_refrigerator: Mapped[Optional[str]] = mapped_column(String(100), default=None)
+    appliance_dishwasher: Mapped[Optional[str]] = mapped_column(String(100), default=None)
+    appliance_washing_machine: Mapped[Optional[str]] = mapped_column(String(100), default=None)
+    appliance_oven_mw: Mapped[Optional[str]] = mapped_column(String(100), default=None)
+
     # RELATIONS:
     order: Mapped["Order"] = relationship("Order", back_populates="preferences", init=False)
 
 
-class PaymentInstallment(db.Model, MappedAsDataclass):
+class PaymentInstallment(db.Model):
     """Ödeme Planı (Payment Schedule for Contracts)."""
     __tablename__ = 'payment_installments'
 
@@ -317,231 +404,10 @@ class PaymentInstallment(db.Model, MappedAsDataclass):
     method: Mapped[str] = mapped_column(String(50), default=None) 
     amount: Mapped[float] = mapped_column(Numeric(12, 2), default=0.0)
     status: Mapped[str] = mapped_column(String(20), default='Bekliyor') 
+    
+    is_paid: Mapped[bool] = mapped_column(Boolean, default=False)
+    paid_date: Mapped[Optional[datetime]] = mapped_column(DateTime, default=None)
+    transaction_reference: Mapped[Optional[str]] = mapped_column(String(100), default=None) # Receipt or Wire Transfer ID
 
     # RELATIONS:
     quote: Mapped["Quote"] = relationship("Quote", back_populates="installments", init=False)
-
-
-# ================================================================
-# 🎓 ACADEMIC PLATFORM (Pearson Automation)
-# ================================================================
-
-# Association table for many-to-many between Lesson and LearningOutcome
-lesson_learning_outcome = db.Table(
-    'lesson_learning_outcome_assoc',
-    db.Model.metadata,
-    db.Column('lesson_id', db.Integer, db.ForeignKey('lessons.lesson_id', ondelete="CASCADE"), primary_key=True),
-    db.Column('learning_outcome_id', db.Integer, db.ForeignKey('learning_outcomes.id', ondelete="CASCADE"), primary_key=True),
-    db.Column('strength', db.String(20)),  # Primary, Secondary
-    db.Column('created_date', db.DateTime, default=datetime.utcnow),
-    UniqueConstraint('lesson_id', 'learning_outcome_id', name='uq_lesson_lo')
-)
-
-
-class Course(db.Model, MappedAsDataclass):
-    __tablename__ = 'courses'
-
-    course_id: Mapped[int] = mapped_column(primary_key=True, init=False)
-    course_title: Mapped[str] = mapped_column(String(200), nullable=False)
-    course_code: Mapped[str] = mapped_column(String(50), nullable=False, unique=True, index=True)
-    
-    instructor: Mapped[Optional[str]] = mapped_column(String(100), default=None, index=True)
-    contact_email: Mapped[Optional[str]] = mapped_column(String(100), default=None)
-    level: Mapped[Optional[str]] = mapped_column(String(50), default=None)
-    language: Mapped[Optional[str]] = mapped_column(String(50), default='English')
-    delivery_mode: Mapped[Optional[str]] = mapped_column(String(50), default=None)
-    aim: Mapped[Optional[str]] = mapped_column(Text, default=None)
-    description: Mapped[Optional[str]] = mapped_column(Text, default=None)
-    objectives: Mapped[Optional[str]] = mapped_column(Text, default=None)
-    created_date: Mapped[datetime] = mapped_column(DateTime, default_factory=datetime.utcnow)
-    updated_date: Mapped[datetime] = mapped_column(DateTime, default_factory=datetime.utcnow, onupdate=datetime.utcnow)
-
-    # RELATIONS: Core Course Hub
-    lessons: Mapped[List["Lesson"]] = relationship('Lesson', back_populates='course', cascade='all, delete-orphan', order_by='Lesson.order', default_factory=list)
-    learning_outcomes: Mapped[List["LearningOutcome"]] = relationship('LearningOutcome', back_populates='course', cascade='all, delete-orphan', order_by='LearningOutcome.id', default_factory=list)
-    assessment_formats: Mapped[List["AssessmentFormat"]] = relationship('AssessmentFormat', back_populates='course', cascade='all, delete-orphan', order_by='AssessmentFormat.id', default_factory=list)
-    tools: Mapped[List["Tool"]] = relationship('Tool', back_populates='course', cascade='all, delete-orphan', order_by='Tool.id', default_factory=list)
-
-    __table_args__ = (
-        Index('ix_course_level_language', 'level', 'language'),
-    )
-
-    def __repr__(self) -> str:
-        return f"<Course(course_id={self.course_id}, code='{self.course_code}', title='{self.course_title}')>"
-
-    @validates('contact_email')
-    def validate_email(self, key: str, email: Optional[str]) -> Optional[str]:
-        if email and '@' not in email:
-            raise ValueError("Invalid email format")
-        return email
-
-    def to_dict(self, include_relationships: bool = False) -> Dict[str, Any]:
-        result: Dict[str, Any] = {
-            'course_id': self.course_id,
-            'course_title': self.course_title,
-            'course_code': self.course_code,
-            'instructor': self.instructor,
-            'contact_email': self.contact_email,
-            'level': self.level,
-            'language': self.language,
-            'delivery_mode': self.delivery_mode,
-            'aim': self.aim,
-            'description': self.description,
-            'objectives': self.objectives,
-            'created_date': self.created_date.isoformat() if self.created_date else None,
-            'updated_date': self.updated_date.isoformat() if self.updated_date else None,
-            'lesson_count': len(self.lessons)
-        }
-        if include_relationships:
-            result['lessons'] = [lesson.to_dict() for lesson in self.lessons]
-            result['learning_outcomes'] = [lo.to_dict() for lo in self.learning_outcomes]
-            result['assessment_formats'] = [af.to_dict() for af in self.assessment_formats]
-            result['tools'] = [tool.to_dict() for tool in self.tools]
-        return result
-
-
-class Lesson(db.Model, MappedAsDataclass):
-    __tablename__ = 'lessons'
-
-    lesson_id: Mapped[int] = mapped_column(primary_key=True, init=False)
-    course_id: Mapped[int] = mapped_column(ForeignKey('courses.course_id', ondelete="CASCADE"), nullable=False, index=True)
-    lesson_title: Mapped[str] = mapped_column(String(200), nullable=False)
-    
-    content: Mapped[Optional[str]] = mapped_column(Text, default=None)
-    duration: Mapped[int] = mapped_column(Integer, default=60)
-    order: Mapped[int] = mapped_column(Integer, default=1)
-    activity_type: Mapped[Optional[str]] = mapped_column(String(100), default=None)
-    assignment_description: Mapped[Optional[str]] = mapped_column(Text, default=None)
-    materials_needed: Mapped[Optional[str]] = mapped_column(Text, default=None)
-    created_date: Mapped[datetime] = mapped_column(DateTime, default_factory=datetime.utcnow)
-
-    # RELATIONS: Many Lessons -> 1 Course | Many Lessons <-> Many Learning Outcomes
-    course: Mapped[Optional["Course"]] = relationship('Course', back_populates='lessons', default=None)
-    learning_outcomes: Mapped[List["LearningOutcome"]] = relationship('LearningOutcome', secondary=lesson_learning_outcome, back_populates='lessons', default_factory=list)
-
-    __table_args__ = (
-        Index('ix_lesson_course_order', 'course_id', 'order'),
-    )
-
-    def __repr__(self) -> str:
-        return f"<Lesson(id={self.lesson_id}, course_id={self.course_id}, title='{self.lesson_title}', order={self.order})>"
-
-    @validates('duration')
-    def validate_duration(self, key: str, duration: int) -> int:
-        if duration <= 0:
-            raise ValueError("Duration must be positive")
-        return duration
-
-    @validates('order')
-    def validate_order(self, key: str, order: int) -> int:
-        if order <= 0:
-            raise ValueError("Order must be positive")
-        return order
-
-    def to_dict(self, include_relationships: bool = False) -> Dict[str, Any]:
-        result: Dict[str, Any] = {
-            'lesson_id': self.lesson_id,
-            'course_id': self.course_id,
-            'lesson_title': self.lesson_title,
-            'content': self.content,
-            'duration': self.duration,
-            'order': self.order,
-            'activity_type': self.activity_type,
-            'assignment_description': self.assignment_description,
-            'materials_needed': self.materials_needed,
-            'created_date': self.created_date.isoformat() if self.created_date else None
-        }
-        if include_relationships:
-            result['learning_outcomes'] = [
-                {'id': lo.id, 'outcome_text': lo.outcome_text} for lo in self.learning_outcomes
-            ]
-        return result
-
-
-class LearningOutcome(db.Model, MappedAsDataclass):
-    __tablename__ = 'learning_outcomes'
-
-    id: Mapped[int] = mapped_column(primary_key=True, init=False)
-    course_id: Mapped[int] = mapped_column(ForeignKey('courses.course_id', ondelete="CASCADE"), nullable=False, index=True)
-    outcome_text: Mapped[str] = mapped_column(Text, nullable=False)
-    
-    created_date: Mapped[datetime] = mapped_column(DateTime, default_factory=datetime.utcnow)
-
-    # RELATIONS: Many Learning Outcomes -> 1 Course | Many Outcomes <-> Many Lessons
-    course: Mapped[Optional["Course"]] = relationship('Course', back_populates='learning_outcomes', default=None)
-    lessons: Mapped[List["Lesson"]] = relationship('Lesson', secondary=lesson_learning_outcome, back_populates='learning_outcomes', default_factory=list)
-
-    def __repr__(self) -> str:
-        outcome_val = self.outcome_text if isinstance(self.outcome_text, str) else ""
-        short_text = outcome_val[:50] + "..." if len(outcome_val) > 50 else outcome_val
-        return f"<LearningOutcome(id={self.id}, course_id={self.course_id}, text='{short_text}')>"
-
-    def to_dict(self, include_coverage: bool = False) -> Dict[str, Any]:
-        return {
-            'id': self.id,
-            'course_id': self.course_id,
-            'outcome_text': self.outcome_text,
-            'created_date': self.created_date.isoformat() if self.created_date else None
-        }
-
-
-class AssessmentFormat(db.Model, MappedAsDataclass):
-    __tablename__ = 'assessment_formats'
-
-    id: Mapped[int] = mapped_column(primary_key=True, init=False)
-    course_id: Mapped[int] = mapped_column(ForeignKey('courses.course_id', ondelete="CASCADE"), nullable=False, index=True)
-    format_type: Mapped[str] = mapped_column(String(100), nullable=False)
-    
-    percentage: Mapped[Optional[float]] = mapped_column(Float, default=None)
-    description: Mapped[Optional[str]] = mapped_column(Text, default=None)
-    created_date: Mapped[datetime] = mapped_column(DateTime, default_factory=datetime.utcnow)
-
-    # RELATIONS: Many AssessmentFormats -> 1 Course
-    course: Mapped[Optional["Course"]] = relationship('Course', back_populates='assessment_formats', default=None)
-
-    def __repr__(self) -> str:
-        return f"<AssessmentFormat(id={self.id}, course_id={self.course_id}, format='{self.format_type}', percentage={self.percentage})>"
-
-    @validates('percentage')
-    def validate_percentage(self, key: str, percentage: Optional[float]) -> Optional[float]:
-        if percentage is not None and (percentage < 0 or percentage > 100):
-            raise ValueError("Percentage must be between 0 and 100")
-        return percentage
-
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            'id': self.id,
-            'course_id': self.course_id,
-            'format_type': self.format_type,
-            'percentage': self.percentage,
-            'description': self.description,
-            'created_date': self.created_date.isoformat() if self.created_date else None
-        }
-
-
-class Tool(db.Model, MappedAsDataclass):
-    __tablename__ = 'tools'
-
-    id: Mapped[int] = mapped_column(primary_key=True, init=False)
-    course_id: Mapped[int] = mapped_column(ForeignKey('courses.course_id', ondelete="CASCADE"), nullable=False, index=True)
-    tool_name: Mapped[str] = mapped_column(String(100), nullable=False)
-    
-    purpose: Mapped[Optional[str]] = mapped_column(Text, default=None)
-    license_info: Mapped[Optional[str]] = mapped_column(String(100), default=None)
-    created_date: Mapped[datetime] = mapped_column(DateTime, default_factory=datetime.utcnow)
-
-    # RELATIONS: Many Tools -> 1 Course
-    course: Mapped[Optional["Course"]] = relationship('Course', back_populates='tools', default=None)
-
-    def __repr__(self) -> str:
-        return f"<Tool(id={self.id}, course_id={self.course_id}, name='{self.tool_name}')>"
-
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            'id': self.id,
-            'course_id': self.course_id,
-            'tool_name': self.tool_name,
-            'purpose': self.purpose,
-            'license_info': self.license_info,
-            'created_date': self.created_date.isoformat() if self.created_date else None
-        }

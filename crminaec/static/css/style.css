@@ -362,3 +362,44 @@ body {
     background-color: var(--accent-red);
     color: var(--white);
 }
+
+/* --- BoM Editor --- */
+#search_dropdown {
+    display: none;
+    z-index: 1050;
+    max-height: 350px;
+    overflow-y: auto;
+}
+
+#bom_tree {
+    min-height: 500px;
+    max-height: 700px;
+    overflow: auto;
+}
+
+#btn_add_child,
+#btn_edit_item,
+#btn_attachments,
+#btn_where_used,
+#btn_print_label,
+#btn_archive_item,
+#btn_delete_item,
+#btn_export_csv,
+#btn_import_flat_bom {
+    display: none;
+}
+
+/* --- Scanner --- */
+#reader {
+    width: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+#scan-result-card {
+    display: none;
+}
+
+.ledger-table {
+    font-size: 0.9rem;
+}
